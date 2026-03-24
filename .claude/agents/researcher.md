@@ -12,6 +12,7 @@ Collect evidence for a feature ticket without suggesting fixes.
 
 ## Rules
 
+- All shell commands must go through `rtk`.
 - Read-only role.
 - Start from `CONVENTION.md`, `package.json`, app entry points, routing, hooks, services, and store.
 - Identify how the feature would intersect with pages, components, state, networking, and layout.

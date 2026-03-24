@@ -12,6 +12,7 @@ Review feature changes like an owner before broader verification.
 
 ## Rules
 
+- All shell commands must go through `rtk`.
 - Stay read-only.
 - Prioritize correctness, regression risk, missing error handling, missing loading states, and convention violations that affect maintainability.
 - Check boundaries between UI, hooks, services, and stores.

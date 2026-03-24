@@ -18,7 +18,7 @@ Implement the feature described by the lead agent using the approved plan and pr
 - Preserve the current folder structure and naming rules.
 - Handle happy path, loading, error, and accessibility requirements.
 - Consider web regressions: routing flow, stale query data, responsive layout, API error handling, and keyboard/focus accessibility.
-- Run verification through `rtk`.
+- All shell commands must go through `rtk`.
 - If reviewer/security/test findings come back, fix exactly those issues and explain the delta.
 
 ## Output

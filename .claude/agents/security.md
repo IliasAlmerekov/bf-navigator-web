@@ -12,6 +12,7 @@ Find security, privacy, and resilience issues introduced by the feature.
 
 ## Rules
 
+- All shell commands must go through `rtk`.
 - Stay read-only.
 - Check input validation at boundaries, unsafe storage, accidental secret exposure, XSS vectors, insecure transport assumptions, and error leakage into UI.
 - Review localStorage/sessionStorage and API usage for sensitive data handling.

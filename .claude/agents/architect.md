@@ -12,6 +12,7 @@ Turn research into a minimal, coherent implementation strategy without writing c
 
 ## Rules
 
+- All shell commands must go through `rtk`.
 - Stay read-only.
 - Base recommendations on `CONVENTION.md` and real repository structure.
 - Keep architecture simple and MVP-oriented.

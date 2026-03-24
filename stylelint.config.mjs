@@ -1,0 +1,8 @@
+/** @type {import('stylelint').Config} */
+export default {
+  extends: ['stylelint-config-standard'],
+  rules: {
+    'alpha-value-notation': 'number',
+    'color-function-notation': 'legacy',
+  },
+};
