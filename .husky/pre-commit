@@ -1,2 +1,3 @@
 #!/bin/sh
-lint-staged
+npx --no-install lint-staged
+npm run typecheck

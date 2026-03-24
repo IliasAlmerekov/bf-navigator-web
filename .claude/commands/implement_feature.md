@@ -1,7 +1,7 @@
 ---
 name: implement_feature
 description: Lead-agent orchestration workflow for implementing a ticket from research and plan artifacts.
-allowed_tools: ["Task", "Bash", "Read", "Write", "Grep", "Glob"]
+allowed_tools: ['Task', 'Bash', 'Read', 'Write', 'Grep', 'Glob']
 ---
 
 # /implement_feature

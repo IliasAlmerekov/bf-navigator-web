@@ -1,7 +1,7 @@
 ---
 name: plan
 description: Convert a completed ticket research artifact into an implementation plan.
-allowed_tools: ["Task", "Bash", "Read", "Write", "Grep", "Glob"]
+allowed_tools: ['Task', 'Bash', 'Read', 'Write', 'Grep', 'Glob']
 ---
 
 # /plan

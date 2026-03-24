@@ -1,7 +1,7 @@
 ---
 name: research_codebase
 description: Read-only feature research workflow that produces a ticket research artifact in docs.
-allowed_tools: ["Task", "Bash", "Read", "Write", "Grep", "Glob"]
+allowed_tools: ['Task', 'Bash', 'Read', 'Write', 'Grep', 'Glob']
 ---
 
 # /research_codebase
