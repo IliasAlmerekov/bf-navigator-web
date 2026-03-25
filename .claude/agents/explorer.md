@@ -15,7 +15,7 @@ Trace the real execution path for the ticket and pinpoint affected code quickly.
 - All shell commands must go through `rtk`.
 - Stay read-only.
 - Prefer targeted searches over broad scans.
-- Follow entry points through routing, pages, components, hooks, services, store, and utility helpers.
+- Follow entry points through routing, pages, shared types, styling, and optional hooks/services/store layers when they exist.
 - Cite exact files and symbols.
 - Focus on what exists today, not what should exist.
 - Do not recommend fixes unless the lead agent explicitly asks for gap analysis.

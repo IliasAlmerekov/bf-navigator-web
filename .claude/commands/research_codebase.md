@@ -16,12 +16,12 @@ Pass the raw ticket text as `$ARGUMENTS`.
 
 1. Read `CONVENTION.md` and identify the project stack and architectural boundaries.
 2. Derive a `ticket-slug` from the ticket title or ID in lowercase kebab-case.
-3. Create `docs/<ticket-slug>/` if it does not exist.
+3. Create `docs/agents/<ticket-slug>/` if it does not exist.
 4. Spawn read-only subagents:
    - `researcher` for repository and feature context
    - `explorer` for execution path tracing
    - `architect` for constraints and decomposition boundaries only
-5. Consolidate the evidence into `docs/<ticket-slug>/research.md`.
+5. Consolidate the evidence into `docs/agents/<ticket-slug>/research.md`.
 
 ## Research Output Template
 
@@ -29,7 +29,8 @@ The file must include:
 
 - ticket summary
 - current behavior
-- affected pages, components, hooks, services, store, and types
+- affected routes, pages, shared types, and styling modules
+- optional shared layers in scope, if they exist
 - likely touched files
 - data flow and routing flow
 - constraints from `CONVENTION.md`

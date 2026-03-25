@@ -24,7 +24,7 @@ description = "Read-only repository researcher for ticket discovery and evidence
 config_file = "agents/researcher.toml"
 
 [agents.coder]
-description = "Primary write-enabled implementation agent for Expo/React Native feature work."
+description = "Primary write-enabled implementation agent for React + Vite + TypeScript feature work."
 config_file = "agents/coder.toml"
 
 [agents.reviewer]
@@ -36,7 +36,7 @@ description = "Verification agent for automated checks and manual test matrices.
 config_file = "agents/tester.toml"
 
 [agents.security]
-description = "Read-only security and resilience reviewer for mobile feature changes."
+description = "Read-only security and resilience reviewer for web feature changes."
 config_file = "agents/security.toml"
 
 [agents.architect]

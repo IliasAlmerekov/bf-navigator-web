@@ -4,31 +4,56 @@ This project uses a lead-agent orchestration model for feature work.
 
 ## Stack Context
 
-- React + Vite
+- React 19
+- React DOM 19
+- Vite 8
 - TypeScript strict mode
-- React Router
-- Zustand for client state
-- TanStack Query for server state
-- Axios-based services
+- TanStack Router with file-based routes
+- Vitest + React Testing Library
+- ESLint + Prettier + Stylelint
 - Accessibility is mandatory
 
 Always read and follow `CONVENTION.md` before planning or implementation.
 
+## Agent Architecture
+
+```text
+.claude/
+├── CLAUDE.md
+├── agents/
+│   ├── architect.md
+│   ├── coder.md
+│   ├── explorer.md
+│   ├── researcher.md
+│   ├── reviewer.md
+│   ├── security.md
+│   └── tester.md
+└── commands/
+    ├── research_codebase.md
+    ├── plan.md
+    └── implement_feature.md
+
+docs/
+└── agents/
+    └── <ticket-slug>/
+        ├── research.md
+        └── plan.md
+```
+
 ## Project Structure
 
-```
+```text
 src/
-├── pages/           # Dashboard, RouteOverview, Profile, Alerts
-├── components/      # all UI components
-│   ├── ui/          # Button, Card, Badge, Input
-│   └── layout/      # MobileLayout, DesktopLayout
-├── store/           # Zustand — one file per domain
-├── services/        # API calls — one file per domain
-├── hooks/           # useRoute, useElevator, useProfile
-├── types/           # all TypeScript types
-├── constants/       # colors, typography, spacing
-└── utils/           # riskCalculator, formatters
+├── routes/          # TanStack Router route definitions
+├── pages/           # page-level UI modules
+├── types/           # shared TypeScript types
+├── assets/
+├── App.tsx          # router bootstrap
+├── main.tsx         # React entrypoint
+└── routeTree.gen.ts # auto-generated, do not edit
 ```
+
+Additional directories such as `components/`, `hooks/`, `services/`, `store/`, `constants/`, and `utils/` are optional and should be introduced only when real feature pressure exists.
 
 ## Global Rules
 
@@ -36,15 +61,15 @@ src/
 - The lead agent orchestrates; it does not write production code during implementation.
 - `coder` is the only agent allowed to make source-code changes unless the user explicitly asks otherwise.
 - Prefer local code evidence first. If framework or API behavior is uncertain, query Context7 MCP.
-- Assume web-specific failure modes: routing regressions, stale query state, API failures, loading/error states, responsive layout issues, and accessibility regressions.
-- Keep changes aligned with the current structure: `pages`, `components`, `hooks`, `services`, `store`, `types`, `constants`, `utils`.
+- Assume web-specific failure modes: routing regressions, stale generated routes, broken links, loading/error states, responsive layout issues, form-state bugs, and accessibility regressions.
+- Keep changes aligned with the current structure: `routes`, `pages`, `types`, and only the optional layers that actually exist.
 
 ## Ticket Artifact Contract
 
 For every feature ticket, create a folder:
 
-- `docs/<ticket-slug>/research.md`
-- `docs/<ticket-slug>/plan.md`
+- `docs/agents/<ticket-slug>/research.md`
+- `docs/agents/<ticket-slug>/plan.md`
 
 `ticket-slug` should be lowercase kebab-case. If the ticket has an ID, preserve it, for example `bf-123-route-history`.
 
@@ -56,15 +81,15 @@ For every feature ticket, create a folder:
 - Lead agent spawns read-only subagents such as `researcher`, `explorer`, and `architect`
 - Goal: understand the current implementation, entry points, affected files, constraints, risks, and unknowns
 - Forbidden: proposing fixes, writing implementation steps, or editing product code
-- Output: `docs/<ticket-slug>/research.md`
+- Output: `docs/agents/<ticket-slug>/research.md`
 
 ### 2. `plan`
 
 - Input: ticket text or ticket slug with completed research
 - Lead agent reads `research.md`, optionally asks `architect` for decomposition
-- Goal: produce a concrete implementation plan with touched files, state/data flow changes, failure scenarios, test scope, and rollout order
+- Goal: produce a concrete implementation plan with touched files, route/page/type changes, failure scenarios, test scope, and rollout order
 - Forbidden: coding
-- Output: `docs/<ticket-slug>/plan.md`
+- Output: `docs/agents/<ticket-slug>/plan.md`
 
 ### 3. `implement_feature`
 
