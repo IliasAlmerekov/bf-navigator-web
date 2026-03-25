@@ -12,7 +12,7 @@ describe('App', () => {
   it('renders the home route', async () => {
     await renderAppAt('/');
 
-    expect(await screen.findByText('HomeSearch')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Find Optimal Route' })).toBeInTheDocument();
   });
 
   it('renders the onboarding route at /onboarding', async () => {

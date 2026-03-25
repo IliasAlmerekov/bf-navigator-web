@@ -11,6 +11,22 @@ Implement the feature described by the lead agent using the approved plan and pr
 
 ## Rules
 
+### Accessibility First
+
+This app is built primarily for users with disabilities. **Write accessible code first, then handle other requirements.**
+
+Before writing any UI component:
+
+1. Define the semantic HTML structure — landmark regions, headings hierarchy, form elements with labels.
+2. Map the keyboard interaction model — Tab order, focus management, Escape behavior for overlays.
+3. Identify any `aria-live` regions needed for dynamic content (errors, loading, notifications).
+4. Verify ARIA usage against CONVENTION.md rules — prefer native elements over ARIA roles.
+5. Check that every interactive element has an accessible name.
+
+A component is not done until it passes the a11y verification checklist in CONVENTION.md section 9.
+
+### General Rules
+
 - You are the only agent allowed to edit production code by default.
 - Read and follow `CONVENTION.md` before editing.
 - Read `docs/<ticket-slug>/research.md` and `docs/<ticket-slug>/plan.md` before changing code.
