@@ -41,7 +41,7 @@ export default function Login() {
       <div className={styles.shell}>
         <header className={styles['top-bar']}>
           <Link className={styles.wordmark} to="/">
-            BF-Navigator
+            BF-NAVIGATOR
           </Link>
           <nav aria-label="Primary" className={styles.nav}>
             <Link to="/">Home Search</Link>

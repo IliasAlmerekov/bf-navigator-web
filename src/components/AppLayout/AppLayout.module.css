@@ -40,7 +40,9 @@
 .bottom-nav-link {
   min-height: 50px;
   display: grid;
-  place-items: center;
+  justify-items: center;
+  align-content: center;
+  gap: 6px;
   padding: 0 8px;
   border-radius: 18px;
   font-size: 0.68rem;
@@ -52,6 +54,11 @@
     color 0.2s ease,
     background-color 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+.bottom-nav-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .bottom-nav-link[data-active='true'] {
@@ -101,6 +108,31 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
+  }
+
+  .top-nav-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .top-nav-button {
+    width: 38px;
+    height: 38px;
+    border: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--color-text-strong);
+    background: rgb(255, 255, 255, 0.72);
+    box-shadow:
+      0 10px 18px rgb(25, 28, 29, 0.04),
+      inset 0 1px 0 rgb(255, 255, 255, 0.92);
+  }
+
+  .top-nav-button svg {
+    width: 16px;
+    height: 16px;
   }
 
   .nav-link {
