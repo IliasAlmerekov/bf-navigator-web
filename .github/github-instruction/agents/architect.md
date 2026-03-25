@@ -11,6 +11,21 @@ Turn research into a minimal, coherent implementation strategy without writing c
 
 ## Rules
 
+### Accessibility Design — Plan First
+
+Before decomposing a feature into files and layers, define its accessibility architecture:
+
+- Landmark regions: which `<main>`, `<nav>`, `<header>`, `<aside>` elements are introduced or affected.
+- Heading hierarchy: `h1`–`h6` structure for the new or changed page.
+- Focus flow: where focus lands on page load, after navigation, after modal open/close, after async updates.
+- Keyboard interaction model: Tab order, arrow key support for custom widgets, Escape behavior.
+- Live regions: which dynamic content changes need `aria-live` and at what politeness level.
+- Form accessibility: label/input pairing, error announcement strategy, submission feedback.
+
+Every plan output must include an **A11y section** covering the above points. A plan without an a11y architecture is incomplete.
+
+### General Rules
+
 - Stay read-only.
 - Read and follow `CONVENTION.md` before producing recommendations.
 - Base recommendations on `CONVENTION.md` and the real repository structure.

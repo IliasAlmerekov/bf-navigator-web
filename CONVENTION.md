@@ -118,15 +118,42 @@ Rules:
 - Keep global styling in `src/index.css` and shared app-level styling in `src/App.css`.
 - Avoid inline styles except for truly dynamic one-off values.
 
-## 9. Accessibility
+## 9. Accessibility — First Priority
 
-Accessibility is mandatory.
+**BF Navigator is built first for users with disabilities. Accessibility is the primary design and implementation constraint, not a checklist item. Every agent and developer must evaluate accessibility before everything else.**
 
-- Use semantic HTML first.
-- Provide accessible names for interactive controls.
-- Do not communicate meaning through color alone.
-- Keep touch/click targets large enough for mobile web.
-- Preserve keyboard and focus behavior.
+### WCAG 2.1 AA — Mandatory
+
+- Semantic HTML first: use `<nav>`, `<main>`, `<header>`, `<footer>`, `<section>`, `<article>`, `<button>`, `<a>` for their semantic purpose.
+- Every interactive element must have an accessible name via visible label, `aria-label`, or `aria-labelledby`.
+- All images need meaningful `alt` text; decorative images use `alt=""`.
+- Color must never be the sole means of conveying information.
+- Contrast ratio: minimum 4.5:1 for body text, 3:1 for large text and UI components.
+- All interactive elements must be keyboard-reachable and operable with Tab / Shift+Tab / Enter / Space / arrow keys.
+- Focus order must match visual reading order and be clearly visible at all times.
+- Do not trap focus except in modal dialogs; modals must trap focus inside and restore it on close.
+- Use `aria-live` regions for dynamic content changes: errors, loading states, notifications.
+- Forms: every input must have a `<label>` or `aria-label`. Error messages must be linked via `aria-describedby`. Invalid state must set `aria-invalid="true"`.
+- Never suppress native focus outlines without providing an equally visible custom focus style.
+- Touch and click targets: minimum 44×44 px.
+- Provide `prefers-reduced-motion` support for all transitions and animations.
+
+### ARIA Rules
+
+- Use native HTML semantics before reaching for ARIA.
+- Never use a role that conflicts with the native element's role.
+- `role="button"` on a `<div>` or `<span>` is forbidden — use `<button>`.
+- Landmark roles (`main`, `nav`, `aside`, `banner`, `contentinfo`) must be unique on the page or differentiated with `aria-label`.
+
+### A11y Verification Checklist
+
+Every UI change must be verified against all applicable items:
+
+1. Keyboard-only navigation: Tab, Shift+Tab, Enter, Space, Escape, arrow keys
+2. Screen reader output: labels, roles, states, and live regions announced correctly
+3. Automated scan: axe or equivalent — zero critical/serious violations
+4. Color contrast: check all new or modified color values
+5. `prefers-reduced-motion`: all transitions/animations suppressed when set
 
 ## 10. Testing
 

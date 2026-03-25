@@ -4,15 +4,27 @@ This directory defines the project-local multi-agent workflow for GitHub-based a
 
 ## Stack Context
 
-- Expo / React Native
+- React 19 + Vite 8
 - TypeScript strict mode
-- React Navigation
-- Zustand for client state
-- TanStack Query for server state
-- Axios-based services
-- Accessibility is mandatory
+- TanStack Router with file-based routing
+- Vitest + React Testing Library
+- ESLint + Prettier + Stylelint
+- **Accessibility is the primary design and implementation constraint**
 
 Always read and follow `CONVENTION.md` before planning or implementation.
+
+## Accessibility — First Priority
+
+**BF Navigator is built primarily for users with disabilities. Every agent must treat a11y as the first concern, not the last.**
+
+- **researcher / explorer**: Document existing a11y state (landmarks, ARIA, keyboard support, gaps) before investigating other aspects.
+- **architect**: Define the a11y architecture (focus flow, landmarks, live regions, keyboard model) before decomposing into files.
+- **coder**: Write semantic HTML and ARIA first; functional behavior second. A component is not done until it passes the CONVENTION.md section 9 a11y checklist.
+- **reviewer**: A11y failures block merge. Check accessibility before correctness.
+- **tester**: Run the a11y test matrix before any other verification. A11y failures are P0.
+- **security**: Flag a11y regressions as functional access denials.
+
+The full a11y requirement is defined in `CONVENTION.md` section 9.
 
 ## Global Rules
 
@@ -21,8 +33,8 @@ Always read and follow `CONVENTION.md` before planning or implementation.
 - The lead agent orchestrates; it does not write production code during implementation.
 - `coder` is the only agent allowed to make source-code changes unless the user explicitly asks otherwise.
 - Prefer local code evidence first. If framework or API behavior is uncertain, query Context7 MCP.
-- Assume mobile-specific failure modes: navigation regressions, stale query state, offline/API failures, loading and error states, notification flow issues, retry storms, empty states, and accessibility regressions.
-- Keep changes aligned with the current structure: `screens`, `components`, `hooks`, `services`, `stores`, `types`, `constants`, `utils`.
+- Assume web-specific failure modes: routing regressions, stale generated routes, broken links, loading/error states, responsive layout issues, form-state bugs, and accessibility regressions.
+- Keep changes aligned with the current structure: `routes`, `pages`, `types`, and only the optional layers that actually exist.
 - Every spawned subagent must also read and follow `CONVENTION.md`.
 
 ## Lead Agent Contract

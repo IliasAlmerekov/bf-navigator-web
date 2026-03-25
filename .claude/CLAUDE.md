@@ -55,6 +55,21 @@ src/
 
 Additional directories such as `components/`, `hooks/`, `services/`, `store/`, `constants/`, and `utils/` are optional and should be introduced only when real feature pressure exists.
 
+## Accessibility — First Priority
+
+**BF Navigator is built primarily for users with disabilities. Accessibility is not a checklist item — it is the primary design and implementation constraint.**
+
+Every agent must treat a11y as the first concern, not the last:
+
+- **researcher / explorer**: Document existing a11y state (landmarks, ARIA, keyboard support, gaps) before investigating other aspects.
+- **architect**: Define the a11y architecture (focus flow, landmarks, live regions, keyboard model) before decomposing into files.
+- **coder**: Write semantic HTML and ARIA first; functional behavior second. A component is not done until it passes the CONVENTION.md section 9 a11y checklist.
+- **reviewer**: A11y failures block merge. Check accessibility before correctness.
+- **tester**: Run the a11y test matrix (keyboard nav, screen reader, axe scan, contrast, reduced motion) before any other verification. A11y failures are P0.
+- **security**: Flag a11y regressions — inaccessible UI is a functional denial of service for users with disabilities.
+
+The full a11y requirement is defined in `CONVENTION.md` section 9. All agents must read that section before starting work.
+
 ## Global Rules
 
 - All shell commands must go through `rtk`.
