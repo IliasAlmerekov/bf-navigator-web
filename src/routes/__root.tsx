@@ -1,5 +1,6 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { createRootRoute } from '@tanstack/react-router';
+import RootRouteShell from '../components/RootRouteShell';
 
 export const Route = createRootRoute({
-  component: () => <Outlet />,
+  component: RootRouteShell,
 });
