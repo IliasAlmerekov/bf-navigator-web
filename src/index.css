@@ -1,23 +1,11 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgb(170, 59, 255, 0.1);
-  --accent-border: rgb(170, 59, 255, 0.5);
-  --social-bg: rgb(244, 243, 236, 0.5);
-  --shadow: rgb(0, 0, 0, 0.1) 0 10px 15px -3px, rgb(0, 0, 0, 0.05) 0 4px 6px -2px;
-  --sans: system-ui, 'Segoe UI', roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', roboto, sans-serif;
-  --mono: ui-monospace, consolas, monospace;
+@import url('./constants/design-tokens.css');
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+:root {
+  font: 18px/155% var(--font-body);
+  letter-spacing: 0.01em;
+  color-scheme: light;
+  color: var(--color-text);
+  background: var(--color-surface);
   font-synthesis: none;
   text-rendering: optimizelegibility;
   -webkit-font-smoothing: antialiased;
@@ -28,85 +16,129 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgb(192, 132, 252, 0.15);
-    --accent-border: rgb(192, 132, 252, 0.5);
-    --social-bg: rgb(47, 48, 58, 0.5);
-    --shadow: rgb(0, 0, 0, 0.4) 0 10px 15px -3px, rgb(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+html {
+  background: var(--color-surface);
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
+  width: min(1126px, 100%);
   margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
+  padding-inline: clamp(16px, 2vw, 32px);
 }
 
 body {
   margin: 0;
+  min-height: 100svh;
+  color: var(--color-text);
+  background:
+    radial-gradient(circle at top left, #00339914, transparent 30%),
+    linear-gradient(
+      180deg,
+      var(--color-surface-container-lowest) 0%,
+      var(--color-surface) 28%,
+      var(--color-surface-container) 100%
+    );
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-body);
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: var(--color-link);
+  text-decoration-color: #00206833;
+  text-underline-offset: 0.18em;
+  transition:
+    color 0.2s ease,
+    text-decoration-color 0.2s ease;
+}
+
+a:hover {
+  color: var(--color-link-hover);
+  text-decoration-color: #0033995c;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+::selection {
+  color: var(--color-on-primary);
+  background: var(--color-accent-strong);
 }
 
 h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-text-strong);
+  text-wrap: balance;
 }
 
 h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
+  font-size: clamp(2.75rem, 6vw, var(--font-size-display-lg));
+  line-height: 0.95;
+  margin: 32px 0 20px;
 
   @media (width <= 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+    margin: 20px 0 16px;
   }
 }
 
 h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
+  font-size: clamp(1.25rem, 2vw, var(--font-size-title-lg));
+  line-height: 1.15;
+  margin: 0 0 12px;
 
   @media (width <= 1024px) {
-    font-size: 20px;
+    font-size: 1.125rem;
+    margin-bottom: 10px;
   }
 }
 
 p {
   margin: 0;
+  max-width: 68ch;
 }
 
 code,
 .counter {
-  font-family: var(--mono);
+  font-family: var(--font-mono);
   display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-strong);
 }
 
 code {
   font-size: 15px;
   line-height: 135%;
   padding: 4px 8px;
-  background: var(--code-bg);
+  background: var(--color-surface-container-lowest);
+  box-shadow: inset 0 0 0 1px var(--color-ghost-border);
 }
