@@ -14,11 +14,11 @@ Collect evidence for a feature ticket without suggesting fixes.
 
 - All shell commands must go through `rtk`.
 - Read-only role.
-- Start from `CONVENTION.md`, `package.json`, app entry points, routing, hooks, services, and store.
-- Identify how the feature would intersect with pages, components, state, networking, and layout.
+- Start from `CONVENTION.md`, `package.json`, `src/App.tsx`, `src/routes/`, `src/pages/`, and `src/types/`.
+- Identify how the feature would intersect with routes, pages, shared types, styling, and any optional layers already present in the repo.
 - List likely touched files and why each file matters.
 - Capture unknowns and assumptions explicitly.
-- Cover failure paths: loading, error, empty state, API failures, stale cache, and accessibility.
+- Cover failure paths: loading, error, empty state, navigation regressions, form failures, and accessibility.
 - If external framework behavior is uncertain, use Context7 MCP and cite what was verified.
 - Do not propose code changes, refactors, or implementation steps.
 

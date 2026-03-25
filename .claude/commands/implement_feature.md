@@ -14,7 +14,7 @@ Pass the ticket slug as `$ARGUMENTS`.
 
 ## Required Behavior
 
-1. Read `CONVENTION.md`, `docs/<ticket-slug>/research.md`, and `docs/<ticket-slug>/plan.md`.
+1. Read `CONVENTION.md`, `docs/agents/<ticket-slug>/research.md`, and `docs/agents/<ticket-slug>/plan.md`.
 2. Lead agent delegates code changes only to `coder`.
 3. Lead agent must not write production code itself. It orchestrates, evaluates, and loops.
 4. Run the first implementation loop:
@@ -33,7 +33,7 @@ Pass the ticket slug as `$ARGUMENTS`.
 ## Verification Expectations
 
 - Commands must run through `rtk`.
-- Verification must consider happy path, loading, error, empty, API failure, retry, accessibility, and regression scenarios relevant to the ticket.
+- Verification must consider happy path, loading, error, empty, navigation, responsive layout, form behavior, accessibility, and regression scenarios relevant to the ticket.
 - If automated tests do not exist, document the gap and require a manual verification matrix.
 
 ## Hard Constraints

@@ -15,10 +15,10 @@ Pass either the ticket slug or the original ticket text as `$ARGUMENTS`.
 ## Required Behavior
 
 1. Resolve the `ticket-slug`.
-2. Read `docs/<ticket-slug>/research.md`.
+2. Read `docs/agents/<ticket-slug>/research.md`.
 3. Read `CONVENTION.md`.
 4. Spawn `architect` if deeper decomposition or boundary checks are needed.
-5. Create or overwrite `docs/<ticket-slug>/plan.md`.
+5. Create or overwrite `docs/agents/<ticket-slug>/plan.md`.
 
 ## Plan Output Template
 
@@ -27,9 +27,10 @@ The plan must include:
 - feature goal
 - touched files and why each one changes
 - implementation sequence
-- state and data-flow updates
-- API / storage considerations
-- loading, error, empty, and accessibility scenarios
+- route/page/type/style updates
+- state and data-flow updates when applicable
+- API / storage considerations when applicable
+- loading, error, empty, responsive, and accessibility scenarios
 - verification strategy
 - out-of-scope items
 
