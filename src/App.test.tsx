@@ -6,6 +6,6 @@ describe('App', () => {
   it('renders the home route', async () => {
     render(<App />);
 
-    expect(await screen.findByText('HomeSearch')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Find Optimal Route' })).toBeInTheDocument();
   });
 });
