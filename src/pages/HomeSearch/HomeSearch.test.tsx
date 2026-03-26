@@ -123,7 +123,7 @@ describe('HomeSearch', () => {
   });
 
   it('navigates when both stations are selected', async () => {
-    fetchMock.mockResolvedValue(
+    fetchMock.mockResolvedValueOnce(
       createJsonResponse([{ city: 'Berlin', evaNumber: 8011160, name: 'Berlin Hbf', number: 1 }])
     );
 
@@ -132,19 +132,25 @@ describe('HomeSearch', () => {
     const originInputs = screen.getAllByRole('combobox', { name: 'From' });
     fireEvent.focus(originInputs[0]);
     fireEvent.change(originInputs[0], { target: { value: 'Ber' } });
-    const originOption = await screen.findAllByRole('option', { name: /Berlin Hbf/i });
-    fireEvent.mouseDown(originOption[0]);
-    fireEvent.click(originOption[0]);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+    const originOption = await screen.findByRole('option', { name: /Berlin Hbf/i });
+    fireEvent.mouseDown(originOption);
+    fireEvent.click(originOption);
 
-    fetchMock.mockResolvedValue(
+    fetchMock.mockResolvedValueOnce(
       createJsonResponse([{ city: 'Hamburg', evaNumber: 8002549, name: 'Hamburg Hbf', number: 1 }])
     );
     const destInputs = screen.getAllByRole('combobox', { name: 'To' });
     fireEvent.focus(destInputs[0]);
     fireEvent.change(destInputs[0], { target: { value: 'Ham' } });
-    const destOption = await screen.findAllByRole('option', { name: /Hamburg Hbf/i });
-    fireEvent.mouseDown(destOption[0]);
-    fireEvent.click(destOption[0]);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    const destOption = await screen.findByRole('option', { name: /Hamburg Hbf/i });
+    fireEvent.mouseDown(destOption);
+    fireEvent.click(destOption);
 
     const submitButton = screen.getAllByRole('button', { name: 'Find Optimal Route' })[0];
     fireEvent.click(submitButton);
