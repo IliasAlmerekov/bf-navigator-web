@@ -41,13 +41,6 @@
     inset 0 0 0 1px rgb(25, 28, 29, 0.04);
 }
 
-.control:focus-within,
-.field[data-open='true'] .control {
-  box-shadow:
-    inset 0 0 0 2px rgb(0, 51, 153, 0.22),
-    0 10px 20px rgb(0, 32, 104, 0.08);
-}
-
 .icon,
 .image-icon {
   grid-area: icon;
@@ -155,4 +148,22 @@
 .status-error {
   color: #9a2830;
   background: #fff0f1;
+}
+
+.control:has([aria-invalid='true']) {
+  box-shadow: inset 0 0 0 2px rgb(180, 30, 40, 0.4);
+}
+
+.control:focus-within,
+.field[data-open='true'] .control {
+  box-shadow:
+    inset 0 0 0 2px rgb(0, 51, 153, 0.22),
+    0 10px 20px rgb(0, 32, 104, 0.08);
+}
+
+.control:focus-within:has([aria-invalid='true']),
+.field[data-open='true'] .control:has([aria-invalid='true']) {
+  box-shadow:
+    inset 0 0 0 2px rgb(180, 30, 40, 0.4),
+    0 10px 20px rgb(0, 32, 104, 0.08);
 }

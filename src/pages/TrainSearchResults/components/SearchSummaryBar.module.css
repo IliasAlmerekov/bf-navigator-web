@@ -1,0 +1,90 @@
+.bar {
+  background: var(--color-surface-container-lowest);
+  border-radius: var(--radius-xl);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--shadow-soft);
+}
+
+.route {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.route-origin,
+.route-destination {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  color: var(--color-text-strong);
+  letter-spacing: -0.02em;
+}
+
+.route-arrow {
+  color: var(--color-primary-container);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.meta-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-body-sm);
+  color: var(--color-text);
+}
+
+.meta-date {
+  font-weight: 500;
+}
+
+.separator {
+  color: var(--color-outline-variant);
+}
+
+.meta-icon {
+  width: 13px;
+  height: 13px;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--color-accent-soft);
+  color: var(--color-primary-container);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-body-sm);
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.filter-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.filter-btn:hover {
+  background: var(--color-accent-strong);
+}
+
+.filter-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
