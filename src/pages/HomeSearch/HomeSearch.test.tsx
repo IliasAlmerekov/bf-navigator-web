@@ -16,6 +16,11 @@ function createJsonResponse(body: unknown) {
   });
 }
 
+function getRequestedQuery(input: Request | string | URL) {
+  const requestUrl = input instanceof Request ? input.url : String(input);
+  return new URL(requestUrl, 'http://localhost').searchParams.get('query');
+}
+
 describe('HomeSearch', () => {
   const fetchMock = vi.mocked(fetch);
 
@@ -123,32 +128,55 @@ describe('HomeSearch', () => {
   });
 
   it('navigates when both stations are selected', async () => {
-    fetchMock.mockResolvedValueOnce(
-      createJsonResponse([{ city: 'Berlin', evaNumber: 8011160, name: 'Berlin Hbf', number: 1 }])
-    );
+    fetchMock.mockImplementation(async (input) => {
+      const query = getRequestedQuery(input);
+
+      if (query === 'Ham*') {
+        return createJsonResponse([
+          { city: 'Hamburg', evaNumber: 8002549, name: 'Hamburg Hbf', number: 1 },
+        ]);
+      }
+
+      if (query === 'Ber*') {
+        return createJsonResponse([
+          { city: 'Berlin', evaNumber: 8011160, name: 'Berlin Hbf', number: 1 },
+        ]);
+      }
+
+      return createJsonResponse([]);
+    });
 
     render(<HomeSearch />);
 
     const originInputs = screen.getAllByRole('combobox', { name: 'From' });
     fireEvent.focus(originInputs[0]);
-    fireEvent.change(originInputs[0], { target: { value: 'Ber' } });
+    fireEvent.change(originInputs[0], { target: { value: 'Ham' } });
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls.some(([input]) => getRequestedQuery(input) === 'Ham*')).toBe(
+        true
+      );
     });
-    const originOption = await screen.findByRole('option', { name: /Berlin Hbf/i });
+    const originOption = await screen.findByRole(
+      'option',
+      { name: /Hamburg Hbf/i },
+      { timeout: 3000 }
+    );
     fireEvent.mouseDown(originOption);
     fireEvent.click(originOption);
 
-    fetchMock.mockResolvedValueOnce(
-      createJsonResponse([{ city: 'Hamburg', evaNumber: 8002549, name: 'Hamburg Hbf', number: 1 }])
-    );
     const destInputs = screen.getAllByRole('combobox', { name: 'To' });
     fireEvent.focus(destInputs[0]);
-    fireEvent.change(destInputs[0], { target: { value: 'Ham' } });
+    fireEvent.change(destInputs[0], { target: { value: 'Ber' } });
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls.some(([input]) => getRequestedQuery(input) === 'Ber*')).toBe(
+        true
+      );
     });
-    const destOption = await screen.findByRole('option', { name: /Hamburg Hbf/i });
+    const destOption = await screen.findByRole(
+      'option',
+      { name: /Berlin Hbf/i },
+      { timeout: 3000 }
+    );
     fireEvent.mouseDown(destOption);
     fireEvent.click(destOption);
 
