@@ -1,0 +1,3 @@
+export const MAX_STATION_SUGGESTIONS = 5;
+export const MIN_STATION_QUERY_LENGTH = 2;
+export const STATION_SEARCH_DEBOUNCE_MS = 300;
