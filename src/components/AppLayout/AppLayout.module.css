@@ -90,9 +90,10 @@
     align-items: center;
     justify-content: space-between;
     gap: 24px;
-    padding: 20px 0 6px;
+    padding: 20px 15px;
+    border-radius: 10px;
     background: linear-gradient(180deg, rgb(248, 249, 250, 0.96) 0%, rgb(248, 249, 250, 0.82) 100%);
-    backdrop-filter: blur(14px);
+    backdrop-filter: blur(10px);
   }
 
   .brand {

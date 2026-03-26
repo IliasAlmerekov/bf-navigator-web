@@ -8,11 +8,13 @@ import styles from './StationAutocompleteField.module.css';
 type StationAutocompleteFieldProps =
   | {
       error: string | null;
+      errorId?: string;
       hasSearched: boolean;
       iconAlt: string;
       iconSrc: string;
       inputId: string;
       inputName: string;
+      invalid?: boolean;
       isActive: boolean;
       label: string;
       loading: boolean;
@@ -26,9 +28,11 @@ type StationAutocompleteFieldProps =
   | {
       Icon: LucideIcon;
       error: string | null;
+      errorId?: string;
       hasSearched: boolean;
       inputId: string;
       inputName: string;
+      invalid?: boolean;
       isActive: boolean;
       label: string;
       loading: boolean;
@@ -64,6 +68,11 @@ export function StationAutocompleteField(props: StationAutocompleteFieldProps) {
       : showEmptyState
         ? 'No stations found for this city.'
         : '';
+  const describedByParts = [
+    props.invalid && props.errorId ? props.errorId : undefined,
+    statusMessage ? statusId : undefined,
+  ].filter(Boolean);
+  const describedBy = describedByParts.length > 0 ? describedByParts.join(' ') : undefined;
   const activeOptionIndex =
     highlightedIndex >= 0 && highlightedIndex < props.suggestions.length
       ? highlightedIndex
@@ -168,8 +177,9 @@ export function StationAutocompleteField(props: StationAutocompleteFieldProps) {
           }
           aria-autocomplete="list"
           aria-controls={showDropdown ? listboxId : undefined}
-          aria-describedby={statusMessage ? statusId : undefined}
+          aria-describedby={describedBy}
           aria-expanded={showDropdown}
+          aria-invalid={props.invalid ?? false}
           aria-label={props.label}
           autoComplete="off"
           className={styles.input}
@@ -196,7 +206,7 @@ export function StationAutocompleteField(props: StationAutocompleteFieldProps) {
       ) : null}
 
       {showDropdown ? (
-        <div className={styles.dropdown} id={listboxId} role="listbox">
+        <div className={styles.dropdown}>
           {props.loading ? <p className={styles.status}>Searching stations...</p> : null}
 
           {props.error ? (
@@ -205,8 +215,9 @@ export function StationAutocompleteField(props: StationAutocompleteFieldProps) {
 
           {showEmptyState ? <p className={styles.status}>No stations found.</p> : null}
 
-          {!props.loading && !props.error
-            ? props.suggestions.map((station, index) => (
+          {!props.loading && !props.error && props.suggestions.length > 0 ? (
+            <div id={listboxId} role="listbox">
+              {props.suggestions.map((station, index) => (
                 <button
                   aria-selected={index === activeOptionIndex}
                   className={styles.option}
@@ -226,8 +237,9 @@ export function StationAutocompleteField(props: StationAutocompleteFieldProps) {
                   <span className={styles['option-primary']}>{station.name}</span>
                   <span className={styles['option-secondary']}>{station.city}</span>
                 </button>
-              ))
-            : null}
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>
