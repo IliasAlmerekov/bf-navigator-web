@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Accessibility,
   Baby,
@@ -18,7 +19,10 @@ import locationIconImage from '../../assets/Home/location.png';
 import savedActionImage from '../../assets/Home/saved.png';
 import trainHeroImage from '../../assets/Home/train.png';
 import trainIconImage from '../../assets/Home/icon_train.png';
+import { StationAutocompleteField } from './components/StationAutocompleteField';
+import { useStationSuggestions } from './hooks/useStationSuggestions';
 import styles from './HomeSearch.module.css';
+import type { FieldKey, StationSuggestion } from './types';
 
 type SearchField =
   | {
@@ -37,43 +41,28 @@ type SearchField =
       autoComplete?: string;
     };
 
-const MOBILE_SEARCH_FIELDS: SearchField[] = [
-  {
-    name: 'origin-mobile',
-    label: 'From',
-    value: 'Frankfurt Hbf',
-    iconSrc: locationIconImage,
-    iconAlt: '',
-    autoComplete: 'off',
+type RouteFieldState = {
+  input: string;
+  selectedStation: StationSuggestion | null;
+};
+
+const INITIAL_ROUTE_STATE: Record<FieldKey, RouteFieldState> = {
+  destination: {
+    input: 'München Hbf',
+    selectedStation: null,
   },
-  {
-    name: 'destination-mobile',
-    label: 'To',
-    value: 'Berlin Hbf',
-    iconSrc: locationIconImage,
-    iconAlt: '',
-    autoComplete: 'off',
+  origin: {
+    input: 'Berlin Hbf',
+    selectedStation: null,
   },
+};
+
+const MOBILE_STATIC_SEARCH_FIELDS: SearchField[] = [
   { name: 'date-mobile', label: 'Date', value: 'Tomorrow, 14 Oct', icon: CalendarDays },
   { name: 'time-mobile', label: 'Time', value: '09:30 AM', icon: Clock3 },
 ] as const;
 
-const DESKTOP_SEARCH_FIELDS: SearchField[] = [
-  {
-    name: 'origin-desktop',
-    label: 'From',
-    value: 'Berlin Hbf',
-    iconSrc: locationIconImage,
-    iconAlt: '',
-    autoComplete: 'off',
-  },
-  {
-    name: 'destination-desktop',
-    label: 'To',
-    value: 'München Hbf',
-    icon: TrainFront,
-    autoComplete: 'off',
-  },
+const DESKTOP_STATIC_SEARCH_FIELDS: SearchField[] = [
   { name: 'date-desktop', label: 'Date', value: 'Tomorrow', icon: CalendarDays },
   { name: 'time-desktop', label: 'Time', value: '09:30', icon: Clock3 },
 ] as const;
@@ -146,6 +135,56 @@ function SearchFieldControl({ field }: { field: SearchField }) {
 }
 
 export default function HomeSearch() {
+  const [routeState, setRouteState] = useState(INITIAL_ROUTE_STATE);
+  const [activeField, setActiveField] = useState<FieldKey | null>(null);
+  const [activeAutocompleteId, setActiveAutocompleteId] = useState<string | null>(null);
+
+  const originSuggestions = useStationSuggestions(
+    routeState.origin.input,
+    activeField === 'origin'
+  );
+  const destinationSuggestions = useStationSuggestions(
+    routeState.destination.input,
+    activeField === 'destination'
+  );
+
+  function handleFieldInputChange(fieldKey: FieldKey, value: string) {
+    setRouteState((currentState) => ({
+      ...currentState,
+      [fieldKey]: {
+        input: value,
+        selectedStation: null,
+      },
+    }));
+  }
+
+  function handleStationSelect(fieldKey: FieldKey, station: StationSuggestion) {
+    setRouteState((currentState) => ({
+      ...currentState,
+      [fieldKey]: {
+        input: station.name,
+        selectedStation: station,
+      },
+    }));
+  }
+
+  function handleActiveAutocompleteChange(
+    fieldKey: FieldKey,
+    autocompleteId: string,
+    nextActive: boolean
+  ) {
+    if (nextActive) {
+      setActiveField(fieldKey);
+      setActiveAutocompleteId(autocompleteId);
+      return;
+    }
+
+    setActiveField((currentField) => (currentField === fieldKey ? null : currentField));
+    setActiveAutocompleteId((currentAutocompleteId) =>
+      currentAutocompleteId === autocompleteId ? null : currentAutocompleteId
+    );
+  }
+
   return (
     <main className={styles.page}>
       <header className={styles['mobile-topbar']}>
@@ -197,13 +236,104 @@ export default function HomeSearch() {
           }}
         >
           <div className={styles['mobile-search-grid']}>
-            {MOBILE_SEARCH_FIELDS.map((field) => (
+            <StationAutocompleteField
+              hasSearched={originSuggestions.hasSearched}
+              iconAlt=""
+              iconSrc={locationIconImage}
+              inputId="origin-mobile"
+              inputName="origin-mobile"
+              isActive={activeAutocompleteId === 'origin-mobile'}
+              label="From"
+              loading={originSuggestions.loading}
+              onActiveChange={(nextActive) => {
+                handleActiveAutocompleteChange('origin', 'origin-mobile', nextActive);
+              }}
+              onInputChange={(value) => {
+                handleFieldInputChange('origin', value);
+              }}
+              onStationSelect={(station) => {
+                handleStationSelect('origin', station);
+              }}
+              suggestions={originSuggestions.suggestions}
+              value={routeState.origin.input}
+              variant="mobile"
+              error={originSuggestions.error}
+            />
+            <StationAutocompleteField
+              hasSearched={destinationSuggestions.hasSearched}
+              iconAlt=""
+              iconSrc={locationIconImage}
+              inputId="destination-mobile"
+              inputName="destination-mobile"
+              isActive={activeAutocompleteId === 'destination-mobile'}
+              label="To"
+              loading={destinationSuggestions.loading}
+              onActiveChange={(nextActive) => {
+                handleActiveAutocompleteChange('destination', 'destination-mobile', nextActive);
+              }}
+              onInputChange={(value) => {
+                handleFieldInputChange('destination', value);
+              }}
+              onStationSelect={(station) => {
+                handleStationSelect('destination', station);
+              }}
+              suggestions={destinationSuggestions.suggestions}
+              value={routeState.destination.input}
+              variant="mobile"
+              error={destinationSuggestions.error}
+            />
+            {MOBILE_STATIC_SEARCH_FIELDS.map((field) => (
               <SearchFieldControl key={field.name} field={field} />
             ))}
           </div>
 
           <div className={styles['desktop-search-grid']}>
-            {DESKTOP_SEARCH_FIELDS.map((field) => (
+            <StationAutocompleteField
+              hasSearched={originSuggestions.hasSearched}
+              iconAlt=""
+              iconSrc={locationIconImage}
+              inputId="origin-desktop"
+              inputName="origin-desktop"
+              isActive={activeAutocompleteId === 'origin-desktop'}
+              label="From"
+              loading={originSuggestions.loading}
+              onActiveChange={(nextActive) => {
+                handleActiveAutocompleteChange('origin', 'origin-desktop', nextActive);
+              }}
+              onInputChange={(value) => {
+                handleFieldInputChange('origin', value);
+              }}
+              onStationSelect={(station) => {
+                handleStationSelect('origin', station);
+              }}
+              suggestions={originSuggestions.suggestions}
+              value={routeState.origin.input}
+              variant="desktop"
+              error={originSuggestions.error}
+            />
+            <StationAutocompleteField
+              Icon={TrainFront}
+              hasSearched={destinationSuggestions.hasSearched}
+              inputId="destination-desktop"
+              inputName="destination-desktop"
+              isActive={activeAutocompleteId === 'destination-desktop'}
+              label="To"
+              loading={destinationSuggestions.loading}
+              onActiveChange={(nextActive) => {
+                handleActiveAutocompleteChange('destination', 'destination-desktop', nextActive);
+              }}
+              onInputChange={(value) => {
+                handleFieldInputChange('destination', value);
+              }}
+              onStationSelect={(station) => {
+                handleStationSelect('destination', station);
+              }}
+              suggestions={destinationSuggestions.suggestions}
+              value={routeState.destination.input}
+              variant="desktop"
+              error={destinationSuggestions.error}
+            />
+            {DESKTOP_STATIC_SEARCH_FIELDS.map((field) => (
               <SearchFieldControl key={field.name} field={field} />
             ))}
 
