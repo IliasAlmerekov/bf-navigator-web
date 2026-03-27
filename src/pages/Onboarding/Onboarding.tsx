@@ -62,7 +62,6 @@ function ProgressDots({ currentStep }: { currentStep: Step }) {
 }
 
 export default function Onboarding() {
-  const [allowMultiple, setAllowMultiple] = useState(false);
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(['wheelchair']);
   const stepOneRef = useRef<HTMLElement | null>(null);
   const stepTwoRef = useRef<HTMLElement | null>(null);
@@ -85,37 +84,46 @@ export default function Onboarding() {
   };
 
   const handleSelectOption = (optionId: string) => {
-    setSelectedOptionIds((previousSelected) => {
-      if (!allowMultiple) {
-        return [optionId];
-      }
+    setSelectedOptionIds([optionId]);
 
-      if (previousSelected.includes(optionId)) {
-        const reduced = previousSelected.filter((id) => id !== optionId);
-        return reduced.length > 0 ? reduced : previousSelected;
-      }
-
-      return [...previousSelected, optionId];
-    });
-  };
-
-  const handleToggleMultiple = () => {
-    setAllowMultiple((previous) => {
-      const next = !previous;
-      if (!next && selectedOptionIds.length > 1) {
-        setSelectedOptionIds([selectedOptionIds[0]]);
-      }
-      return next;
-    });
+    if (optionId === 'vision') {
+      scrollToStep(3);
+    }
   };
 
   return (
     <main className={styles.page}>
       <div className={styles.column}>
-        <section ref={stepOneRef} className={styles.block} aria-labelledby="onboarding-title">
+        <section
+          ref={stepOneRef}
+          className={`${styles.block} ${styles['block-first']}`}
+          aria-labelledby="onboarding-title"
+        >
           <div className={styles['brand-row']}>
-            <span className={styles['brand-text']}>BF NAVIGATURE</span>
+            <span className={styles['brand-text']}>BF-NAVIGATORE</span>
             <span className={styles['locale-tag']}>DE</span>
+          </div>
+
+          <nav aria-label="Hauptnavigation" className={styles['mobile-nav']}>
+            <a href="#hilfe" className={styles['mobile-nav-link']}>
+              Hilfe
+            </a>
+            <a href="#barrierefreiheit" className={styles['mobile-nav-link']}>
+              Barrierefreiheit
+            </a>
+            <a href="#sprache" className={styles['mobile-nav-link']}>
+              Sprache
+            </a>
+            <button type="button" className={styles['mobile-nav-button']}>
+              Anmelden
+            </button>
+          </nav>
+
+          <div className={styles['mobile-step-heading-row']}>
+            <span className={styles['mobile-step-index']} aria-hidden="true">
+              1
+            </span>
+            <p className={styles['mobile-step-title']}>Willkommen</p>
           </div>
 
           <div className={styles['hero-rectangle']} aria-hidden="true">
@@ -132,9 +140,7 @@ export default function Onboarding() {
             beginnt hier
           </h1>
           <p className={styles.subtitle}>
-            Intercity-Reisen,
-            <br />
-            angepasst an Ihre Bedürfnisse
+            Wir gestalten Mobilität grenzenlos. Passen Sie Ihr Reiseerlebnis an Ihre Bedürfnisse an.
           </p>
 
           <button
@@ -149,10 +155,14 @@ export default function Onboarding() {
         </section>
 
         <section ref={stepTwoRef} className={styles.block} aria-labelledby="support-title">
-          <p className={styles.eyebrow}>SCHRITT 2 VON 3 · MOBILITÄTSPROFIL</p>
-          <h2 id="support-title" className={styles.h2}>
-            Wie können wir Sie unterstützen?
-          </h2>
+          <div className={styles['mobile-step-heading-row']}>
+            <span className={styles['mobile-step-index']} aria-hidden="true">
+              2
+            </span>
+            <h2 id="support-title" className={styles['mobile-step-heading']}>
+              Wie können wir Sie unterstützen?
+            </h2>
+          </div>
 
           <ul className={styles['option-list']} aria-label="Mobilitätsoptionen">
             {mobilityOptions.map((option) => {
@@ -179,13 +189,9 @@ export default function Onboarding() {
             })}
           </ul>
 
-          <button
-            type="button"
-            className={styles['text-action-button']}
-            onClick={handleToggleMultiple}
-          >
-            {allowMultiple ? 'Mehrfachauswahl: An' : 'Mehrfachauswahl'}
-          </button>
+          <p className={styles['support-info-chip']}>
+            Ihre Auswahl optimiert automatische Suchergebnisse.
+          </p>
 
           <button
             type="button"
@@ -199,18 +205,29 @@ export default function Onboarding() {
           <ProgressDots currentStep={2} />
         </section>
 
-        <section ref={stepThreeRef} className={styles.block} aria-labelledby="ready-title">
+        <section
+          ref={stepThreeRef}
+          className={`${styles.block} ${styles['block-last']}`}
+          aria-labelledby="ready-title"
+        >
+          <div className={styles['mobile-step-heading-row']}>
+            <span className={styles['mobile-step-index']} aria-hidden="true">
+              3
+            </span>
+            <h2 id="ready-title" className={styles['mobile-step-heading']}>
+              Alles bereit.
+            </h2>
+          </div>
+
           <div className={styles['success-circle']} aria-hidden="true">
             <span className={styles['success-inner-circle']}>
               <img src={confirmationIcon} alt="" className={styles['confirmation-icon-image']} />
             </span>
           </div>
 
-          <h2 id="ready-title" className={styles.h2}>
-            Alles bereit.
-          </h2>
           <p className={styles['body-copy']}>
-            Ihr Profil wurde gespeichert. Wir schlagen Ihnen nur passende Routen vor.
+            Wir haben Ihre Präferenzen gespeichert. Sie können nun Ihre erste barrierefreie Reise
+            planen.
           </p>
 
           <p className={styles['neutral-chip']}>Schritt für Schritt barrierefrei</p>
@@ -227,6 +244,27 @@ export default function Onboarding() {
           </button>
 
           <ProgressDots currentStep={3} />
+
+          <aside className={styles['mobile-quote']} aria-label="Leitprinzip">
+            <span className={styles['mobile-quote-icon']} aria-hidden="true">
+              <img src={wheelChairIcon} alt="" className={styles['mobile-quote-icon-image']} />
+            </span>
+            <span className={styles['mobile-quote-icon']} aria-hidden="true">
+              <img src={lowVisionIcon} alt="" className={styles['mobile-quote-icon-image']} />
+            </span>
+            <span className={styles['mobile-quote-icon']} aria-hidden="true">
+              <img src={hearingIcon} alt="" className={styles['mobile-quote-icon-image']} />
+            </span>
+            <span className={styles['mobile-quote-icon']} aria-hidden="true">
+              <img src={limitedMobilityIcon} alt="" className={styles['mobile-quote-icon-image']} />
+            </span>
+            <span className={styles['mobile-quote-icon']} aria-hidden="true">
+              <img src={confirmationIcon} alt="" className={styles['mobile-quote-icon-image']} />
+            </span>
+            <p className={styles['mobile-quote-text']}>
+              "Unser Ziel ist eine 100% barrierefreie Vernetzung Europas."
+            </p>
+          </aside>
         </section>
       </div>
     </main>
