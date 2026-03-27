@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import type React from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import {
   Accessibility,
   Baby,
@@ -12,71 +15,38 @@ import {
   ShieldCheck,
   TrainFront,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import alertActionImage from '../../assets/Home/alert.png';
 import locationIconImage from '../../assets/Home/location.png';
 import savedActionImage from '../../assets/Home/saved.png';
 import trainHeroImage from '../../assets/Home/train.png';
 import trainIconImage from '../../assets/Home/icon_train.png';
+import { StationAutocompleteField } from './components/StationAutocompleteField';
+import { useStationSuggestions } from './hooks/useStationSuggestions';
+import type { FieldKey, StationSuggestion } from './types';
 import styles from './HomeSearch.module.css';
 
-type SearchField =
-  | {
-      name: string;
-      label: string;
-      value: string;
-      iconSrc: string;
-      iconAlt: string;
-      autoComplete?: string;
-    }
-  | {
-      name: string;
-      label: string;
-      value: string;
-      icon: LucideIcon;
-      autoComplete?: string;
-    };
+type RouteFieldState = {
+  input: string;
+  selectedStation: StationSuggestion | null;
+};
 
-const MOBILE_SEARCH_FIELDS: SearchField[] = [
-  {
-    name: 'origin-mobile',
-    label: 'From',
-    value: 'Frankfurt Hbf',
-    iconSrc: locationIconImage,
-    iconAlt: '',
-    autoComplete: 'off',
-  },
-  {
-    name: 'destination-mobile',
-    label: 'To',
-    value: 'Berlin Hbf',
-    iconSrc: locationIconImage,
-    iconAlt: '',
-    autoComplete: 'off',
-  },
-  { name: 'date-mobile', label: 'Date', value: 'Tomorrow, 14 Oct', icon: CalendarDays },
-  { name: 'time-mobile', label: 'Time', value: '09:30 AM', icon: Clock3 },
-] as const;
+type FormErrors = {
+  origin: string | null;
+  destination: string | null;
+  date: string | null;
+  time: string | null;
+};
 
-const DESKTOP_SEARCH_FIELDS: SearchField[] = [
-  {
-    name: 'origin-desktop',
-    label: 'From',
-    value: 'Berlin Hbf',
-    iconSrc: locationIconImage,
-    iconAlt: '',
-    autoComplete: 'off',
+const INITIAL_ROUTE_STATE: Record<FieldKey, RouteFieldState> = {
+  destination: {
+    input: 'München Hbf',
+    selectedStation: null,
   },
-  {
-    name: 'destination-desktop',
-    label: 'To',
-    value: 'München Hbf',
-    icon: TrainFront,
-    autoComplete: 'off',
+  origin: {
+    input: 'Berlin Hbf',
+    selectedStation: null,
   },
-  { name: 'date-desktop', label: 'Date', value: 'Tomorrow', icon: CalendarDays },
-  { name: 'time-desktop', label: 'Time', value: '09:30', icon: Clock3 },
-] as const;
+};
 
 const PREFERENCES = [
   { label: 'Wheelchair', icon: Accessibility, active: false },
@@ -118,34 +88,94 @@ const QUICK_ACTIONS = [
 
 const LIVE_DATA_POINTS = ['Real-time lift status', 'Accurate platform info', 'Delay notifications'];
 
-function renderFieldIcon(field: SearchField) {
-  if ('iconSrc' in field) {
-    return <img alt={field.iconAlt} className={styles['field-image-icon']} src={field.iconSrc} />;
+export default function HomeSearch() {
+  const navigate = useNavigate();
+  const [routeState, setRouteState] = useState(INITIAL_ROUTE_STATE);
+  const [activeField, setActiveField] = useState<FieldKey | null>(null);
+  const [activeAutocompleteId, setActiveAutocompleteId] = useState<string | null>(null);
+  const [dateValue, setDateValue] = useState<string>(() => {
+    const d = new Date();
+    return d.toISOString().slice(0, 10);
+  });
+  const [timeValue, setTimeValue] = useState('09:00');
+  const [formErrors, setFormErrors] = useState<FormErrors>({
+    origin: null,
+    destination: null,
+    date: null,
+    time: null,
+  });
+
+  const originSuggestions = useStationSuggestions(
+    routeState.origin.input,
+    activeField === 'origin'
+  );
+  const destinationSuggestions = useStationSuggestions(
+    routeState.destination.input,
+    activeField === 'destination'
+  );
+
+  function handleFieldInputChange(fieldKey: FieldKey, value: string) {
+    setRouteState((currentState) => ({
+      ...currentState,
+      [fieldKey]: {
+        input: value,
+        selectedStation: null,
+      },
+    }));
+    setFormErrors((current) => ({ ...current, [fieldKey]: null }));
   }
 
-  const Icon = field.icon;
+  function handleStationSelect(fieldKey: FieldKey, station: StationSuggestion) {
+    setRouteState((currentState) => ({
+      ...currentState,
+      [fieldKey]: {
+        input: station.name,
+        selectedStation: station,
+      },
+    }));
+    setFormErrors((current) => ({ ...current, [fieldKey]: null }));
+  }
 
-  return <Icon aria-hidden="true" className={styles['field-icon']} />;
-}
+  function handleActiveAutocompleteChange(
+    fieldKey: FieldKey,
+    autocompleteId: string,
+    nextActive: boolean
+  ) {
+    if (nextActive) {
+      setActiveField(fieldKey);
+      setActiveAutocompleteId(autocompleteId);
+      return;
+    }
 
-function SearchFieldControl({ field }: { field: SearchField }) {
-  return (
-    <label className={styles['search-field']}>
-      {renderFieldIcon(field)}
-      <span className={styles['field-label']}>{field.label}</span>
-      <input
-        aria-label={field.label}
-        autoComplete={field.autoComplete}
-        className={styles['search-input']}
-        defaultValue={field.value}
-        name={field.name}
-        type="text"
-      />
-    </label>
-  );
-}
+    setActiveField((currentField) => (currentField === fieldKey ? null : currentField));
+    setActiveAutocompleteId((currentAutocompleteId) =>
+      currentAutocompleteId === autocompleteId ? null : currentAutocompleteId
+    );
+  }
 
-export default function HomeSearch() {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const errors: FormErrors = {
+      origin:
+        routeState.origin.selectedStation === null
+          ? 'Please select an origin station from the suggestions.'
+          : null,
+      destination:
+        routeState.destination.selectedStation === null
+          ? 'Please select a destination station from the suggestions.'
+          : null,
+      date: dateValue === '' ? 'Please select a departure date.' : null,
+      time: timeValue === '' ? 'Please select a departure time.' : null,
+    };
+
+    setFormErrors(errors);
+
+    if (Object.values(errors).some((e) => e !== null)) return;
+
+    void navigate({ to: '/train-search-results' });
+  }
+
   return (
     <main className={styles.page}>
       <header className={styles['mobile-topbar']}>
@@ -190,24 +220,232 @@ export default function HomeSearch() {
           Home search
         </h2>
 
-        <form
-          className={styles['search-card']}
-          onSubmit={(event) => {
-            event.preventDefault();
-          }}
-        >
+        <form className={styles['search-card']} onSubmit={handleSubmit}>
           <div className={styles['mobile-search-grid']}>
-            {MOBILE_SEARCH_FIELDS.map((field) => (
-              <SearchFieldControl key={field.name} field={field} />
-            ))}
+            <StationAutocompleteField
+              errorId="origin-error-mobile"
+              hasSearched={originSuggestions.hasSearched}
+              iconAlt=""
+              iconSrc={locationIconImage}
+              inputId="origin-mobile"
+              inputName="origin-mobile"
+              invalid={formErrors.origin !== null}
+              isActive={activeAutocompleteId === 'origin-mobile'}
+              label="From"
+              loading={originSuggestions.loading}
+              onActiveChange={(nextActive) => {
+                handleActiveAutocompleteChange('origin', 'origin-mobile', nextActive);
+              }}
+              onInputChange={(value) => {
+                handleFieldInputChange('origin', value);
+              }}
+              onStationSelect={(station) => {
+                handleStationSelect('origin', station);
+              }}
+              suggestions={originSuggestions.suggestions}
+              value={routeState.origin.input}
+              variant="mobile"
+              error={originSuggestions.error}
+            />
+            {formErrors.origin ? (
+              <p className={styles['field-error']} id="origin-error-mobile" role="alert">
+                {formErrors.origin}
+              </p>
+            ) : null}
+            <StationAutocompleteField
+              errorId="destination-error-mobile"
+              hasSearched={destinationSuggestions.hasSearched}
+              iconAlt=""
+              iconSrc={locationIconImage}
+              inputId="destination-mobile"
+              inputName="destination-mobile"
+              invalid={formErrors.destination !== null}
+              isActive={activeAutocompleteId === 'destination-mobile'}
+              label="To"
+              loading={destinationSuggestions.loading}
+              onActiveChange={(nextActive) => {
+                handleActiveAutocompleteChange('destination', 'destination-mobile', nextActive);
+              }}
+              onInputChange={(value) => {
+                handleFieldInputChange('destination', value);
+              }}
+              onStationSelect={(station) => {
+                handleStationSelect('destination', station);
+              }}
+              suggestions={destinationSuggestions.suggestions}
+              value={routeState.destination.input}
+              variant="mobile"
+              error={destinationSuggestions.error}
+            />
+            {formErrors.destination ? (
+              <p className={styles['field-error']} id="destination-error-mobile" role="alert">
+                {formErrors.destination}
+              </p>
+            ) : null}
+
+            <div className={styles['date-time-wrapper']}>
+              <label className={styles['date-time-field']} htmlFor="date-mobile">
+                <CalendarDays aria-hidden="true" className={styles['field-icon']} />
+                <span className={styles['field-label']}>Date</span>
+                <input
+                  aria-describedby={formErrors.date ? 'date-error-mobile' : undefined}
+                  aria-invalid={formErrors.date !== null}
+                  className={styles['date-input']}
+                  id="date-mobile"
+                  name="date-mobile"
+                  onChange={(e) => {
+                    setDateValue(e.target.value);
+                    setFormErrors((current) => ({ ...current, date: null }));
+                  }}
+                  type="date"
+                  value={dateValue}
+                />
+              </label>
+              {formErrors.date ? (
+                <p className={styles['field-error']} id="date-error-mobile" role="alert">
+                  {formErrors.date}
+                </p>
+              ) : null}
+            </div>
+
+            <div className={styles['date-time-wrapper']}>
+              <label className={styles['date-time-field']} htmlFor="time-mobile">
+                <Clock3 aria-hidden="true" className={styles['field-icon']} />
+                <span className={styles['field-label']}>Time</span>
+                <input
+                  aria-describedby={formErrors.time ? 'time-error-mobile' : undefined}
+                  aria-invalid={formErrors.time !== null}
+                  className={styles['date-input']}
+                  id="time-mobile"
+                  name="time-mobile"
+                  onChange={(e) => {
+                    setTimeValue(e.target.value);
+                    setFormErrors((current) => ({ ...current, time: null }));
+                  }}
+                  type="time"
+                  value={timeValue}
+                />
+              </label>
+              {formErrors.time ? (
+                <p className={styles['field-error']} id="time-error-mobile" role="alert">
+                  {formErrors.time}
+                </p>
+              ) : null}
+            </div>
           </div>
 
           <div className={styles['desktop-search-grid']}>
-            {DESKTOP_SEARCH_FIELDS.map((field) => (
-              <SearchFieldControl key={field.name} field={field} />
-            ))}
+            <StationAutocompleteField
+              errorId="origin-error-desktop"
+              hasSearched={originSuggestions.hasSearched}
+              iconAlt=""
+              iconSrc={locationIconImage}
+              inputId="origin-desktop"
+              inputName="origin-desktop"
+              invalid={formErrors.origin !== null}
+              isActive={activeAutocompleteId === 'origin-desktop'}
+              label="From"
+              loading={originSuggestions.loading}
+              onActiveChange={(nextActive) => {
+                handleActiveAutocompleteChange('origin', 'origin-desktop', nextActive);
+              }}
+              onInputChange={(value) => {
+                handleFieldInputChange('origin', value);
+              }}
+              onStationSelect={(station) => {
+                handleStationSelect('origin', station);
+              }}
+              suggestions={originSuggestions.suggestions}
+              value={routeState.origin.input}
+              variant="desktop"
+              error={originSuggestions.error}
+            />
+            {formErrors.origin ? (
+              <p className={styles['field-error']} id="origin-error-desktop" role="alert">
+                {formErrors.origin}
+              </p>
+            ) : null}
+            <StationAutocompleteField
+              Icon={TrainFront}
+              errorId="destination-error-desktop"
+              hasSearched={destinationSuggestions.hasSearched}
+              inputId="destination-desktop"
+              inputName="destination-desktop"
+              invalid={formErrors.destination !== null}
+              isActive={activeAutocompleteId === 'destination-desktop'}
+              label="To"
+              loading={destinationSuggestions.loading}
+              onActiveChange={(nextActive) => {
+                handleActiveAutocompleteChange('destination', 'destination-desktop', nextActive);
+              }}
+              onInputChange={(value) => {
+                handleFieldInputChange('destination', value);
+              }}
+              onStationSelect={(station) => {
+                handleStationSelect('destination', station);
+              }}
+              suggestions={destinationSuggestions.suggestions}
+              value={routeState.destination.input}
+              variant="desktop"
+              error={destinationSuggestions.error}
+            />
+            {formErrors.destination ? (
+              <p className={styles['field-error']} id="destination-error-desktop" role="alert">
+                {formErrors.destination}
+              </p>
+            ) : null}
 
-            <button aria-label="Find route" className={styles['search-submit']} type="button">
+            <div className={styles['date-time-wrapper']}>
+              <label className={styles['date-time-field']} htmlFor="date-desktop">
+                <CalendarDays aria-hidden="true" className={styles['field-icon']} />
+                <span className={styles['field-label']}>Date</span>
+                <input
+                  aria-describedby={formErrors.date ? 'date-error-desktop' : undefined}
+                  aria-invalid={formErrors.date !== null}
+                  className={styles['date-input']}
+                  id="date-desktop"
+                  name="date-desktop"
+                  onChange={(e) => {
+                    setDateValue(e.target.value);
+                    setFormErrors((current) => ({ ...current, date: null }));
+                  }}
+                  type="date"
+                  value={dateValue}
+                />
+              </label>
+              {formErrors.date ? (
+                <p className={styles['field-error']} id="date-error-desktop" role="alert">
+                  {formErrors.date}
+                </p>
+              ) : null}
+            </div>
+
+            <div className={styles['date-time-wrapper']}>
+              <label className={styles['date-time-field']} htmlFor="time-desktop">
+                <Clock3 aria-hidden="true" className={styles['field-icon']} />
+                <span className={styles['field-label']}>Time</span>
+                <input
+                  aria-describedby={formErrors.time ? 'time-error-desktop' : undefined}
+                  aria-invalid={formErrors.time !== null}
+                  className={styles['date-input']}
+                  id="time-desktop"
+                  name="time-desktop"
+                  onChange={(e) => {
+                    setTimeValue(e.target.value);
+                    setFormErrors((current) => ({ ...current, time: null }));
+                  }}
+                  type="time"
+                  value={timeValue}
+                />
+              </label>
+              {formErrors.time ? (
+                <p className={styles['field-error']} id="time-error-desktop" role="alert">
+                  {formErrors.time}
+                </p>
+              ) : null}
+            </div>
+
+            <button aria-label="Find route" className={styles['search-submit']} type="submit">
               <Search aria-hidden="true" />
             </button>
           </div>
@@ -233,7 +471,7 @@ export default function HomeSearch() {
             </div>
           </section>
 
-          <button className={styles['primary-action']} type="button">
+          <button className={styles['primary-action']} type="submit">
             <span>Find Optimal Route</span>
             <Search aria-hidden="true" />
           </button>

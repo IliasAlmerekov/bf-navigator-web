@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrainSearchResultsRouteImport } from './routes/train-search-results'
 import { Route as StationAccessibilityRouteImport } from './routes/station-accessibility'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedTripsRouteImport } from './routes/saved-trips'
@@ -24,6 +25,11 @@ import { Route as AlternativeRoutesRouteImport } from './routes/alternative-rout
 import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TrainSearchResultsRoute = TrainSearchResultsRouteImport.update({
+  id: '/train-search-results',
+  path: '/train-search-results',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StationAccessibilityRoute = StationAccessibilityRouteImport.update({
   id: '/station-accessibility',
   path: '/station-accessibility',
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/saved-trips': typeof SavedTripsRoute
   '/settings': typeof SettingsRoute
   '/station-accessibility': typeof StationAccessibilityRoute
+  '/train-search-results': typeof TrainSearchResultsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/saved-trips': typeof SavedTripsRoute
   '/settings': typeof SettingsRoute
   '/station-accessibility': typeof StationAccessibilityRoute
+  '/train-search-results': typeof TrainSearchResultsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/saved-trips': typeof SavedTripsRoute
   '/settings': typeof SettingsRoute
   '/station-accessibility': typeof StationAccessibilityRoute
+  '/train-search-results': typeof TrainSearchResultsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/saved-trips'
     | '/settings'
     | '/station-accessibility'
+    | '/train-search-results'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/saved-trips'
     | '/settings'
     | '/station-accessibility'
+    | '/train-search-results'
   id:
     | '__root__'
     | '/'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/saved-trips'
     | '/settings'
     | '/station-accessibility'
+    | '/train-search-results'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -210,10 +222,18 @@ export interface RootRouteChildren {
   SavedTripsRoute: typeof SavedTripsRoute
   SettingsRoute: typeof SettingsRoute
   StationAccessibilityRoute: typeof StationAccessibilityRoute
+  TrainSearchResultsRoute: typeof TrainSearchResultsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/train-search-results': {
+      id: '/train-search-results'
+      path: '/train-search-results'
+      fullPath: '/train-search-results'
+      preLoaderRoute: typeof TrainSearchResultsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/station-accessibility': {
       id: '/station-accessibility'
       path: '/station-accessibility'
@@ -330,6 +350,7 @@ const rootRouteChildren: RootRouteChildren = {
   SavedTripsRoute: SavedTripsRoute,
   SettingsRoute: SettingsRoute,
   StationAccessibilityRoute: StationAccessibilityRoute,
+  TrainSearchResultsRoute: TrainSearchResultsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
