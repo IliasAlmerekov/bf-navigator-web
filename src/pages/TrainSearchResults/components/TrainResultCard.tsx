@@ -88,7 +88,7 @@ export function TrainResultCard({ result, onSelect, isRecommended = false }: Tra
       )}
 
       <button
-        aria-label={`${trainLabel} auswählen, Abfahrt ${depDisplay}`}
+        aria-label={`${trainLabel} Route auswählen, Abfahrt ${depDisplay}`}
         className={styles.selectBtn}
         type="button"
         onClick={onSelect}

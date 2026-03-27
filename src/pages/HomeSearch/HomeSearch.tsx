@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type React from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -93,6 +93,8 @@ export default function HomeSearch() {
   const [routeState, setRouteState] = useState(INITIAL_ROUTE_STATE);
   const [activeField, setActiveField] = useState<FieldKey | null>(null);
   const [activeAutocompleteId, setActiveAutocompleteId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitInFlightRef = useRef(false);
   const [dateValue, setDateValue] = useState<string>(() => {
     const d = new Date();
     return d.toISOString().slice(0, 10);
@@ -153,8 +155,12 @@ export default function HomeSearch() {
     );
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (submitInFlightRef.current) {
+      return;
+    }
 
     const errors: FormErrors = {
       origin:
@@ -173,7 +179,32 @@ export default function HomeSearch() {
 
     if (Object.values(errors).some((e) => e !== null)) return;
 
-    void navigate({ to: '/train-search-results' });
+    const originStation = routeState.origin.selectedStation;
+    const destinationStation = routeState.destination.selectedStation;
+
+    if (!originStation || !destinationStation) {
+      return;
+    }
+
+    submitInFlightRef.current = true;
+    setIsSubmitting(true);
+
+    try {
+      await navigate({
+        search: {
+          date: dateValue,
+          destinationEva: String(destinationStation.evaNumber),
+          destinationName: destinationStation.name,
+          originEva: String(originStation.evaNumber),
+          originName: originStation.name,
+          time: timeValue,
+        },
+        to: '/train-search-results',
+      });
+    } finally {
+      submitInFlightRef.current = false;
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -220,7 +251,13 @@ export default function HomeSearch() {
           Home search
         </h2>
 
-        <form className={styles['search-card']} onSubmit={handleSubmit}>
+        <form aria-busy={isSubmitting} className={styles['search-card']} onSubmit={handleSubmit}>
+          {isSubmitting ? (
+            <p aria-live="polite" className={styles['sr-only']}>
+              Loading train results.
+            </p>
+          ) : null}
+
           <div className={styles['mobile-search-grid']}>
             <StationAutocompleteField
               errorId="origin-error-mobile"
@@ -445,7 +482,12 @@ export default function HomeSearch() {
               ) : null}
             </div>
 
-            <button aria-label="Find route" className={styles['search-submit']} type="submit">
+            <button
+              aria-label="Find route"
+              className={styles['search-submit']}
+              disabled={isSubmitting}
+              type="submit"
+            >
               <Search aria-hidden="true" />
             </button>
           </div>
@@ -471,7 +513,7 @@ export default function HomeSearch() {
             </div>
           </section>
 
-          <button className={styles['primary-action']} type="submit">
+          <button className={styles['primary-action']} disabled={isSubmitting} type="submit">
             <span>Find Optimal Route</span>
             <Search aria-hidden="true" />
           </button>

@@ -3,6 +3,8 @@ import styles from './SearchSummaryBar.module.css';
 interface SearchSummaryBarProps {
   date: string;
   time: string;
+  originName?: string;
+  destinationName?: string;
   passengerCount: number;
   resultCount: number | null;
   onChangeSearch: () => void;
@@ -11,6 +13,8 @@ interface SearchSummaryBarProps {
 export function SearchSummaryBar({
   date,
   time,
+  originName,
+  destinationName,
   passengerCount,
   resultCount,
   onChangeSearch,
@@ -20,6 +24,11 @@ export function SearchSummaryBar({
 
   return (
     <div className={styles.bar} role="region" aria-label="Suchanfrage Zusammenfassung">
+      {(originName || destinationName) && (
+        <p className={styles.route}>
+          {originName} → {destinationName}
+        </p>
+      )}
       <div className={styles.meta}>
         <span className={styles.metaText}>
           {scheduleLabel} · {passengerLabel}

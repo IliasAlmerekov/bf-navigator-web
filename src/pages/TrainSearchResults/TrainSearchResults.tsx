@@ -150,17 +150,21 @@ export default function TrainSearchResults() {
         <SearchSummaryBar
           date={search.date}
           time={search.time}
+          originName={summaryOrigin}
+          destinationName={summaryDestination}
           passengerCount={2}
           resultCount={resultCount}
           onChangeSearch={handleBack}
         />
 
         {/* ── Filter tabs ── */}
-        <FilterTabs
-          options={FILTER_OPTIONS}
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-        />
+        {!hasError && (
+          <FilterTabs
+            options={FILTER_OPTIONS}
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+          />
+        )}
 
         {/* ── Results list ── */}
         <section aria-labelledby="results-heading" className={styles['results-section']}>
@@ -170,15 +174,15 @@ export default function TrainSearchResults() {
 
           {loading ? (
             <p aria-live="polite" className={styles['empty-state']} role="status">
-              Verbindungen werden geladen…
+              Loading train results…
             </p>
           ) : hasError ? (
             <p className={styles['empty-state']} role="alert">
-              Verbindungen konnten nicht geladen werden. Bitte erneut versuchen.
+              Unable to load train results. Please try again.
             </p>
           ) : hasLoaded && results.length === 0 ? (
             <p aria-live="polite" className={styles['empty-state']} role="status">
-              Keine Züge für diese Strecke und Zeit gefunden.
+              No trains found for this station and time.
             </p>
           ) : (
             <ul className={styles['results-list']} role="list">
