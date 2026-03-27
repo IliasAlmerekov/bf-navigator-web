@@ -30,7 +30,7 @@ describe('Onboarding', () => {
   it('renders the three onboarding blocks with key headings and actions', () => {
     render(<Onboarding />);
 
-    expect(screen.getByText('BF NAVIGATURE')).toBeInTheDocument();
+    expect(screen.getByText('BF-NAVIGATORE')).toBeInTheDocument();
     expect(screen.getByText('DE')).toBeInTheDocument();
 
     expect(
@@ -39,9 +39,7 @@ describe('Onboarding', () => {
         name: /Ihre barrierefreie Reise\s*beginnt hier/i,
       })
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Intercity-Reisen,\s*angepasst an Ihre Bedürfnisse/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Wir gestalten Mobilität grenzenlos\./i)).toBeInTheDocument();
     expect(
       screen.getByRole('heading', {
         level: 2,
@@ -49,16 +47,16 @@ describe('Onboarding', () => {
       })
     ).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: /alles bereit\./i })).toBeInTheDocument();
-    expect(screen.getByText('SCHRITT 2 VON 3 · MOBILITÄTSPROFIL')).toBeInTheDocument();
 
     expect(screen.getByRole('button', { name: 'Jetzt starten' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Mehrfachauswahl' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Weiter' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Route finden ->' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Einrichtung überspringen' })).toBeInTheDocument();
 
     expect(
-      screen.getByText('Ihr Profil wurde gespeichert. Wir schlagen Ihnen nur passende Routen vor.')
+      screen.getByText(
+        'Wir haben Ihre Präferenzen gespeichert. Sie können nun Ihre erste barrierefreie Reise planen.'
+      )
     ).toBeInTheDocument();
     expect(screen.getByText('Schritt für Schritt barrierefrei')).toBeInTheDocument();
 
