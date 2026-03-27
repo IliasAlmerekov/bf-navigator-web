@@ -1,28 +1,86 @@
-import { useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Bell, CircleUserRound, Search } from 'lucide-react';
-import type { FilterKey } from './types';
-import { FILTER_OPTIONS, MOCK_RESULTS } from './constants';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { ArrowLeft, Bell, CircleUserRound, Search, SlidersHorizontal } from 'lucide-react';
+import type { TimetableEntry, FilterKey } from './types';
 import { BahnCardBanner } from './components/BahnCardBanner';
-import { FilterTabs } from './components/FilterTabs';
 import { SearchSummaryBar } from './components/SearchSummaryBar';
 import { TrainResultCard } from './components/TrainResultCard';
+import { FilterTabs } from './components/FilterTabs';
+import { FILTER_OPTIONS } from './constants';
 import styles from './TrainSearchResults.module.css';
+
+function formatTimetableDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return '';
+  const [, year, month, day] = match;
+  return `${year.slice(-2)}${month}${day}`;
+}
+
+function formatTimetableTime(value: string) {
+  return value.replace(':', '');
+}
 
 export default function TrainSearchResults() {
   const navigate = useNavigate();
+  const search = useSearch({ from: '/train-search-results' });
+  const [results, setResults] = useState<TimetableEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
+  const summaryOrigin = search.originName || 'Hamburg Hbf';
+  const summaryDestination = search.destinationName || 'Berlin Hbf';
+  const routeTitle = `${summaryOrigin} → ${summaryDestination}`;
 
-  const visibleResults = MOCK_RESULTS.filter((r) => {
-    if (activeFilter === 'all') return true;
-    if (activeFilter === 'fastest') return r.duration <= '1 Std. 47 Min.';
-    if (activeFilter === 'fewest-transfers') return r.transfers === 0;
-    if (activeFilter === 'accessible') return r.isAccessible;
-    if (activeFilter === 'step-free')
-      return r.isAccessible && r.accessibilityNote?.includes('barrierefrei');
-    if (activeFilter === 'ice-only') return r.trainType.startsWith('ICE');
-    return true;
-  });
+  useEffect(() => {
+    if (!search.originEva) {
+      setResults([]);
+      setLoading(false);
+      setHasLoaded(true);
+      setHasError(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const params = new URLSearchParams({
+      date: formatTimetableDate(search.date),
+      time: formatTimetableTime(search.time),
+    });
+
+    async function loadTimetable() {
+      setLoading(true);
+      setHasLoaded(false);
+      setHasError(false);
+
+      try {
+        const response = await fetch(
+          `/api/stations/${search.originEva}/timetable?${params.toString()}`,
+          {
+            signal: controller.signal,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Timetable request failed');
+        }
+
+        const payload = (await response.json()) as TimetableEntry[];
+        setResults(Array.isArray(payload) ? payload : []);
+        setHasLoaded(true);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        setResults([]);
+        setHasError(true);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+
+    void loadTimetable();
+    return () => {
+      controller.abort();
+    };
+  }, [search.date, search.originEva, search.time]);
 
   function handleSelectRoute() {
     navigate({ to: '/route-details' });
@@ -31,6 +89,8 @@ export default function TrainSearchResults() {
   function handleBack() {
     navigate({ to: '/' });
   }
+
+  const resultCount = hasLoaded ? results.length : null;
 
   return (
     <main className={styles.page}>
@@ -44,15 +104,12 @@ export default function TrainSearchResults() {
         >
           <ArrowLeft aria-hidden="true" />
         </button>
-        <p className={styles.brand}>BF-NAVIGATOR</p>
-        <div className={styles['topbar-actions']}>
-          <button aria-label="Benachrichtigungen" className={styles['icon-button']} type="button">
-            <Bell aria-hidden="true" />
-          </button>
-          <button aria-label="Profil öffnen" className={styles['icon-button']} type="button">
-            <CircleUserRound aria-hidden="true" />
-          </button>
-        </div>
+        <p className={styles['route-title']} aria-label={`Route: ${routeTitle}`}>
+          {routeTitle}
+        </p>
+        <button aria-label="Filter und Sortierung" className={styles['icon-button']} type="button">
+          <SlidersHorizontal aria-hidden="true" />
+        </button>
       </header>
 
       {/* ── Desktop top bar ── */}
@@ -91,35 +148,51 @@ export default function TrainSearchResults() {
       <div className={styles.content}>
         {/* ── Search summary ── */}
         <SearchSummaryBar
-          date="Do, 26. Mär."
-          destination="Berlin Hbf"
-          origin="Hamburg Hbf"
+          date={search.date}
+          time={search.time}
+          originName={summaryOrigin}
+          destinationName={summaryDestination}
           passengerCount={2}
-          onFilterOpen={() => {}}
+          resultCount={resultCount}
+          onChangeSearch={handleBack}
         />
 
         {/* ── Filter tabs ── */}
-        <FilterTabs
-          activeFilter={activeFilter}
-          options={FILTER_OPTIONS}
-          onFilterChange={setActiveFilter}
-        />
+        {!hasError && (
+          <FilterTabs
+            options={FILTER_OPTIONS}
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+          />
+        )}
 
         {/* ── Results list ── */}
         <section aria-labelledby="results-heading" className={styles['results-section']}>
           <h1 className={styles['sr-only']} id="results-heading">
-            Suchergebnisse: Zugverbindungen von Hamburg Hbf nach Berlin Hbf
+            Suchergebnisse: Zugverbindungen von {summaryOrigin} nach {summaryDestination}
           </h1>
 
-          {visibleResults.length === 0 ? (
-            <p className={styles['empty-state']} role="status">
-              Keine Verbindungen für diesen Filter gefunden.
+          {loading ? (
+            <p aria-live="polite" className={styles['empty-state']} role="status">
+              Loading train results…
+            </p>
+          ) : hasError ? (
+            <p className={styles['empty-state']} role="alert">
+              Unable to load train results. Please try again.
+            </p>
+          ) : hasLoaded && results.length === 0 ? (
+            <p aria-live="polite" className={styles['empty-state']} role="status">
+              No trains found for this station and time.
             </p>
           ) : (
             <ul className={styles['results-list']} role="list">
-              {visibleResults.map((result) => (
-                <li key={result.id}>
-                  <TrainResultCard result={result} onSelect={handleSelectRoute} />
+              {results.map((result, index) => (
+                <li key={`${result.trainType}-${result.trainNumber}-${result.departureTime}`}>
+                  <TrainResultCard
+                    result={result}
+                    onSelect={handleSelectRoute}
+                    isRecommended={index === 0}
+                  />
                 </li>
               ))}
             </ul>

@@ -21,6 +21,38 @@ function getRequestedQuery(input: Request | string | URL) {
   return new URL(requestUrl, 'http://localhost').searchParams.get('query');
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+
+  return { promise, reject, resolve };
+}
+
+async function selectStation(fieldLabel: 'From' | 'To', typedValue: string, optionName: RegExp) {
+  const input = screen.getAllByRole('combobox', { name: fieldLabel })[0];
+
+  fireEvent.focus(input);
+  fireEvent.change(input, { target: { value: typedValue } });
+
+  await waitFor(() => {
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.some(([request]) => getRequestedQuery(request) === `${typedValue}*`)
+    ).toBe(true);
+  });
+
+  const option = await screen.findByRole('option', { name: optionName }, { timeout: 3000 });
+
+  fireEvent.mouseDown(option);
+  fireEvent.click(option);
+}
+
 describe('HomeSearch', () => {
   const fetchMock = vi.mocked(fetch);
 
@@ -28,6 +60,7 @@ describe('HomeSearch', () => {
     fetchMock.mockReset();
     fetchMock.mockResolvedValue(createJsonResponse([]));
     mockNavigate.mockReset();
+    mockNavigate.mockResolvedValue(undefined);
   });
 
   it('shows station suggestions for a typed city', async () => {
@@ -148,37 +181,8 @@ describe('HomeSearch', () => {
 
     render(<HomeSearch />);
 
-    const originInputs = screen.getAllByRole('combobox', { name: 'From' });
-    fireEvent.focus(originInputs[0]);
-    fireEvent.change(originInputs[0], { target: { value: 'Ham' } });
-    await waitFor(() => {
-      expect(fetchMock.mock.calls.some(([input]) => getRequestedQuery(input) === 'Ham*')).toBe(
-        true
-      );
-    });
-    const originOption = await screen.findByRole(
-      'option',
-      { name: /Hamburg Hbf/i },
-      { timeout: 3000 }
-    );
-    fireEvent.mouseDown(originOption);
-    fireEvent.click(originOption);
-
-    const destInputs = screen.getAllByRole('combobox', { name: 'To' });
-    fireEvent.focus(destInputs[0]);
-    fireEvent.change(destInputs[0], { target: { value: 'Ber' } });
-    await waitFor(() => {
-      expect(fetchMock.mock.calls.some(([input]) => getRequestedQuery(input) === 'Ber*')).toBe(
-        true
-      );
-    });
-    const destOption = await screen.findByRole(
-      'option',
-      { name: /Berlin Hbf/i },
-      { timeout: 3000 }
-    );
-    fireEvent.mouseDown(destOption);
-    fireEvent.click(destOption);
+    await selectStation('From', 'Ham', /Hamburg Hbf/i);
+    await selectStation('To', 'Ber', /Berlin Hbf/i);
 
     const submitButton = screen.getAllByRole('button', { name: 'Find Optimal Route' })[0];
     fireEvent.click(submitButton);
@@ -189,6 +193,134 @@ describe('HomeSearch', () => {
       ).not.toBeInTheDocument();
     });
 
-    expect(mockNavigate).toHaveBeenCalledWith({ to: '/train-search-results' });
+    expect(mockNavigate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        search: expect.objectContaining({
+          destinationEva: '8011160',
+          destinationName: 'Berlin Hbf',
+          originEva: '8002549',
+          originName: 'Hamburg Hbf',
+        }),
+        to: '/train-search-results',
+      })
+    );
+  });
+
+  it('submits selected stations and date/time via route search params', async () => {
+    fetchMock.mockImplementation(async (input) => {
+      const query = getRequestedQuery(input);
+
+      if (query === 'Ham*') {
+        return createJsonResponse([
+          { city: 'Hamburg', evaNumber: 8002549, name: 'Hamburg Hbf', number: 1 },
+        ]);
+      }
+
+      if (query === 'Köl*') {
+        return createJsonResponse([
+          { city: 'Köln', evaNumber: 8000207, name: 'Köln Hbf', number: 1 },
+        ]);
+      }
+
+      return createJsonResponse([]);
+    });
+
+    render(<HomeSearch />);
+
+    await selectStation('From', 'Ham', /Hamburg Hbf/i);
+    await selectStation('To', 'Köl', /Köln Hbf/i);
+
+    fireEvent.change(screen.getAllByLabelText('Date')[0], { target: { value: '2026-04-02' } });
+    fireEvent.change(screen.getAllByLabelText('Time')[0], { target: { value: '13:45' } });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Find Optimal Route' })[0]);
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({
+        search: {
+          date: '2026-04-02',
+          destinationEva: '8000207',
+          destinationName: 'Köln Hbf',
+          originEva: '8002549',
+          originName: 'Hamburg Hbf',
+          time: '13:45',
+        },
+        to: '/train-search-results',
+      });
+    });
+  });
+
+  it('shows an immediate loading announcement and disables search buttons while submit is in progress', async () => {
+    const navigation = createDeferred<void>();
+
+    fetchMock.mockImplementation(async (input) => {
+      const query = getRequestedQuery(input);
+
+      if (query === 'Ham*') {
+        return createJsonResponse([
+          { city: 'Hamburg', evaNumber: 8002549, name: 'Hamburg Hbf', number: 1 },
+        ]);
+      }
+
+      if (query === 'Köl*') {
+        return createJsonResponse([
+          { city: 'Köln', evaNumber: 8000207, name: 'Köln Hbf', number: 1 },
+        ]);
+      }
+
+      return createJsonResponse([]);
+    });
+    mockNavigate.mockReturnValueOnce(navigation.promise);
+
+    render(<HomeSearch />);
+
+    await selectStation('From', 'Ham', /Hamburg Hbf/i);
+    await selectStation('To', 'Köl', /Köln Hbf/i);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Find Optimal Route' })[0]);
+
+    const loadingAnnouncement = screen.getByText(/loading train results/i);
+    expect(loadingAnnouncement).toHaveAttribute('aria-live', 'polite');
+    expect(screen.getAllByRole('button', { name: 'Find Optimal Route' })[0]).toBeDisabled();
+    expect(screen.getAllByRole('button', { name: 'Find route' })[0]).toBeDisabled();
+
+    navigation.resolve();
+  });
+
+  it('prevents duplicate submissions while the search is loading', async () => {
+    const navigation = createDeferred<void>();
+
+    fetchMock.mockImplementation(async (input) => {
+      const query = getRequestedQuery(input);
+
+      if (query === 'Ham*') {
+        return createJsonResponse([
+          { city: 'Hamburg', evaNumber: 8002549, name: 'Hamburg Hbf', number: 1 },
+        ]);
+      }
+
+      if (query === 'Köl*') {
+        return createJsonResponse([
+          { city: 'Köln', evaNumber: 8000207, name: 'Köln Hbf', number: 1 },
+        ]);
+      }
+
+      return createJsonResponse([]);
+    });
+    mockNavigate.mockReturnValue(navigation.promise);
+
+    render(<HomeSearch />);
+
+    await selectStation('From', 'Ham', /Hamburg Hbf/i);
+    await selectStation('To', 'Köl', /Köln Hbf/i);
+
+    const primarySearchButton = screen.getAllByRole('button', { name: 'Find Optimal Route' })[0];
+
+    fireEvent.click(primarySearchButton);
+    fireEvent.click(primarySearchButton);
+
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+
+    navigation.resolve();
   });
 });
