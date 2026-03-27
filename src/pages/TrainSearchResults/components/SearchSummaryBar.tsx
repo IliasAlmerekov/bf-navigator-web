@@ -1,53 +1,43 @@
-import { SlidersHorizontal, Users } from 'lucide-react';
 import styles from './SearchSummaryBar.module.css';
 
 interface SearchSummaryBarProps {
-  origin: string;
-  destination: string;
   date: string;
+  time: string;
   passengerCount: number;
-  onFilterOpen: () => void;
+  resultCount: number | null;
+  onChangeSearch: () => void;
 }
 
 export function SearchSummaryBar({
-  origin,
-  destination,
   date,
+  time,
   passengerCount,
-  onFilterOpen,
+  resultCount,
+  onChangeSearch,
 }: SearchSummaryBarProps) {
+  const scheduleLabel = [date, time].filter(Boolean).join(' · ');
+  const passengerLabel = `${passengerCount} ${passengerCount === 1 ? 'Reisender' : 'Reisende'}`;
+
   return (
     <div className={styles.bar} role="region" aria-label="Suchanfrage Zusammenfassung">
-      <div className={styles.route}>
-        <span className={styles['route-origin']}>{origin}</span>
-        <span className={styles['route-arrow']} aria-hidden="true">
-          →
-        </span>
-        <span className={styles['route-destination']}>{destination}</span>
-      </div>
-
       <div className={styles.meta}>
-        <div className={styles['meta-info']}>
-          <span className={styles['meta-date']}>{date}</span>
-          <span className={styles.separator} aria-hidden="true">
-            ·
-          </span>
-          <Users aria-hidden="true" className={styles['meta-icon']} />
-          <span>
-            {passengerCount} {passengerCount === 1 ? 'Reisender' : 'Reisende'}
-          </span>
-        </div>
-
+        <span className={styles.metaText}>
+          {scheduleLabel} · {passengerLabel}
+        </span>
         <button
-          aria-label="Filter öffnen"
-          className={styles['filter-btn']}
+          aria-label="Suche ändern"
+          className={styles.changeBtn}
           type="button"
-          onClick={onFilterOpen}
+          onClick={onChangeSearch}
         >
-          <SlidersHorizontal aria-hidden="true" />
-          <span>Filter</span>
+          Suche ändern
         </button>
       </div>
+      {resultCount !== null && (
+        <p className={styles.count} aria-live="polite">
+          {resultCount} {resultCount === 1 ? 'Verbindung' : 'Verbindungen'} gefunden
+        </p>
+      )}
     </div>
   );
 }

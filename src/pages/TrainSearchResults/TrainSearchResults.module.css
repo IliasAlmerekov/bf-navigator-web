@@ -25,22 +25,18 @@
   padding: 16px 0 12px;
 }
 
-.brand {
+.route-title {
   flex: 1;
   font-family: var(--font-display);
-  font-size: 0.875rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-primary-container);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-strong);
   margin: 0;
   text-align: center;
-}
-
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .icon-button {
