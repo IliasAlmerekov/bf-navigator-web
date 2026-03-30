@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import RouteOverview from './RouteOverview';
 
@@ -44,10 +44,11 @@ describe('RouteOverview', () => {
 
   it('renders station platform info and departure times', () => {
     render(<RouteOverview />);
+    const timeline = screen.getByRole('list', { name: /journey timeline/i });
 
     expect(screen.getByText(/platform 9 · main entrance/i)).toBeInTheDocument();
-    expect(screen.getByText('09:30')).toBeInTheDocument();
-    expect(screen.getByText('13:45')).toBeInTheDocument();
+    expect(within(timeline).getAllByText('09:30').length).toBeGreaterThan(0);
+    expect(within(timeline).getAllByText('13:45').length).toBeGreaterThan(0);
   });
 
   it('renders the transfer note for Kassel', () => {
