@@ -1,5 +1,3 @@
-export type TrainStatus = 'ontime' | 'delayed' | 'cancelled';
-export type CrowdLevel = 'low' | 'moderate' | 'high';
 export type FilterKey =
   | 'all'
   | 'fastest'
@@ -8,20 +6,15 @@ export type FilterKey =
   | 'step-free'
   | 'ice-only';
 
-export interface TrainResult {
-  id: string;
+export interface TimetableEntry {
+  trainNumber: string;
   trainType: string;
   departureTime: string;
-  arrivalTime: string;
-  duration: string;
-  transfers: number;
-  status: TrainStatus;
-  delayMinutes?: number;
-  isAccessible: boolean;
-  accessibilityNote?: string;
-  crowdLevel: CrowdLevel;
-  price: string;
-  platform?: string;
+  arrivalTime: string | null;
+  line: string | null;
+  departurePlatform: string | null;
+  arrivalPlatform: string | null;
+  route: string[];
 }
 
 export interface FilterOption {
