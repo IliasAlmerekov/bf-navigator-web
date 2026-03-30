@@ -1,24 +1,21 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { CircleUserRound, Search } from 'lucide-react';
+import { Bell, Bookmark, House, Search, UserRound } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import alertsIcon from '../../assets/mobile-layout/alert.png';
-import homeIcon from '../../assets/mobile-layout/home.png';
-import profileIcon from '../../assets/mobile-layout/profile.png';
-import savedIcon from '../../assets/mobile-layout/saved.png';
 import styles from './AppLayout.module.css';
 
 type NavItem = {
   key: 'home' | 'saved' | 'alerts' | 'profile';
-  icon: string;
+  icon: LucideIcon;
   label: string;
   to: '/' | '/saved-trips' | '/alerts' | '/profile';
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'home', icon: homeIcon, label: 'Home Search', to: '/' },
-  { key: 'saved', icon: savedIcon, label: 'Saved Trips', to: '/saved-trips' },
-  { key: 'alerts', icon: alertsIcon, label: 'Alerts', to: '/alerts' },
-  { key: 'profile', icon: profileIcon, label: 'Profile', to: '/profile' },
+  { key: 'home', icon: House, label: 'Home Search', to: '/' },
+  { key: 'saved', icon: Bookmark, label: 'Saved Trips', to: '/saved-trips' },
+  { key: 'alerts', icon: Bell, label: 'Alerts', to: '/alerts' },
+  { key: 'profile', icon: UserRound, label: 'Profile', to: '/profile' },
 ];
 
 const HOME_SECTION_PATHS = new Set([
@@ -70,6 +67,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               key={item.key}
               className={styles['nav-link']}
               data-active={item.key === activeSection}
+              aria-current={item.key === activeSection ? 'page' : undefined}
               to={item.to}
             >
               {item.label}
@@ -81,25 +79,30 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <Search aria-hidden="true" />
           </button>
           <button aria-label="Profile" className={styles['top-nav-button']} type="button">
-            <CircleUserRound aria-hidden="true" />
+            <UserRound aria-hidden="true" />
           </button>
         </div>
       </header>
 
       <div className={styles.content}>{children}</div>
 
-      <nav aria-label="Bottom navigation" className={styles['bottom-nav']}>
-        {NAV_ITEMS.map((item) => (
-          <Link
-            key={item.key}
-            className={styles['bottom-nav-link']}
-            data-active={item.key === activeSection}
-            to={item.to}
-          >
-            <img alt="" className={styles['bottom-nav-icon']} src={item.icon} />
-            <span>{item.label}</span>
-          </Link>
-        ))}
+      <nav aria-label="Footer navigation" className={styles['footer-nav']}>
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <Link
+              key={item.key}
+              className={styles['footer-nav-link']}
+              data-active={item.key === activeSection}
+              aria-current={item.key === activeSection ? 'page' : undefined}
+              to={item.to}
+            >
+              <Icon aria-hidden="true" className={styles['footer-nav-icon']} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
     </div>
   );
