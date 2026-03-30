@@ -37,9 +37,9 @@ describe('RouteOverview', () => {
     const timeline = screen.getByRole('list', { name: /journey timeline/i });
 
     expect(timeline).toBeInTheDocument();
-    expect(screen.getByText('Frankfurt (Main) Hbf')).toBeInTheDocument();
-    expect(screen.getByText('Kassel-Wilhelmshöhe')).toBeInTheDocument();
-    expect(screen.getByText('Berlin Hbf')).toBeInTheDocument();
+    expect(within(timeline).getByText('Frankfurt (Main) Hbf')).toBeInTheDocument();
+    expect(within(timeline).getByText('Kassel-Wilhelmshöhe')).toBeInTheDocument();
+    expect(within(timeline).getByText('Berlin Hbf')).toBeInTheDocument();
   });
 
   it('renders station platform info and departure times', () => {
@@ -60,11 +60,12 @@ describe('RouteOverview', () => {
 
   it('renders amenity tags for departure and arrival stations', () => {
     render(<RouteOverview />);
+    const timeline = screen.getByRole('list', { name: /journey timeline/i });
 
-    expect(screen.getByText('Free WiFi')).toBeInTheDocument();
-    expect(screen.getByText('Bistro')).toBeInTheDocument();
-    expect(screen.getByText('Transit Links')).toBeInTheDocument();
-    expect(screen.getByText('Step-free')).toBeInTheDocument();
+    expect(within(timeline).getByText('Free WiFi')).toBeInTheDocument();
+    expect(within(timeline).getByText('Bistro')).toBeInTheDocument();
+    expect(within(timeline).getByText('Transit Links')).toBeInTheDocument();
+    expect(within(timeline).getByText('Step-free')).toBeInTheDocument();
   });
 
   it('exposes primary route actions for details and alternatives', () => {
