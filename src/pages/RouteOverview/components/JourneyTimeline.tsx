@@ -1,4 +1,4 @@
-import { Clock3 } from 'lucide-react';
+import { ArrowRightLeft } from 'lucide-react';
 import type { TimelineItem } from '../types';
 import styles from '../RouteOverview.module.css';
 
@@ -8,65 +8,62 @@ type JourneyTimelineProps = {
 
 export function JourneyTimeline({ items }: JourneyTimelineProps) {
   return (
-    <section aria-labelledby="journey-timeline-heading" className={styles.section}>
-      <div className={styles['section-heading']}>
-        <p className={styles['section-kicker']}>Journey timeline</p>
-        <h2 id="journey-timeline-heading">Every transfer checked for step-free continuity.</h2>
-      </div>
+    <ol aria-label="Journey timeline" className={styles.timeline}>
+      {items.map((item, index) => (
+        <li className={styles['timeline-item']} key={item.station}>
+          <div aria-hidden="true" className={styles['timeline-rail']}>
+            <span className={styles['timeline-dot']} data-kind={item.kind} />
+            {index < items.length - 1 ? <span className={styles['timeline-line']} /> : null}
+          </div>
 
-      <ol className={styles.timeline}>
-        {items.map((item, index) => {
-          const Icon = item.icon;
-
-          return (
-            <li className={styles['timeline-item']} key={`${item.station}-${item.time}`}>
-              <div className={styles['timeline-rail']} aria-hidden="true">
-                <span className={styles['timeline-icon-wrap']}>
-                  <Icon className={styles['timeline-icon']} />
-                </span>
-                {index < items.length - 1 ? <span className={styles['timeline-line']} /> : null}
+          <div className={styles['timeline-content']}>
+            <div className={styles['timeline-row']}>
+              <div className={styles['timeline-left']}>
+                <p className={styles['station-name']}>{item.station}</p>
+                <p className={styles['platform-info']}>{item.platformInfo}</p>
               </div>
 
-              <article className={styles['timeline-card']} data-kind={item.kind}>
-                <div className={styles['timeline-card-header']}>
+              {item.transferNote ? (
+                <div
+                  aria-label={`${item.transferNote}, ${item.transferTrain}`}
+                  className={styles['transfer-note']}
+                >
+                  <span className={styles['transfer-icon-wrap']}>
+                    <ArrowRightLeft aria-hidden="true" className={styles['transfer-icon']} />
+                  </span>
                   <div>
-                    <p className={styles['timeline-status']} data-tone={item.statusTone}>
-                      {item.statusLabel}
-                    </p>
-                    <h3>{item.title}</h3>
+                    <p className={styles['transfer-duration']}>{item.transferNote}</p>
+                    <p className={styles['transfer-train']}>{item.transferTrain}</p>
                   </div>
-
-                  <p className={styles['timeline-time']}>
-                    <Clock3 aria-hidden="true" />
-                    <span>{item.time}</span>
-                  </p>
                 </div>
+              ) : null}
 
-                <p className={styles['timeline-station']}>{item.station}</p>
-                <p className={styles['timeline-detail']}>
-                  <strong>{item.phase}.</strong> {item.detail}
-                </p>
+              <div className={styles['timeline-right']}>
+                <p className={styles['timeline-time']}>{item.time}</p>
+                <p className={styles['timeline-label']}>{item.label}</p>
+              </div>
+            </div>
 
-                <ul className={styles['timeline-tags']} role="list">
-                  {item.amenities.map((amenity) => {
-                    const AmenityIcon = amenity.icon;
-
-                    return (
-                      <li
-                        className={styles['timeline-tag']}
-                        key={`${item.station}-${amenity.label}`}
-                      >
-                        <AmenityIcon aria-hidden="true" />
-                        <span>{amenity.label}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </article>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
+            {item.amenities.length > 0 ? (
+              <ul
+                aria-label={`${item.station} amenities`}
+                className={styles['timeline-tags']}
+                role="list"
+              >
+                {item.amenities.map((amenity) => {
+                  const Icon = amenity.icon;
+                  return (
+                    <li className={styles['timeline-tag']} key={amenity.label}>
+                      <Icon aria-hidden="true" />
+                      <span>{amenity.label}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }

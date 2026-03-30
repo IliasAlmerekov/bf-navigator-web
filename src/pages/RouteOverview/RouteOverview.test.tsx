@@ -1,13 +1,10 @@
 import type { ReactNode } from 'react';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import RouteOverview from './RouteOverview';
 
-const mockNavigate = vi.fn();
-
 afterEach(() => {
   cleanup();
-  mockNavigate.mockReset();
 });
 
 vi.mock('@tanstack/react-router', () => ({
@@ -16,60 +13,63 @@ vi.mock('@tanstack/react-router', () => ({
       {children}
     </a>
   ),
-  useNavigate: () => mockNavigate,
+  useNavigate: () => vi.fn(),
 }));
 
 describe('RouteOverview', () => {
-  it('renders the route summary, timeline, and live accessibility sections', () => {
+  it('renders the detailed timeline heading and train badges', () => {
     render(<RouteOverview />);
 
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: /route overview/i,
+        name: /detailed timeline/i,
       })
     ).toBeInTheDocument();
 
-    expect(screen.getByLabelText(/route snapshot/i)).toHaveTextContent('4h 15m');
-    expect(screen.getByLabelText(/route snapshot/i)).toHaveTextContent('98%');
-
-    const timelineHeading = screen.getByRole('heading', {
-      level: 2,
-      name: /every transfer checked for step-free continuity/i,
-    });
-
-    const timelineSection = timelineHeading.closest('section');
-
-    expect(timelineSection).not.toBeNull();
-    expect(
-      within(timelineSection as HTMLElement).getByText(/frankfurt departure/i)
-    ).toBeInTheDocument();
-    expect(
-      within(timelineSection as HTMLElement).getByText(/accessible transfer/i)
-    ).toBeInTheDocument();
-    expect(within(timelineSection as HTMLElement).getByText(/berlin arrival/i)).toBeInTheDocument();
-
-    expect(
-      screen.getByRole('heading', {
-        level: 2,
-        name: /live access notes for every station touchpoint/i,
-      })
-    ).toBeInTheDocument();
-    expect(screen.getByText(/elevator p12 out of service/i)).toBeInTheDocument();
+    expect(screen.getByText(/on time/i)).toBeInTheDocument();
+    expect(screen.getByText('ICE772')).toBeInTheDocument();
   });
 
-  it('navigates back to train search results from the page header', () => {
+  it('renders the journey timeline with all three stations', () => {
     render(<RouteOverview />);
 
-    fireEvent.click(screen.getByRole('button', { name: /back to home search/i }));
+    const timeline = screen.getByRole('list', { name: /journey timeline/i });
 
-    expect(mockNavigate).toHaveBeenCalledWith({ to: '/' });
+    expect(timeline).toBeInTheDocument();
+    expect(screen.getByText('Frankfurt (Main) Hbf')).toBeInTheDocument();
+    expect(screen.getByText('Kassel-Wilhelmshöhe')).toBeInTheDocument();
+    expect(screen.getByText('Berlin Hbf')).toBeInTheDocument();
+  });
+
+  it('renders station platform info and departure times', () => {
+    render(<RouteOverview />);
+
+    expect(screen.getByText(/platform 9 · main entrance/i)).toBeInTheDocument();
+    expect(screen.getByText('09:30')).toBeInTheDocument();
+    expect(screen.getByText('13:45')).toBeInTheDocument();
+  });
+
+  it('renders the transfer note for Kassel', () => {
+    render(<RouteOverview />);
+
+    expect(screen.getByText(/22 min transfer/i)).toBeInTheDocument();
+    expect(screen.getByText(/switching to ice884/i)).toBeInTheDocument();
+  });
+
+  it('renders amenity tags for departure and arrival stations', () => {
+    render(<RouteOverview />);
+
+    expect(screen.getByText('Free WiFi')).toBeInTheDocument();
+    expect(screen.getByText('Bistro')).toBeInTheDocument();
+    expect(screen.getByText('Transit Links')).toBeInTheDocument();
+    expect(screen.getByText('Step-free')).toBeInTheDocument();
   });
 
   it('exposes primary route actions for details and alternatives', () => {
     render(<RouteOverview />);
 
-    expect(screen.getByRole('link', { name: /view full route/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /view full route map/i })).toHaveAttribute(
       'href',
       '/route-details'
     );
