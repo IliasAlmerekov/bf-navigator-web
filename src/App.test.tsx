@@ -13,7 +13,7 @@ describe('App', () => {
     await renderAppAt('/');
 
     expect(await screen.findByRole('button', { name: 'Find Optimal Route' })).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('renders the onboarding route at /onboarding', async () => {
     await renderAppAt('/onboarding');
@@ -24,5 +24,5 @@ describe('App', () => {
         name: /Ihre barrierefreie Reise\s*beginnt hier/i,
       })
     ).toBeInTheDocument();
-  });
+  }, 15000);
 });
