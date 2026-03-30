@@ -1,45 +1,30 @@
 import {
   Accessibility,
-  ArrowRightLeft,
-  BellRing,
+  ArrowUpDown,
   BusFront,
-  CloudSnow,
   Footprints,
   Gauge,
   HandHeart,
   Leaf,
-  MapPinned,
-  ShieldCheck,
-  TrainFront,
-  TriangleAlert,
+  Toilet,
   Utensils,
   Wifi,
 } from 'lucide-react';
-import type {
-  RouteHeroData,
-  RouteHighlight,
-  StationAccessibilityItem,
-  TimelineItem,
-  WeatherSnapshot,
-} from './types';
+import type { RouteHeroData, RouteHighlight, StationServiceStatus, TimelineItem } from './types';
 
 export const ROUTE_HERO: RouteHeroData = {
   confidence: '98%',
   duration: '4h 15m',
-  eyebrow: 'Best barrier-free option',
-  summary:
-    'Frankfurt Hbf to Berlin Hbf with one transfer, step-free routing and a live station check before every platform change.',
-  title: 'Route Overview',
+  eyebrow: '',
+  title: '',
   transfers: '1 transfer',
   departure: {
     label: 'Departure',
-    platform: 'Track 9',
     station: 'Frankfurt Hbf',
     time: '09:30',
   },
   arrival: {
     label: 'Arrival',
-    platform: 'Arrival track 4',
     station: 'Berlin Hbf',
     time: '13:45',
   },
@@ -49,79 +34,34 @@ export const ROUTE_TIMELINE: TimelineItem[] = [
   {
     amenities: [
       { icon: Wifi, label: 'Free WiFi' },
-      { icon: Utensils, label: 'Bistro service' },
+      { icon: Utensils, label: 'Bistro' },
     ],
-    detail: 'Platform 9 · Main entrance · Low-floor boarding support available.',
-    icon: TrainFront,
-    kind: 'ride',
-    phase: 'Departure',
+    kind: 'departure',
+    label: 'DEPARTURE',
+    platformInfo: 'Platform 9 · Main Entrance',
     station: 'Frankfurt (Main) Hbf',
-    statusLabel: 'On time · ICE 772',
-    statusTone: 'accent',
     time: '09:30',
-    title: 'Frankfurt departure',
   },
   {
-    amenities: [
-      { icon: Accessibility, label: 'Lift access verified' },
-      { icon: Footprints, label: '320m assisted path' },
-    ],
-    detail:
-      'Kassel-Wilhelmshöhe · 22 min transfer window via the step-free corridor B and tactile route markings.',
-    icon: ArrowRightLeft,
+    amenities: [],
     kind: 'transfer',
-    phase: 'Transfer',
+    label: 'DEPARTING',
+    platformInfo: 'Platform 4 · Arriving 10:52',
     station: 'Kassel-Wilhelmshöhe',
-    statusLabel: 'Switch to ICE 884',
-    statusTone: 'warning',
-    time: '10:52 → 11:14',
-    title: 'Accessible transfer',
+    time: '11:14',
+    transferNote: '22 MIN TRANSFER',
+    transferTrain: 'Switching to ICE884',
   },
   {
     amenities: [
-      { icon: BusFront, label: 'Transit links' },
-      { icon: ShieldCheck, label: 'Step-free exit' },
+      { icon: BusFront, label: 'Transit Links' },
+      { icon: Footprints, label: 'Step-free' },
     ],
-    detail: 'Platforms 11-14 · Lower level · Assistance desk available on arrival.',
-    icon: TrainFront,
     kind: 'arrival',
-    phase: 'Arrival',
+    label: 'ARRIVAL',
+    platformInfo: 'Platform 11–14 · Lower Level',
     station: 'Berlin Hbf',
-    statusLabel: 'Arrival track confirmed',
-    statusTone: 'neutral',
     time: '13:45',
-    title: 'Berlin arrival',
-  },
-];
-
-export const STATION_ACCESSIBILITY: StationAccessibilityItem[] = [
-  {
-    services: [
-      { icon: Accessibility, label: 'All elevators functional' },
-      { icon: MapPinned, label: 'Tactile guidance active' },
-    ],
-    station: 'Frankfurt Hbf',
-    status: 'LIVE',
-    summary: 'All elevators functional. Tactile guidance system active on all platforms.',
-  },
-  {
-    services: [
-      { icon: TriangleAlert, label: 'Platform 12 elevator offline' },
-      { icon: Accessibility, label: 'Ramp B keeps the route step-free' },
-    ],
-    station: 'Kassel-Wilhelmshöhe',
-    status: 'WARNING',
-    summary:
-      'Elevator P12 out of service. Step-free path stays available via Ramp B with roughly four extra minutes.',
-  },
-  {
-    services: [
-      { icon: Accessibility, label: 'Full step-free access' },
-      { icon: HandHeart, label: 'Assistance desk open 24/7' },
-    ],
-    station: 'Berlin Hbf',
-    status: 'LIVE',
-    summary: 'Full step-free access available across all levels. Assistance desk open 24/7.',
   },
 ];
 
@@ -132,23 +72,47 @@ export const ROUTE_HIGHLIGHTS: RouteHighlight[] = [
     title: 'Green journey',
   },
   {
-    description:
-      'Reaches up to 300 km/h between Kassel and Berlin while keeping a low-transfer profile.',
+    description: 'Reaches up to 300 km/h between Kassel and Berlin with one transfer.',
     icon: Gauge,
     title: 'High-speed section',
   },
-  {
-    description:
-      'Live disruption monitoring stays active from departure until platform arrival in Berlin.',
-    icon: BellRing,
-    title: 'Continuous updates',
-  },
 ];
 
-export const DESTINATION_WEATHER: WeatherSnapshot = {
-  condition: 'Light sleet expected on arrival. Keep extra time for the lower-level exit ramps.',
-  icon: CloudSnow,
-  station: 'Berlin',
-  temperature: '4°C',
-  time: '13:45',
-};
+export const ROUTE_STATION_SERVICES: StationServiceStatus[] = [
+  {
+    amenities: [
+      { icon: Wifi, label: 'WLAN', serviceStatus: 'available' },
+      { icon: ArrowUpDown, label: 'Escalators', serviceStatus: 'unavailable' },
+      { icon: Footprints, label: 'Tactile guidance', serviceStatus: 'available' },
+      { icon: Toilet, label: 'Accessible toilets', serviceStatus: 'available' },
+      { icon: HandHeart, label: 'Assistance desk', serviceStatus: 'available' },
+    ],
+    elevatorsStatus: 'available',
+    stationId: 'frankfurt-main-hbf',
+    stationName: 'Frankfurt (Main) Hbf',
+  },
+  {
+    amenities: [
+      { icon: Footprints, label: 'Step-free paths', serviceStatus: 'available' },
+      { icon: ArrowUpDown, label: 'Escalators', serviceStatus: 'unavailable' },
+      { icon: Footprints, label: 'Tactile guidance', serviceStatus: 'available' },
+      { icon: Toilet, label: 'Accessible toilets', serviceStatus: 'available' },
+      { icon: Accessibility, label: 'Elevators', serviceStatus: 'available' },
+    ],
+    elevatorsStatus: 'available',
+    stationId: 'kassel-wilhelmshoehe',
+    stationName: 'Kassel-Wilhelmshöhe',
+  },
+  {
+    amenities: [
+      { icon: Wifi, label: 'WLAN', serviceStatus: 'available' },
+      { icon: ArrowUpDown, label: 'Escalators', serviceStatus: 'unavailable' },
+      { icon: Footprints, label: 'Tactile guidance', serviceStatus: 'available' },
+      { icon: Toilet, label: 'Accessible toilets', serviceStatus: 'available' },
+      { icon: Accessibility, label: 'Elevators', serviceStatus: 'available' },
+    ],
+    elevatorsStatus: 'available',
+    stationId: 'berlin-hbf',
+    stationName: 'Berlin Hbf',
+  },
+];

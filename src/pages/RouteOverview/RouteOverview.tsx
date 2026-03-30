@@ -1,16 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import {
-  DESTINATION_WEATHER,
-  ROUTE_HERO,
-  ROUTE_HIGHLIGHTS,
-  ROUTE_TIMELINE,
-  STATION_ACCESSIBILITY,
-} from './constants';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { Map, Navigation } from 'lucide-react';
+import { ROUTE_HERO, ROUTE_HIGHLIGHTS, ROUTE_STATION_SERVICES, ROUTE_TIMELINE } from './constants';
 import { JourneyTimeline } from './components/JourneyTimeline';
 import { RouteHero } from './components/RouteHero';
 import { RouteSupportAside } from './components/RouteSupportAside';
-import { StationAccessibilityPanel } from './components/StationAccessibilityPanel';
 import styles from './RouteOverview.module.css';
 
 export default function RouteOverview() {
@@ -36,14 +30,36 @@ export default function RouteOverview() {
       </p>
 
       <div className={styles.layout}>
-        <JourneyTimeline items={ROUTE_TIMELINE} />
+        <section aria-labelledby="detailed-timeline-heading" className={styles['timeline-section']}>
+          <header className={styles['timeline-header']}>
+            <h1 id="detailed-timeline-heading" className={styles['card-title']}>
+              Detailed Timeline
+            </h1>
+            <div className={styles['header-badges']}>
+              <span className={styles['badge-on-time']}>On time</span>
+              <span className={styles['badge-train']}>ICE772</span>
+            </div>
+          </header>
+
+          <JourneyTimeline items={ROUTE_TIMELINE} />
+
+          <div className={styles['action-row']}>
+            <Link className={styles['action-button']} to="/route-details">
+              <Map aria-hidden="true" className={styles['action-icon']} />
+              <span>View Full Route Map</span>
+            </Link>
+            <Link className={styles['action-button']} to="/alternative-routes">
+              <Navigation aria-hidden="true" className={styles['action-icon']} />
+              <span>View Alternatives</span>
+            </Link>
+          </div>
+        </section>
 
         <div className={styles['detail-column']}>
-          <StationAccessibilityPanel items={STATION_ACCESSIBILITY} />
           <RouteSupportAside
             highlights={ROUTE_HIGHLIGHTS}
             onSave={handleSave}
-            weather={DESTINATION_WEATHER}
+            stationServices={ROUTE_STATION_SERVICES}
           />
         </div>
       </div>

@@ -1,23 +1,33 @@
 import { BookmarkPlus } from 'lucide-react';
-import { Link } from '@tanstack/react-router';
-import type { RouteHighlight, WeatherSnapshot } from '../types';
+import type { RouteHighlight, StationServiceStatus } from '../types';
 import styles from '../RouteOverview.module.css';
 
 type RouteSupportAsideProps = {
   highlights: RouteHighlight[];
   onSave: () => void;
-  weather: WeatherSnapshot;
+  stationServices: StationServiceStatus[];
 };
 
-export function RouteSupportAside({ highlights, onSave, weather }: RouteSupportAsideProps) {
-  const WeatherIcon = weather.icon;
+function getElevatorStatusLabel(status: StationServiceStatus['elevatorsStatus']) {
+  switch (status) {
+    case 'available':
+      return 'Elevators available';
+    case 'limited':
+      return 'Elevators limited';
+    case 'out_of_service':
+      return 'Elevators out of service';
+    default:
+      return 'Elevators status unavailable';
+  }
+}
 
+export function RouteSupportAside({ highlights, onSave, stationServices }: RouteSupportAsideProps) {
   return (
     <aside className={styles.aside}>
-      <section aria-labelledby="journey-highlights-heading" className={styles.section}>
+      <section aria-labelledby="journey-highlights-heading" className={styles['highlight-section']}>
         <div className={styles['section-heading']}>
           <p className={styles['section-kicker']}>Journey highlights</p>
-          <h2 id="journey-highlights-heading">Fast context beyond the raw timetable.</h2>
+          <h2 id="journey-highlights-heading">Journey highlights</h2>
         </div>
 
         <ul className={styles['highlight-list']} role="list">
@@ -39,43 +49,59 @@ export function RouteSupportAside({ highlights, onSave, weather }: RouteSupportA
             );
           })}
         </ul>
-      </section>
-
-      <section aria-labelledby="destination-weather-heading" className={styles.section}>
-        <div className={styles['section-heading']}>
-          <p className={styles['section-kicker']}>Destination weather</p>
-          <h2 id="destination-weather-heading">
-            {weather.station}, {weather.time}
-          </h2>
-        </div>
-
-        <article className={styles['weather-card']}>
-          <span className={styles['weather-icon-wrap']}>
-            <WeatherIcon aria-hidden="true" className={styles['weather-icon']} />
-          </span>
-          <strong>{weather.temperature}</strong>
-          <p>{weather.condition}</p>
-        </article>
-      </section>
-
-      <section aria-labelledby="route-actions-heading" className={styles.section}>
-        <div className={styles['section-heading']}>
-          <p className={styles['section-kicker']}>Next step</p>
-          <h2 id="route-actions-heading">Keep moving without leaving this route context.</h2>
-        </div>
 
         <div className={styles['action-stack']}>
-          <Link className={styles['primary-link']} to="/route-details">
-            View full route
-          </Link>
           <button className={styles['secondary-button']} type="button" onClick={onSave}>
             <BookmarkPlus aria-hidden="true" />
-            <span>Save route</span>
+            <span>Save to My Routes</span>
           </button>
-          <Link className={styles['tertiary-link']} to="/alternative-routes">
-            View alternatives
-          </Link>
         </div>
+      </section>
+
+      <section
+        aria-labelledby="station-services-heading"
+        className={styles['station-services-section']}
+      >
+        <div className={styles['section-heading']}>
+          <p className={styles['section-kicker']}>Station services</p>
+          <h2 id="station-services-heading">Station services</h2>
+        </div>
+
+        <ul className={styles['station-services-station-list']} role="list">
+          {stationServices.map((station) => (
+            <li key={station.stationId}>
+              <article className={styles['station-service-card']}>
+                <h3 className={styles['station-service-station-name']}>{station.stationName}</h3>
+                <p
+                  className={styles['station-service-elevators']}
+                  data-status={station.elevatorsStatus}
+                >
+                  {getElevatorStatusLabel(station.elevatorsStatus)}
+                </p>
+
+                <ul className={styles['station-services-list']} role="list">
+                  {station.amenities.map((service) => {
+                    const ServiceIcon = service.icon;
+                    return (
+                      <li
+                        className={styles['station-service-chip']}
+                        data-status={service.serviceStatus ?? 'available'}
+                        key={`${station.stationId}-${service.label}`}
+                      >
+                        <span aria-hidden="true" className={styles['station-service-dot']} />
+                        <ServiceIcon
+                          aria-hidden="true"
+                          className={styles['station-service-icon']}
+                        />
+                        <span>{service.label}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </article>
+            </li>
+          ))}
+        </ul>
       </section>
     </aside>
   );
