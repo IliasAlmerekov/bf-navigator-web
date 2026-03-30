@@ -1,4 +1,70 @@
-# BF Navigator Web
+# Barrier-Free Navigator
+
+> The only rail travel assistant that doesn't just show you **when** your train departs —
+> but whether you can **actually reach it barrier-free**. And if not, finds you another way. Instantly.
+
+---
+
+## What is this?
+
+Barrier-Free Navigator is a navigation tool built specifically for people with reduced mobility.
+It doesn't just display train connections — it **actively warns you about barriers** and suggests
+alternative routes in real time, before you arrive at the station and discover the elevator is broken.
+
+---
+
+## Why not just use DB Navigator?
+
+DB Navigator is a general-purpose travel app built for everyone.
+Accessibility is an afterthought — a hidden filter, occasional elevator info, no risk awareness.
+
+Barrier-Free Navigator is built **only** for mobility-impaired users, from the ground up.
+
+| Feature                                  | DB Navigator           | Barrier-Free Navigator            |
+| ---------------------------------------- | ---------------------- | --------------------------------- |
+| Elevator status per station              | Partial, manual search | ✅ Automatic for every route      |
+| Risk score per connection                | ❌                     | ✅ 0–100 with visual indicator    |
+| Push notification on elevator failure    | ❌                     | ✅ Real-time via FASTA API        |
+| Automatic barrier-free alternative route | ❌                     | ✅ Step-free guaranteed           |
+| Persistent mobility profile              | ❌                     | ✅ Set once, always active        |
+| Target audience                          | All users              | Wheelchair, stroller, walking aid |
+| UI complexity                            | High, many features    | Minimal, focused, calm            |
+
+---
+
+## 3 Core Advantages
+
+### 1. Proactive, not reactive
+
+DB Navigator tells you about a disruption when you're already on your way — or not at all.
+Barrier-Free Navigator alerts you **within 10 seconds** of a report via push notification,
+before you even leave the house.
+
+### 2. Risk is visible
+
+No other app shows you at a glance how safe a connection is for your specific needs.
+The risk score combines elevator status, transfer times, and step-free access into
+**one single number** — color-coded and always on screen.
+
+### 3. Your profile thinks for you
+
+Set it once: _"Wheelchair, elevator required, max. 200m walking distance"_ —
+and every search filters automatically based on your profile.
+With DB Navigator, you have to re-enter your accessibility needs every single time.
+
+---
+
+## Who is this for?
+
+- **Wheelchair users** and people with walking aids
+- **Parents with strollers** navigating stairs and narrow passages
+- **Older adults** who need to avoid steps and long walking distances
+- **Temporarily mobility-impaired people** — recovering from surgery, broken leg, etc.
+
+Germany alone has approximately **7.8 million people with severe disabilities** —
+a massively underserved segment in public rail transport.
+
+---
 
 Browser prototype for accessible route planning flows.
 
