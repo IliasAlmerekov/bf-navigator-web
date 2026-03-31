@@ -5,16 +5,16 @@ import {
   Accessibility,
   Baby,
   Bell,
-  CalendarDays,
   ChevronRight,
   CircleUserRound,
-  Clock3,
   Eye,
   Luggage,
   Search,
   ShieldCheck,
   TrainFront,
 } from 'lucide-react';
+import { CalendarDatePicker } from '../../components/ui/CalendarDatePicker';
+import { TimePicker } from '../../components/ui/TimePicker';
 import alertActionImage from '../../assets/Home/alert.png';
 import locationIconImage from '../../assets/Home/location.png';
 import savedActionImage from '../../assets/Home/saved.png';
@@ -321,23 +321,16 @@ export default function HomeSearch() {
             ) : null}
 
             <div className={styles['date-time-wrapper']}>
-              <label className={styles['date-time-field']} htmlFor="date-mobile">
-                <CalendarDays aria-hidden="true" className={styles['field-icon']} />
-                <span className={styles['field-label']}>Date</span>
-                <input
-                  aria-describedby={formErrors.date ? 'date-error-mobile' : undefined}
-                  aria-invalid={formErrors.date !== null}
-                  className={styles['date-input']}
-                  id="date-mobile"
-                  name="date-mobile"
-                  onChange={(e) => {
-                    setDateValue(e.target.value);
-                    setFormErrors((current) => ({ ...current, date: null }));
-                  }}
-                  type="date"
-                  value={dateValue}
-                />
-              </label>
+              <CalendarDatePicker
+                describedBy={formErrors.date ? 'date-error-mobile' : undefined}
+                invalid={formErrors.date !== null}
+                label="Date"
+                onChange={(nextDate) => {
+                  setDateValue(nextDate);
+                  setFormErrors((current) => ({ ...current, date: null }));
+                }}
+                value={dateValue}
+              />
               {formErrors.date ? (
                 <p className={styles['field-error']} id="date-error-mobile" role="alert">
                   {formErrors.date}
@@ -346,23 +339,16 @@ export default function HomeSearch() {
             </div>
 
             <div className={styles['date-time-wrapper']}>
-              <label className={styles['date-time-field']} htmlFor="time-mobile">
-                <Clock3 aria-hidden="true" className={styles['field-icon']} />
-                <span className={styles['field-label']}>Time</span>
-                <input
-                  aria-describedby={formErrors.time ? 'time-error-mobile' : undefined}
-                  aria-invalid={formErrors.time !== null}
-                  className={styles['date-input']}
-                  id="time-mobile"
-                  name="time-mobile"
-                  onChange={(e) => {
-                    setTimeValue(e.target.value);
-                    setFormErrors((current) => ({ ...current, time: null }));
-                  }}
-                  type="time"
-                  value={timeValue}
-                />
-              </label>
+              <TimePicker
+                describedBy={formErrors.time ? 'time-error-mobile' : undefined}
+                invalid={formErrors.time !== null}
+                label="Time"
+                onChange={(nextTime) => {
+                  setTimeValue(nextTime);
+                  setFormErrors((current) => ({ ...current, time: null }));
+                }}
+                value={timeValue}
+              />
               {formErrors.time ? (
                 <p className={styles['field-error']} id="time-error-mobile" role="alert">
                   {formErrors.time}
@@ -433,23 +419,16 @@ export default function HomeSearch() {
             ) : null}
 
             <div className={styles['date-time-wrapper']}>
-              <label className={styles['date-time-field']} htmlFor="date-desktop">
-                <CalendarDays aria-hidden="true" className={styles['field-icon']} />
-                <span className={styles['field-label']}>Date</span>
-                <input
-                  aria-describedby={formErrors.date ? 'date-error-desktop' : undefined}
-                  aria-invalid={formErrors.date !== null}
-                  className={styles['date-input']}
-                  id="date-desktop"
-                  name="date-desktop"
-                  onChange={(e) => {
-                    setDateValue(e.target.value);
-                    setFormErrors((current) => ({ ...current, date: null }));
-                  }}
-                  type="date"
-                  value={dateValue}
-                />
-              </label>
+              <CalendarDatePicker
+                describedBy={formErrors.date ? 'date-error-desktop' : undefined}
+                invalid={formErrors.date !== null}
+                label="Date"
+                onChange={(nextDate) => {
+                  setDateValue(nextDate);
+                  setFormErrors((current) => ({ ...current, date: null }));
+                }}
+                value={dateValue}
+              />
               {formErrors.date ? (
                 <p className={styles['field-error']} id="date-error-desktop" role="alert">
                   {formErrors.date}
@@ -458,23 +437,16 @@ export default function HomeSearch() {
             </div>
 
             <div className={styles['date-time-wrapper']}>
-              <label className={styles['date-time-field']} htmlFor="time-desktop">
-                <Clock3 aria-hidden="true" className={styles['field-icon']} />
-                <span className={styles['field-label']}>Time</span>
-                <input
-                  aria-describedby={formErrors.time ? 'time-error-desktop' : undefined}
-                  aria-invalid={formErrors.time !== null}
-                  className={styles['date-input']}
-                  id="time-desktop"
-                  name="time-desktop"
-                  onChange={(e) => {
-                    setTimeValue(e.target.value);
-                    setFormErrors((current) => ({ ...current, time: null }));
-                  }}
-                  type="time"
-                  value={timeValue}
-                />
-              </label>
+              <TimePicker
+                describedBy={formErrors.time ? 'time-error-desktop' : undefined}
+                invalid={formErrors.time !== null}
+                label="Time"
+                onChange={(nextTime) => {
+                  setTimeValue(nextTime);
+                  setFormErrors((current) => ({ ...current, time: null }));
+                }}
+                value={timeValue}
+              />
               {formErrors.time ? (
                 <p className={styles['field-error']} id="time-error-desktop" role="alert">
                   {formErrors.time}
