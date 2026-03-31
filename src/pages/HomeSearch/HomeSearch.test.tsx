@@ -33,6 +33,23 @@ function createDeferred<T>() {
   return { promise, reject, resolve };
 }
 
+function formatCalendarButtonName(date: Date) {
+  return new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    month: 'long',
+    weekday: 'long',
+    year: 'numeric',
+  }).format(date);
+}
+
+function formatLocalIsoDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
 async function selectStation(fieldLabel: 'From' | 'To', typedValue: string, optionName: RegExp) {
   const input = screen.getAllByRole('combobox', { name: fieldLabel })[0];
 
@@ -118,15 +135,14 @@ describe('HomeSearch', () => {
 
   it("renders date input with today's date", () => {
     render(<HomeSearch />);
-    const today = new Date().toISOString().slice(0, 10);
-    const dateInputs = screen.getAllByLabelText('Date');
-    expect((dateInputs[0] as HTMLInputElement).value).toBe(today);
+    const dateButtons = screen.getAllByRole('button', { name: /choose departure date/i });
+    expect(dateButtons[0]).toBeInTheDocument();
   });
 
   it('renders time input with default value', () => {
     render(<HomeSearch />);
-    const timeInputs = screen.getAllByLabelText('Time');
-    expect((timeInputs[0] as HTMLInputElement).value).toBe('09:00');
+    const timeButtons = screen.getAllByRole('button', { name: /choose departure time/i });
+    expect(timeButtons[0]).toHaveAccessibleName(/09:00/i);
   });
 
   it('blocks submit and shows errors when origin not selected from autocomplete', async () => {
@@ -207,6 +223,10 @@ describe('HomeSearch', () => {
   });
 
   it('submits selected stations and date/time via route search params', async () => {
+    const selectedDate = new Date();
+    selectedDate.setHours(12, 0, 0, 0);
+    selectedDate.setDate(15);
+
     fetchMock.mockImplementation(async (input) => {
       const query = getRequestedQuery(input);
 
@@ -230,15 +250,17 @@ describe('HomeSearch', () => {
     await selectStation('From', 'Ham', /Hamburg Hbf/i);
     await selectStation('To', 'Köl', /Köln Hbf/i);
 
-    fireEvent.change(screen.getAllByLabelText('Date')[0], { target: { value: '2026-04-02' } });
-    fireEvent.change(screen.getAllByLabelText('Time')[0], { target: { value: '13:45' } });
+    fireEvent.click(screen.getAllByRole('button', { name: /choose departure date/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: formatCalendarButtonName(selectedDate) }));
+    fireEvent.click(screen.getAllByRole('button', { name: /choose departure time/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: '13:45' }));
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Find Optimal Route' })[0]);
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith({
         search: {
-          date: '2026-04-02',
+          date: formatLocalIsoDate(selectedDate),
           destinationEva: '8000207',
           destinationName: 'Köln Hbf',
           originEva: '8002549',
@@ -248,6 +270,40 @@ describe('HomeSearch', () => {
         to: '/train-search-results',
       });
     });
+  });
+
+  it('opens the date picker dialog and closes it after selecting a day', () => {
+    const selectedDate = new Date();
+    selectedDate.setHours(12, 0, 0, 0);
+    selectedDate.setDate(15);
+
+    render(<HomeSearch />);
+
+    const trigger = screen.getAllByRole('button', { name: /choose departure date/i })[0];
+    fireEvent.click(trigger);
+
+    expect(screen.getByRole('dialog', { name: /choose departure date/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: formatCalendarButtonName(selectedDate) }));
+
+    expect(
+      screen.queryByRole('dialog', { name: /choose departure date/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it('opens the time picker dialog and closes it after selecting a time', () => {
+    render(<HomeSearch />);
+
+    const trigger = screen.getAllByRole('button', { name: /choose departure time/i })[0];
+    fireEvent.click(trigger);
+
+    expect(screen.getByRole('dialog', { name: /choose departure time/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '13:45' }));
+
+    expect(
+      screen.queryByRole('dialog', { name: /choose departure time/i })
+    ).not.toBeInTheDocument();
   });
 
   it('shows an immediate loading announcement and disables search buttons while submit is in progress', async () => {
