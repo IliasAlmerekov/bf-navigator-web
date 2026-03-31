@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Eye, EyeOff, Globe, User } from 'lucide-react';
-import openIcon from '../../assets/Onboarding/icons8-open-60.png';
+import { Eye, EyeOff } from 'lucide-react';
+import disabilityIcon from '../../assets/Onboarding/icons8-disability-24.png';
+import familyIcon from '../../assets/Onboarding/icons8-family-64.png';
 import styles from './RegisterDesktop.module.css';
 
 type FormData = {
@@ -101,27 +102,6 @@ export default function RegisterDesktop() {
 
   return (
     <main className={styles.page}>
-      {/* Header */}
-      <header className={styles.header}>
-        <Link to="/" className={styles.logo}>
-          Trans-Europe Line
-        </Link>
-        <nav className={styles.nav} aria-label="Primary">
-          <Link to="/">Home Search</Link>
-          <Link to="/saved-trips">Saved Trips</Link>
-          <Link to="/alerts">Alerts</Link>
-          <Link to="/profile">Profile</Link>
-        </nav>
-        <div className={styles['header-icons']}>
-          <button className={styles['icon-button']} aria-label="Language">
-            <Globe size={20} />
-          </button>
-          <button className={styles['icon-button']} aria-label="User account">
-            <User size={20} />
-          </button>
-        </div>
-      </header>
-
       {/* Main Content */}
       <div className={styles.container}>
         {/* Left Hero Section */}
@@ -141,7 +121,7 @@ export default function RegisterDesktop() {
             <div className={styles['benefits-list']}>
               <div className={styles['benefit-item']}>
                 <div className={styles['benefit-icon']}>
-                  <img src={openIcon} alt="" className={styles['benefit-icon-img']} />
+                  <img src={disabilityIcon} alt="" className={styles['benefit-icon-img']} />
                 </div>
                 <div className={styles['benefit-text']}>
                   <h3 className={styles['benefit-title']}>Individuelle Assistenz</h3>
@@ -153,7 +133,7 @@ export default function RegisterDesktop() {
 
               <div className={styles['benefit-item']}>
                 <div className={styles['benefit-icon']}>
-                  <img src={openIcon} alt="" className={styles['benefit-icon-img']} />
+                  <Eye size={24} />
                 </div>
                 <div className={styles['benefit-text']}>
                   <h3 className={styles['benefit-title']}>Visuelle Führung</h3>
@@ -165,7 +145,7 @@ export default function RegisterDesktop() {
 
               <div className={styles['benefit-item']}>
                 <div className={styles['benefit-icon']}>
-                  <img src={openIcon} alt="" className={styles['benefit-icon-img']} />
+                  <img src={familyIcon} alt="" className={styles['benefit-icon-img']} />
                 </div>
                 <div className={styles['benefit-text']}>
                   <h3 className={styles['benefit-title']}>Barrierefreie Bahnhöfe</h3>
@@ -372,14 +352,18 @@ export default function RegisterDesktop() {
 
       {/* Footer */}
       <footer className={styles.footer}>
-        <p className={styles['footer-text']}>
-          © 2026 Trans-Europe Line. Barrierefreies Reisen für alle.
-        </p>
+        <Link to="/" className={styles['footer-logo']}>
+          Trans-Europe Line
+        </Link>
         <div className={styles['footer-links']}>
-          <a href="#datenschutz">Datenschutz</a>
           <a href="#impressum">Impressum</a>
-          <a href="#hilfe">Hilfe</a>
+          <a href="#datenschutz">Datenschutz</a>
+          <a href="#barrierefreiheit">Barrierefreiheit</a>
+          <a href="#kontakt">Kontakt</a>
         </div>
+        <p className={styles['footer-text']}>
+          © 2024 Trans-Europe Line. Barrierefreies Reisen für alle.
+        </p>
       </footer>
     </main>
   );
