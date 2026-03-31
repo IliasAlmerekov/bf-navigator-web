@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cleanup, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import RouteOverview from './RouteOverview';
 
@@ -8,8 +9,18 @@ afterEach(() => {
 });
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, className, to }: { children: ReactNode; className?: string; to: string }) => (
-    <a className={className} href={to}>
+  Link: ({
+    children,
+    className,
+    to,
+    'aria-label': ariaLabel,
+  }: {
+    children: ReactNode;
+    className?: string;
+    to: string;
+    'aria-label'?: string;
+  }) => (
+    <a className={className} href={to} aria-label={ariaLabel}>
       {children}
     </a>
   ),
@@ -22,7 +33,7 @@ describe('RouteOverview', () => {
 
     expect(
       screen.getByRole('heading', {
-        level: 1,
+        level: 2,
         name: /detailed timeline/i,
       })
     ).toBeInTheDocument();
@@ -68,16 +79,73 @@ describe('RouteOverview', () => {
     expect(within(timeline).getByText('Step-free')).toBeInTheDocument();
   });
 
-  it('exposes primary route actions for details and alternatives', () => {
+  it('does not render "View Full Route Map" link', () => {
     render(<RouteOverview />);
 
-    expect(screen.getByRole('link', { name: /view full route map/i })).toHaveAttribute(
-      'href',
-      '/route-details'
-    );
-    expect(screen.getByRole('link', { name: /view alternatives/i })).toHaveAttribute(
-      'href',
-      '/alternative-routes'
-    );
+    expect(screen.queryByRole('link', { name: /view full route map/i })).not.toBeInTheDocument();
+  });
+
+  it('renders "View Alternatives" link pointing to /train-search-results', () => {
+    render(<RouteOverview />);
+
+    const link = screen.getByRole('link', { name: /return to search results/i });
+    expect(link).toHaveAttribute('href', '/train-search-results');
+  });
+
+  it('renders "Live Navigation" link', () => {
+    render(<RouteOverview />);
+
+    expect(screen.getByRole('link', { name: /live navigation/i })).toBeInTheDocument();
+  });
+
+  it('renders the station services section heading', () => {
+    render(<RouteOverview />);
+
+    expect(screen.getByRole('heading', { name: /station services/i })).toBeInTheDocument();
+  });
+
+  it('renders "Lift out of service" warning for Berlin Hbf', () => {
+    render(<RouteOverview />);
+
+    expect(screen.getByText(/lift out of service/i)).toBeInTheDocument();
+  });
+
+  it('renders the elevator platform label Gleis 11 for Berlin Hbf', () => {
+    render(<RouteOverview />);
+
+    const servicesSection = screen.getByRole('region', { name: /station services/i });
+    expect(within(servicesSection).getByText(/gleis 11/i)).toBeInTheDocument();
+  });
+
+  it('does not announce anything on initial load', () => {
+    render(<RouteOverview />);
+
+    const liveEl = document.querySelector('[aria-live="polite"]');
+    expect(liveEl?.textContent).toBe('');
+  });
+
+  it('announces when route is saved and updates aria-pressed', async () => {
+    render(<RouteOverview />);
+
+    const saveButton = screen.getByRole('button', { name: /save route/i });
+    expect(saveButton).toHaveAttribute('aria-pressed', 'false');
+
+    await userEvent.click(saveButton);
+
+    expect(saveButton).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(/route saved to your trips/i)).toBeInTheDocument();
+  });
+
+  it('renders sr-only unavailable label for out-of-service amenities', () => {
+    render(<RouteOverview />);
+
+    const unavailableLabels = screen.getAllByText('(unavailable)');
+    expect(unavailableLabels.length).toBeGreaterThan(0);
+  });
+
+  it('shows gleis label next to unavailable service chip', () => {
+    render(<RouteOverview />);
+
+    expect(screen.getByText(/escalators — gleis 7/i)).toBeInTheDocument();
   });
 });

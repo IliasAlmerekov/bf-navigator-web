@@ -1,29 +1,26 @@
-import { ArrowLeft, BookmarkPlus, Share2 } from 'lucide-react';
+import { BookmarkPlus, Share2 } from 'lucide-react';
 import germanMap from '../../../assets/RouteOverview/german.png';
 import type { RouteHeroData } from '../types';
 import styles from '../RouteOverview.module.css';
 
 type RouteHeroProps = {
-  onBack: () => void;
+  isSaved?: boolean;
   onSave: () => void;
   route: RouteHeroData;
 };
 
-export function RouteHero({ onBack, onSave, route }: RouteHeroProps) {
+export function RouteHero({ isSaved = false, onSave, route }: RouteHeroProps) {
   return (
     <header className={styles.hero}>
-      <div className={styles['hero-toolbar']}>
-        <button
-          aria-label="Back to home search"
-          className={styles['icon-button']}
-          type="button"
-          onClick={onBack}
-        >
-          <ArrowLeft aria-hidden="true" />
-        </button>
+      <h1 className={styles['sr-only']}>
+        {route.departure.station} to {route.arrival.station}
+      </h1>
 
-        {route.eyebrow ? <p className={styles.eyebrow}>{route.eyebrow}</p> : null}
-      </div>
+      {route.eyebrow ? (
+        <div className={styles['hero-toolbar']}>
+          <p className={styles.eyebrow}>{route.eyebrow}</p>
+        </div>
+      ) : null}
 
       <div className={styles['hero-image-wrap']}>
         <img src={germanMap} alt="" className={styles['hero-image']} />
@@ -45,7 +42,7 @@ export function RouteHero({ onBack, onSave, route }: RouteHeroProps) {
           </defs>
 
           <path
-            className={styles['route-line']}
+            className={`${styles['route-line']} ${styles['route-desktop-shape']}`}
             d="M 30 360 Q 300 180 570 230"
             fill="none"
             stroke="#00ffff"
@@ -54,9 +51,26 @@ export function RouteHero({ onBack, onSave, route }: RouteHeroProps) {
             filter="url(#routeGlow)"
           />
 
-          <circle cx="30" cy="360" r="5" fill="#ffffff" filter="url(#routeGlow)" />
+          <path
+            className={`${styles['route-line']} ${styles['route-mobile-shape']}`}
+            d="M 155 402 Q 300 248 445 294"
+            fill="none"
+            stroke="#00ffff"
+            strokeWidth="3"
+            strokeLinecap="round"
+            filter="url(#routeGlow)"
+          />
+
           <circle
-            className={styles['pulse-ring']}
+            className={styles['route-desktop-shape']}
+            cx="30"
+            cy="360"
+            r="5"
+            fill="#ffffff"
+            filter="url(#routeGlow)"
+          />
+          <circle
+            className={`${styles['pulse-ring']} ${styles['route-desktop-shape']}`}
             cx="30"
             cy="360"
             r="5"
@@ -65,12 +79,55 @@ export function RouteHero({ onBack, onSave, route }: RouteHeroProps) {
             strokeWidth="2"
           />
 
-          <circle cx="570" cy="230" r="5" fill="#ffffff" filter="url(#routeGlow)" />
           <circle
-            id="berlin-pulse"
-            className={styles['pulse-ring']}
+            className={styles['route-mobile-shape']}
+            cx="155"
+            cy="402"
+            r="5"
+            fill="#ffffff"
+            filter="url(#routeGlow)"
+          />
+          <circle
+            className={`${styles['pulse-ring']} ${styles['route-mobile-shape']}`}
+            cx="155"
+            cy="402"
+            r="5"
+            fill="none"
+            stroke="#00ffff"
+            strokeWidth="2"
+          />
+
+          <circle
+            className={styles['route-desktop-shape']}
             cx="570"
             cy="230"
+            r="5"
+            fill="#ffffff"
+            filter="url(#routeGlow)"
+          />
+          <circle
+            id="berlin-pulse"
+            className={`${styles['pulse-ring']} ${styles['route-desktop-shape']}`}
+            cx="570"
+            cy="230"
+            r="5"
+            fill="none"
+            stroke="#00ffff"
+            strokeWidth="2"
+          />
+
+          <circle
+            className={styles['route-mobile-shape']}
+            cx="445"
+            cy="294"
+            r="5"
+            fill="#ffffff"
+            filter="url(#routeGlow)"
+          />
+          <circle
+            className={`${styles['pulse-ring']} ${styles['route-mobile-shape']}`}
+            cx="445"
+            cy="294"
             r="5"
             fill="none"
             stroke="#00ffff"
@@ -79,11 +136,12 @@ export function RouteHero({ onBack, onSave, route }: RouteHeroProps) {
         </svg>
 
         <div className={styles['hero-image-actions']}>
-          <button aria-label="Share route" className={styles['icon-button']} type="button">
+          <button aria-label="Share route" className={styles['icon-button']} disabled type="button">
             <Share2 aria-hidden="true" />
           </button>
           <button
             aria-label="Save route"
+            aria-pressed={isSaved}
             className={styles['icon-button']}
             type="button"
             onClick={onSave}
