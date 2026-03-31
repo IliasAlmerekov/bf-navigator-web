@@ -212,3 +212,29 @@
     border-right-color: var(--color-surface-container-highest);
   }
 }
+
+.route-overview-leaflet-map {
+  font: inherit;
+  background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 100%);
+}
+
+.route-overview-leaflet-map .leaflet-pane.leaflet-tile-pane {
+  filter: saturate(0.78) contrast(1.02);
+}
+
+.route-overview-leaflet-map .leaflet-tooltip {
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 10px;
+  color: #082f49;
+  background: rgb(255, 255, 255, 0.96);
+  box-shadow: 0 10px 24px rgb(8, 47, 73, 0.16);
+}
+
+.route-overview-leaflet-map .leaflet-tooltip::before {
+  display: none;
+}
+
+.route-overview-leaflet-map .leaflet-control-attribution {
+  display: none;
+}

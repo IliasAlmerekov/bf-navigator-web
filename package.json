@@ -33,9 +33,11 @@
   "dependencies": {
     "@tanstack/react-router": "^1.168.3",
     "framer-motion": "^12.38.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.6.0",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.0",
