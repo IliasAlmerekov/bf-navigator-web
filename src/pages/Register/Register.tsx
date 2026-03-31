@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Eye, EyeOff } from 'lucide-react';
-import locationIcon from '../../assets/Home/location.png';
+import openIcon from '../../assets/Onboarding/icons8-open-60.png';
+import trainWindowPhoto from '../../assets/mobile-layout/bahnübergang-generieren-moderne-generierte-ai-291825100.webp';
 import styles from './Register.module.css';
 
 type FormData = {
@@ -302,17 +303,15 @@ export default function Register() {
 
           {/* Hero Section */}
           <section className={styles['hero-section']}>
-            <div
-              className={styles['hero-image-placeholder']}
-              role="img"
-              aria-label="Platzhalter für Bild"
-            >
-              {/* Placeholder für Foto - wird später hinzugefügt */}
-            </div>
+            <img
+              src={trainWindowPhoto}
+              alt="Ausblick aus einem Zugfenster - Barrierefreies Reisen"
+              className={styles['hero-image']}
+            />
 
             <div className={styles['benefit-box']}>
               <div className={styles['benefit-icon']} aria-hidden="true">
-                <img src={locationIcon} alt="" className={styles['benefit-icon-img']} />
+                <img src={openIcon} alt="" className={styles['benefit-icon-img']} />
               </div>
               <div className={styles['benefit-content']}>
                 <h2 className={styles['benefit-title']}>Ihre Reise, Ihre Bedürfnisse.</h2>
@@ -327,7 +326,7 @@ export default function Register() {
 
         {/* Footer */}
         <footer className={styles.footer}>
-          <p className={styles['footer-text']}>© 2024 THE EDITORIAL NAVIGATOR</p>
+          <p className={styles['footer-text']}>© 2026 THE EDITORIAL NAVIGATOR</p>
           <div className={styles['footer-links']}>
             <a href="#datenschutz">Datenschutz</a>
             <a href="#impressum">Impressum</a>
