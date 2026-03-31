@@ -1,7 +1,12 @@
 import { Outlet, useRouterState } from '@tanstack/react-router';
 import AppLayout from '../AppLayout';
 
-const ROUTES_WITHOUT_APP_LAYOUT = new Set(['/login', '/register']);
+const ROUTES_WITHOUT_APP_LAYOUT = new Set([
+  '/login',
+  '/register',
+  '/onboarding',
+  '/onboarding-desktop',
+]);
 
 export default function RootRouteShell() {
   const pathname = useRouterState({

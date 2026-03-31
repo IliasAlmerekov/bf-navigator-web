@@ -10,7 +10,7 @@ type ExpandingSearchDockProps = {
 
 export function ExpandingSearchDock({
   onSearch,
-  placeholder = 'Search...',
+  placeholder = 'Suchen...',
 }: ExpandingSearchDockProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [query, setQuery] = useState('');
@@ -41,7 +41,7 @@ export function ExpandingSearchDock({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             onClick={handleExpand}
-            aria-label="Open search"
+            aria-label="Suche öffnen"
             type="button"
             className={styles.trigger}
           >
@@ -80,7 +80,7 @@ export function ExpandingSearchDock({
                 animate={{ scale: 1 }}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                aria-label="Close search"
+                aria-label="Suche schließen"
                 className={styles['close-btn']}
               >
                 <X aria-hidden="true" className={styles['close-icon']} />

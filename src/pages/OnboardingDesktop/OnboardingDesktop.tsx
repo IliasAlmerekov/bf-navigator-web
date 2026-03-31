@@ -1,50 +1,62 @@
 import { useState } from 'react';
+import { Baby } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
-import styles from './OnboardingDesktop.module.css';
+import {
+  ACCESSIBILITY_PREFERENCES,
+  type AccessibilityPreferenceId,
+} from '../../constants/accessibilityPreferences';
 import wheelChairIcon from '../../assets/Onboarding/icons8-rollstuhl-26.png';
 import lowVisionIcon from '../../assets/Onboarding/icons8-sehschwäche-48.png';
 import hearingIcon from '../../assets/Onboarding/icons8-taub-67.png';
 import limitedMobilityIcon from '../../assets/Onboarding/icons8-zugang-für-blinde-50.png';
 import confirmationIcon from '../../assets/Onboarding/icons8-anerkennung-50.png';
 import trainPhoto from '../../assets/Onboarding/ice taufe europa europe.webp';
+import { storeAccessibilityPreference, storeCompletedOnboarding } from '../../utils/accountStorage';
+import styles from './OnboardingDesktop.module.css';
 
 type MobilityOption = {
-  id: string;
-  title: string;
+  Icon?: typeof Baby;
+  iconSrc?: string;
+  id: AccessibilityPreferenceId;
   subtitle: string;
-  iconSrc: string;
+  title: string;
 };
 
 const mobilityOptions: MobilityOption[] = [
   {
-    id: 'wheelchair',
-    title: 'Rollstuhlzugang',
-    subtitle: 'Routen mit Rampen und Aufzügen',
+    ...ACCESSIBILITY_PREFERENCES[0],
     iconSrc: wheelChairIcon,
   },
   {
-    id: 'vision',
-    title: 'Sehbehinderung',
-    subtitle: 'Taktile Leitsysteme & Ansagen',
+    ...ACCESSIBILITY_PREFERENCES[1],
     iconSrc: lowVisionIcon,
   },
   {
-    id: 'hearing',
-    title: 'Hörbehinderung',
-    subtitle: 'Visuelle Signale & Anzeigen',
+    ...ACCESSIBILITY_PREFERENCES[2],
     iconSrc: hearingIcon,
   },
   {
-    id: 'mobility',
-    title: 'Eingeschränkte Mobilität',
-    subtitle: 'Minimale Stufen und kurze Wege',
+    ...ACCESSIBILITY_PREFERENCES[3],
     iconSrc: limitedMobilityIcon,
+  },
+  {
+    ...ACCESSIBILITY_PREFERENCES[4],
+    Icon: Baby,
   },
 ];
 
 export default function OnboardingDesktop() {
-  const [selectedOptionId, setSelectedOptionId] = useState<string>('vision');
+  const [selectedOptionId, setSelectedOptionId] = useState<AccessibilityPreferenceId>('wheelchair');
   const navigate = useNavigate();
+  const completeOnboardingAndOpenSearch = () => {
+    storeAccessibilityPreference(selectedOptionId);
+    storeCompletedOnboarding();
+    void navigate({ to: '/' });
+  };
+  const skipOnboardingAndOpenSearch = () => {
+    storeCompletedOnboarding();
+    void navigate({ to: '/' });
+  };
 
   return (
     <main className={styles.page}>
@@ -105,7 +117,11 @@ export default function OnboardingDesktop() {
                     onClick={() => setSelectedOptionId(option.id)}
                   >
                     <span className={styles['option-icon']} aria-hidden="true">
-                      <img src={option.iconSrc} alt="" className={styles['option-icon-image']} />
+                      {option.iconSrc ? (
+                        <img src={option.iconSrc} alt="" className={styles['option-icon-image']} />
+                      ) : option.Icon ? (
+                        <option.Icon className={styles['option-icon-image']} />
+                      ) : null}
                     </span>
                     <span className={styles['option-content']}>
                       <span className={styles['option-title']}>{option.title}</span>
@@ -149,7 +165,7 @@ export default function OnboardingDesktop() {
           <button
             type="button"
             className={styles['primary-button']}
-            onClick={() => navigate({ to: '/' })}
+            onClick={completeOnboardingAndOpenSearch}
           >
             Route finden
             <span aria-hidden="true" className={styles['arrow-icon']}>
@@ -157,7 +173,11 @@ export default function OnboardingDesktop() {
             </span>
           </button>
 
-          <button type="button" className={styles['secondary-text-button']}>
+          <button
+            type="button"
+            className={styles['secondary-text-button']}
+            onClick={skipOnboardingAndOpenSearch}
+          >
             Einrichtung überspringen
           </button>
         </article>

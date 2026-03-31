@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import HomeSearch from './HomeSearch';
 
 const mockNavigate = vi.fn();
+const ACCESSIBILITY_PREFERENCE_STORAGE_KEY = 'bf-navigator-accessibility-preference';
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
@@ -50,7 +51,7 @@ function formatLocalIsoDate(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-async function selectStation(fieldLabel: 'From' | 'To', typedValue: string, optionName: RegExp) {
+async function selectStation(fieldLabel: 'Von' | 'Nach', typedValue: string, optionName: RegExp) {
   const input = screen.getAllByRole('combobox', { name: fieldLabel })[0];
 
   fireEvent.focus(input);
@@ -73,11 +74,16 @@ async function selectStation(fieldLabel: 'From' | 'To', typedValue: string, opti
 describe('HomeSearch', () => {
   const fetchMock = vi.mocked(fetch);
 
+  afterEach(() => {
+    cleanup();
+  });
+
   beforeEach(() => {
     fetchMock.mockReset();
     fetchMock.mockResolvedValue(createJsonResponse([]));
     mockNavigate.mockReset();
     mockNavigate.mockResolvedValue(undefined);
+    window.localStorage.removeItem(ACCESSIBILITY_PREFERENCE_STORAGE_KEY);
   });
 
   it('shows station suggestions for a typed city', async () => {
@@ -94,7 +100,7 @@ describe('HomeSearch', () => {
 
     render(<HomeSearch />);
 
-    const fromInput = screen.getAllByRole('combobox', { name: 'From' })[0];
+    const fromInput = screen.getAllByRole('combobox', { name: 'Von' })[0];
 
     fireEvent.focus(fromInput);
     fireEvent.change(fromInput, { target: { value: 'Ham' } });
@@ -120,7 +126,7 @@ describe('HomeSearch', () => {
 
     render(<HomeSearch />);
 
-    const fromInput = screen.getAllByRole('combobox', { name: 'From' })[0] as HTMLInputElement;
+    const fromInput = screen.getAllByRole('combobox', { name: 'Von' })[0] as HTMLInputElement;
 
     fireEvent.focus(fromInput);
     fireEvent.change(fromInput, { target: { value: 'Ham' } });
@@ -145,18 +151,84 @@ describe('HomeSearch', () => {
     expect(timeButtons[0]).toHaveAccessibleName(/09:00/i);
   });
 
+  it('renders the onboarding accessibility preferences and activates the saved selection', () => {
+    window.localStorage.setItem(ACCESSIBILITY_PREFERENCE_STORAGE_KEY, 'hearing');
+
+    render(<HomeSearch />);
+
+    const preferencesRegion = screen.getAllByRole('region', { name: 'Reisepräferenzen' })[0];
+    const preferenceButtons = within(preferencesRegion).getAllByRole('button');
+
+    expect(preferenceButtons).toHaveLength(5);
+    expect(
+      within(preferencesRegion).getByRole('button', { name: 'Rollstuhlzugang' })
+    ).toHaveAttribute('aria-pressed', 'false');
+    expect(
+      within(preferencesRegion).getByRole('button', { name: 'Sehbehinderung' })
+    ).toHaveAttribute('aria-pressed', 'false');
+    expect(
+      within(preferencesRegion).getByRole('button', { name: 'Hörbehinderung' })
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      within(preferencesRegion).getByRole('button', { name: 'Eingeschränkte Mobilität' })
+    ).toHaveAttribute('aria-pressed', 'false');
+    expect(within(preferencesRegion).getByRole('button', { name: 'Kinderwagen' })).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
+
+    expect(
+      within(preferencesRegion).queryByRole('button', { name: 'Rollstuhl' })
+    ).not.toBeInTheDocument();
+    expect(
+      within(preferencesRegion).queryByRole('button', { name: 'Stufenfrei bevorzugen' })
+    ).not.toBeInTheDocument();
+    expect(
+      within(preferencesRegion).queryByRole('button', { name: 'Schweres Gepäck' })
+    ).not.toBeInTheDocument();
+    expect(
+      within(preferencesRegion).queryByRole('button', { name: 'Sehunterstützung' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('lets the user change and clear the active travel preference from home search', () => {
+    window.localStorage.setItem(ACCESSIBILITY_PREFERENCE_STORAGE_KEY, 'hearing');
+
+    render(<HomeSearch />);
+
+    const preferencesRegion = screen.getAllByRole('region', { name: 'Reisepräferenzen' })[0];
+    const hearingButton = within(preferencesRegion).getByRole('button', {
+      name: 'Hörbehinderung',
+    });
+    const strollerButton = within(preferencesRegion).getByRole('button', {
+      name: 'Kinderwagen',
+    });
+
+    fireEvent.click(strollerButton);
+
+    expect(strollerButton).toHaveAttribute('aria-pressed', 'true');
+    expect(hearingButton).toHaveAttribute('aria-pressed', 'false');
+    expect(window.localStorage.getItem(ACCESSIBILITY_PREFERENCE_STORAGE_KEY)).toBe('stroller');
+
+    fireEvent.click(strollerButton);
+
+    expect(strollerButton).toHaveAttribute('aria-pressed', 'false');
+    expect(hearingButton).toHaveAttribute('aria-pressed', 'false');
+    expect(window.localStorage.getItem(ACCESSIBILITY_PREFERENCE_STORAGE_KEY)).toBeNull();
+  });
+
   it('blocks submit and shows errors when origin not selected from autocomplete', async () => {
     render(<HomeSearch />);
 
-    const originInput = screen.getAllByRole('combobox', { name: 'From' })[0];
+    const originInput = screen.getAllByRole('combobox', { name: 'Von' })[0];
     fireEvent.focus(originInput);
     fireEvent.change(originInput, { target: { value: 'Ber' } });
 
-    const submitButton = screen.getAllByRole('button', { name: 'Find Optimal Route' })[0];
+    const submitButton = screen.getAllByRole('button', { name: 'Optimale Route finden' })[0];
     fireEvent.click(submitButton);
 
     expect(
-      await screen.findAllByText('Please select an origin station from the suggestions.')
+      await screen.findAllByText('Bitte wählen Sie einen Startbahnhof aus den Vorschlägen aus.')
     ).not.toHaveLength(0);
   });
 
@@ -164,15 +236,15 @@ describe('HomeSearch', () => {
     fetchMock.mockResolvedValue(createJsonResponse([]));
     render(<HomeSearch />);
 
-    const destInput = screen.getAllByRole('combobox', { name: 'To' })[0];
+    const destInput = screen.getAllByRole('combobox', { name: 'Nach' })[0];
     fireEvent.focus(destInput);
     fireEvent.change(destInput, { target: { value: 'Mun' } });
 
-    const submitButton = screen.getAllByRole('button', { name: 'Find Optimal Route' })[0];
+    const submitButton = screen.getAllByRole('button', { name: 'Optimale Route finden' })[0];
     fireEvent.click(submitButton);
 
     expect(
-      await screen.findAllByText('Please select a destination station from the suggestions.')
+      await screen.findAllByText('Bitte wählen Sie einen Zielbahnhof aus den Vorschlägen aus.')
     ).not.toHaveLength(0);
   });
 
@@ -197,15 +269,15 @@ describe('HomeSearch', () => {
 
     render(<HomeSearch />);
 
-    await selectStation('From', 'Ham', /Hamburg Hbf/i);
-    await selectStation('To', 'Ber', /Berlin Hbf/i);
+    await selectStation('Von', 'Ham', /Hamburg Hbf/i);
+    await selectStation('Nach', 'Ber', /Berlin Hbf/i);
 
-    const submitButton = screen.getAllByRole('button', { name: 'Find Optimal Route' })[0];
+    const submitButton = screen.getAllByRole('button', { name: 'Optimale Route finden' })[0];
     fireEvent.click(submitButton);
 
     await waitFor(() => {
       expect(
-        screen.queryByText('Please select an origin station from the suggestions.')
+        screen.queryByText('Bitte wählen Sie einen Startbahnhof aus den Vorschlägen aus.')
       ).not.toBeInTheDocument();
     });
 
@@ -247,19 +319,20 @@ describe('HomeSearch', () => {
 
     render(<HomeSearch />);
 
-    await selectStation('From', 'Ham', /Hamburg Hbf/i);
-    await selectStation('To', 'Köl', /Köln Hbf/i);
+    await selectStation('Von', 'Ham', /Hamburg Hbf/i);
+    await selectStation('Nach', 'Köl', /Köln Hbf/i);
 
     fireEvent.click(screen.getAllByRole('button', { name: /choose departure date/i })[0]);
     fireEvent.click(screen.getByRole('button', { name: formatCalendarButtonName(selectedDate) }));
     fireEvent.click(screen.getAllByRole('button', { name: /choose departure time/i })[0]);
     fireEvent.click(screen.getByRole('button', { name: '13:45' }));
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Find Optimal Route' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Optimale Route finden' })[0]);
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith({
         search: {
+          accessibilityPreference: '',
           date: formatLocalIsoDate(selectedDate),
           destinationEva: '8000207',
           destinationName: 'Köln Hbf',
@@ -306,6 +379,52 @@ describe('HomeSearch', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('submits the active accessibility preference together with route search params', async () => {
+    fetchMock.mockImplementation(async (input) => {
+      const query = getRequestedQuery(input);
+
+      if (query === 'Ham*') {
+        return createJsonResponse([
+          { city: 'Hamburg', evaNumber: 8002549, name: 'Hamburg Hbf', number: 1 },
+        ]);
+      }
+
+      if (query === 'Köl*') {
+        return createJsonResponse([
+          { city: 'Köln', evaNumber: 8000207, name: 'Köln Hbf', number: 1 },
+        ]);
+      }
+
+      return createJsonResponse([]);
+    });
+
+    render(<HomeSearch />);
+
+    const preferencesRegion = screen.getAllByRole('region', { name: 'Reisepräferenzen' })[0];
+
+    fireEvent.click(
+      within(preferencesRegion).getByRole('button', { name: 'Eingeschränkte Mobilität' })
+    );
+
+    await selectStation('Von', 'Ham', /Hamburg Hbf/i);
+    await selectStation('Nach', 'Köl', /Köln Hbf/i);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Optimale Route finden' })[0]);
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({
+        search: expect.objectContaining({
+          accessibilityPreference: 'mobility',
+          destinationEva: '8000207',
+          destinationName: 'Köln Hbf',
+          originEva: '8002549',
+          originName: 'Hamburg Hbf',
+        }),
+        to: '/train-search-results',
+      });
+    });
+  });
+
   it('shows an immediate loading announcement and disables search buttons while submit is in progress', async () => {
     const navigation = createDeferred<void>();
 
@@ -330,15 +449,15 @@ describe('HomeSearch', () => {
 
     render(<HomeSearch />);
 
-    await selectStation('From', 'Ham', /Hamburg Hbf/i);
-    await selectStation('To', 'Köl', /Köln Hbf/i);
+    await selectStation('Von', 'Ham', /Hamburg Hbf/i);
+    await selectStation('Nach', 'Köl', /Köln Hbf/i);
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Find Optimal Route' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Optimale Route finden' })[0]);
 
-    const loadingAnnouncement = screen.getByText(/loading train results/i);
+    const loadingAnnouncement = screen.getByText(/zugverbindungen werden geladen/i);
     expect(loadingAnnouncement).toHaveAttribute('aria-live', 'polite');
-    expect(screen.getAllByRole('button', { name: 'Find Optimal Route' })[0]).toBeDisabled();
-    expect(screen.getAllByRole('button', { name: 'Find route' })[0]).toBeDisabled();
+    expect(screen.getAllByRole('button', { name: 'Optimale Route finden' })[0]).toBeDisabled();
+    expect(screen.getAllByRole('button', { name: 'Route suchen' })[0]).toBeDisabled();
 
     navigation.resolve();
   });
@@ -367,10 +486,10 @@ describe('HomeSearch', () => {
 
     render(<HomeSearch />);
 
-    await selectStation('From', 'Ham', /Hamburg Hbf/i);
-    await selectStation('To', 'Köl', /Köln Hbf/i);
+    await selectStation('Von', 'Ham', /Hamburg Hbf/i);
+    await selectStation('Nach', 'Köl', /Köln Hbf/i);
 
-    const primarySearchButton = screen.getAllByRole('button', { name: 'Find Optimal Route' })[0];
+    const primarySearchButton = screen.getAllByRole('button', { name: 'Optimale Route finden' })[0];
 
     fireEvent.click(primarySearchButton);
     fireEvent.click(primarySearchButton);

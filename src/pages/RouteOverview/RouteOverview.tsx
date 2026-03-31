@@ -50,6 +50,7 @@ export default function RouteOverview() {
                 className={styles['action-button']}
                 to="/train-search-results"
                 search={{
+                  accessibilityPreference: '',
                   originEva: '',
                   originName: '',
                   destinationEva: '',
