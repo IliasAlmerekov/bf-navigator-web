@@ -1,7 +1,8 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { Bell, Bookmark, House, LifeBuoy, Search } from 'lucide-react';
+import { Bell, Bookmark, House, LifeBuoy } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { ExpandingSearchDock } from '../ui/ExpandingSearchDock';
 import styles from './AppLayout.module.css';
 
 type NavItem = {
@@ -75,9 +76,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className={styles['top-nav-actions']}>
-          <button aria-label="Search" className={styles['top-nav-button']} type="button">
-            <Search aria-hidden="true" />
-          </button>
+          <ExpandingSearchDock />
           <button aria-label="Support" className={styles['top-nav-button']} type="button">
             <LifeBuoy aria-hidden="true" />
           </button>
