@@ -3,6 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import openIcon from '../../assets/Onboarding/icons8-open-60.png';
 import trainWindowPhoto from '../../assets/Onboarding/ice taufe europa europe.webp';
+import { storeCompletedOnboarding } from '../../utils/accountStorage';
 import styles from './Register.module.css';
 
 type FormData = {
@@ -95,7 +96,7 @@ export default function Register() {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // On success, navigate to login
+      storeCompletedOnboarding();
       await navigate({ to: '/login' });
     } catch (error) {
       console.error('Registration failed:', error);
