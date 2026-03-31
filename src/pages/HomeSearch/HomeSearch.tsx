@@ -286,66 +286,70 @@ export default function HomeSearch() {
           ) : null}
 
           <div className={styles['mobile-search-grid']}>
-            <StationAutocompleteField
-              errorId="origin-error-mobile"
-              hasSearched={originSuggestions.hasSearched}
-              iconAlt=""
-              iconSrc={locationIconImage}
-              inputId="origin-mobile"
-              inputName="origin-mobile"
-              invalid={formErrors.origin !== null}
-              isActive={activeAutocompleteId === 'origin-mobile'}
-              label="Von"
-              loading={originSuggestions.loading}
-              onActiveChange={(nextActive) => {
-                handleActiveAutocompleteChange('origin', 'origin-mobile', nextActive);
-              }}
-              onInputChange={(value) => {
-                handleFieldInputChange('origin', value);
-              }}
-              onStationSelect={(station) => {
-                handleStationSelect('origin', station);
-              }}
-              suggestions={originSuggestions.suggestions}
-              value={routeState.origin.input}
-              variant="mobile"
-              error={originSuggestions.error}
-            />
-            {formErrors.origin ? (
-              <p className={styles['field-error']} id="origin-error-mobile" role="alert">
-                {formErrors.origin}
-              </p>
-            ) : null}
-            <StationAutocompleteField
-              errorId="destination-error-mobile"
-              hasSearched={destinationSuggestions.hasSearched}
-              iconAlt=""
-              iconSrc={locationIconImage}
-              inputId="destination-mobile"
-              inputName="destination-mobile"
-              invalid={formErrors.destination !== null}
-              isActive={activeAutocompleteId === 'destination-mobile'}
-              label="Nach"
-              loading={destinationSuggestions.loading}
-              onActiveChange={(nextActive) => {
-                handleActiveAutocompleteChange('destination', 'destination-mobile', nextActive);
-              }}
-              onInputChange={(value) => {
-                handleFieldInputChange('destination', value);
-              }}
-              onStationSelect={(station) => {
-                handleStationSelect('destination', station);
-              }}
-              suggestions={destinationSuggestions.suggestions}
-              value={routeState.destination.input}
-              variant="mobile"
-              error={destinationSuggestions.error}
-            />
-            {formErrors.destination ? (
-              <p className={styles['field-error']} id="destination-error-mobile" role="alert">
-                {formErrors.destination}
-              </p>
-            ) : null}
+            <div className={styles['field-wrap']}>
+              <StationAutocompleteField
+                errorId="origin-error-mobile"
+                hasSearched={originSuggestions.hasSearched}
+                iconAlt=""
+                iconSrc={locationIconImage}
+                inputId="origin-mobile"
+                inputName="origin-mobile"
+                invalid={formErrors.origin !== null}
+                isActive={activeAutocompleteId === 'origin-mobile'}
+                label="Von"
+                loading={originSuggestions.loading}
+                onActiveChange={(nextActive) => {
+                  handleActiveAutocompleteChange('origin', 'origin-mobile', nextActive);
+                }}
+                onInputChange={(value) => {
+                  handleFieldInputChange('origin', value);
+                }}
+                onStationSelect={(station) => {
+                  handleStationSelect('origin', station);
+                }}
+                suggestions={originSuggestions.suggestions}
+                value={routeState.origin.input}
+                variant="mobile"
+                error={originSuggestions.error}
+              />
+              {formErrors.origin ? (
+                <p className={styles['field-error']} id="origin-error-mobile" role="alert">
+                  {formErrors.origin}
+                </p>
+              ) : null}
+            </div>
+            <div className={styles['field-wrap']}>
+              <StationAutocompleteField
+                errorId="destination-error-mobile"
+                hasSearched={destinationSuggestions.hasSearched}
+                iconAlt=""
+                iconSrc={locationIconImage}
+                inputId="destination-mobile"
+                inputName="destination-mobile"
+                invalid={formErrors.destination !== null}
+                isActive={activeAutocompleteId === 'destination-mobile'}
+                label="Nach"
+                loading={destinationSuggestions.loading}
+                onActiveChange={(nextActive) => {
+                  handleActiveAutocompleteChange('destination', 'destination-mobile', nextActive);
+                }}
+                onInputChange={(value) => {
+                  handleFieldInputChange('destination', value);
+                }}
+                onStationSelect={(station) => {
+                  handleStationSelect('destination', station);
+                }}
+                suggestions={destinationSuggestions.suggestions}
+                value={routeState.destination.input}
+                variant="mobile"
+                error={destinationSuggestions.error}
+              />
+              {formErrors.destination ? (
+                <p className={styles['field-error']} id="destination-error-mobile" role="alert">
+                  {formErrors.destination}
+                </p>
+              ) : null}
+            </div>
 
             <div className={styles['date-time-wrapper']}>
               <CalendarDatePicker
@@ -385,65 +389,69 @@ export default function HomeSearch() {
           </div>
 
           <div className={styles['desktop-search-grid']}>
-            <StationAutocompleteField
-              errorId="origin-error-desktop"
-              hasSearched={originSuggestions.hasSearched}
-              iconAlt=""
-              iconSrc={locationIconImage}
-              inputId="origin-desktop"
-              inputName="origin-desktop"
-              invalid={formErrors.origin !== null}
-              isActive={activeAutocompleteId === 'origin-desktop'}
-              label="Von"
-              loading={originSuggestions.loading}
-              onActiveChange={(nextActive) => {
-                handleActiveAutocompleteChange('origin', 'origin-desktop', nextActive);
-              }}
-              onInputChange={(value) => {
-                handleFieldInputChange('origin', value);
-              }}
-              onStationSelect={(station) => {
-                handleStationSelect('origin', station);
-              }}
-              suggestions={originSuggestions.suggestions}
-              value={routeState.origin.input}
-              variant="desktop"
-              error={originSuggestions.error}
-            />
-            {formErrors.origin ? (
-              <p className={styles['field-error']} id="origin-error-desktop" role="alert">
-                {formErrors.origin}
-              </p>
-            ) : null}
-            <StationAutocompleteField
-              Icon={TrainFront}
-              errorId="destination-error-desktop"
-              hasSearched={destinationSuggestions.hasSearched}
-              inputId="destination-desktop"
-              inputName="destination-desktop"
-              invalid={formErrors.destination !== null}
-              isActive={activeAutocompleteId === 'destination-desktop'}
-              label="Nach"
-              loading={destinationSuggestions.loading}
-              onActiveChange={(nextActive) => {
-                handleActiveAutocompleteChange('destination', 'destination-desktop', nextActive);
-              }}
-              onInputChange={(value) => {
-                handleFieldInputChange('destination', value);
-              }}
-              onStationSelect={(station) => {
-                handleStationSelect('destination', station);
-              }}
-              suggestions={destinationSuggestions.suggestions}
-              value={routeState.destination.input}
-              variant="desktop"
-              error={destinationSuggestions.error}
-            />
-            {formErrors.destination ? (
-              <p className={styles['field-error']} id="destination-error-desktop" role="alert">
-                {formErrors.destination}
-              </p>
-            ) : null}
+            <div className={styles['field-wrap']}>
+              <StationAutocompleteField
+                errorId="origin-error-desktop"
+                hasSearched={originSuggestions.hasSearched}
+                iconAlt=""
+                iconSrc={locationIconImage}
+                inputId="origin-desktop"
+                inputName="origin-desktop"
+                invalid={formErrors.origin !== null}
+                isActive={activeAutocompleteId === 'origin-desktop'}
+                label="Von"
+                loading={originSuggestions.loading}
+                onActiveChange={(nextActive) => {
+                  handleActiveAutocompleteChange('origin', 'origin-desktop', nextActive);
+                }}
+                onInputChange={(value) => {
+                  handleFieldInputChange('origin', value);
+                }}
+                onStationSelect={(station) => {
+                  handleStationSelect('origin', station);
+                }}
+                suggestions={originSuggestions.suggestions}
+                value={routeState.origin.input}
+                variant="desktop"
+                error={originSuggestions.error}
+              />
+              {formErrors.origin ? (
+                <p className={styles['field-error']} id="origin-error-desktop" role="alert">
+                  {formErrors.origin}
+                </p>
+              ) : null}
+            </div>
+            <div className={styles['field-wrap']}>
+              <StationAutocompleteField
+                Icon={TrainFront}
+                errorId="destination-error-desktop"
+                hasSearched={destinationSuggestions.hasSearched}
+                inputId="destination-desktop"
+                inputName="destination-desktop"
+                invalid={formErrors.destination !== null}
+                isActive={activeAutocompleteId === 'destination-desktop'}
+                label="Nach"
+                loading={destinationSuggestions.loading}
+                onActiveChange={(nextActive) => {
+                  handleActiveAutocompleteChange('destination', 'destination-desktop', nextActive);
+                }}
+                onInputChange={(value) => {
+                  handleFieldInputChange('destination', value);
+                }}
+                onStationSelect={(station) => {
+                  handleStationSelect('destination', station);
+                }}
+                suggestions={destinationSuggestions.suggestions}
+                value={routeState.destination.input}
+                variant="desktop"
+                error={destinationSuggestions.error}
+              />
+              {formErrors.destination ? (
+                <p className={styles['field-error']} id="destination-error-desktop" role="alert">
+                  {formErrors.destination}
+                </p>
+              ) : null}
+            </div>
 
             <div className={styles['date-time-wrapper']}>
               <CalendarDatePicker
