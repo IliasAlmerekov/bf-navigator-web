@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Eye, EyeOff } from 'lucide-react';
 import openIcon from '../../assets/Onboarding/icons8-open-60.png';
-import trainWindowPhoto from '../../assets/mobile-layout/bahnübergang-generieren-moderne-generierte-ai-291825100.webp';
+import trainWindowPhoto from '../../assets/Onboarding/ice taufe europa europe.webp';
 import styles from './Register.module.css';
 
 type FormData = {
