@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { AlertTriangle } from 'lucide-react';
-import { ROUTE_HERO, ROUTE_STATION_SERVICES, ROUTE_TIMELINE } from './constants';
+import { ROUTE_HERO, ROUTE_STATION_SERVICES_PANEL, ROUTE_TIMELINE } from './constants';
 import { JourneyTimeline } from './components/JourneyTimeline';
 import { MapNavigationCard } from './components/MapNavigationCard';
 import { RouteHero } from './components/RouteHero';
+import { StationServicesPanel } from './components/StationServicesPanel';
 import styles from './RouteOverview.module.css';
 
 export default function RouteOverview() {
@@ -64,61 +64,7 @@ export default function RouteOverview() {
             </div>
           </section>
 
-          <section
-            aria-labelledby="station-services-heading"
-            className={styles['station-services-below']}
-          >
-            <h2 id="station-services-heading">Station services</h2>
-
-            <ul className={styles['station-services-station-list']} role="list">
-              {ROUTE_STATION_SERVICES.map((station) => (
-                <li key={station.stationId}>
-                  <article className={styles['station-service-card']}>
-                    <h3 className={styles['station-service-station-name']}>
-                      {station.stationName}
-                    </h3>
-
-                    {station.elevatorsStatus !== 'available' && (
-                      <p className={styles['station-warning-row']}>
-                        <AlertTriangle aria-hidden="true" />
-                        <span>
-                          {'Lift out of service'}
-                          {station.elevatorsGleis ? ` \u2014 ${station.elevatorsGleis}` : ''}
-                        </span>
-                      </p>
-                    )}
-
-                    <ul className={styles['station-services-list']} role="list">
-                      {station.amenities.map((amenity) => {
-                        const AmenityIcon = amenity.icon;
-                        const chipLabel =
-                          amenity.serviceStatus === 'unavailable' && amenity.gleis
-                            ? `${amenity.label} \u2014 ${amenity.gleis}`
-                            : amenity.label;
-                        return (
-                          <li
-                            className={styles['station-service-chip']}
-                            data-status={amenity.serviceStatus ?? 'available'}
-                            key={`${station.stationId}-${amenity.label}`}
-                          >
-                            <span aria-hidden="true" className={styles['station-service-dot']} />
-                            <AmenityIcon
-                              aria-hidden="true"
-                              className={styles['station-service-icon']}
-                            />
-                            <span>{chipLabel}</span>
-                            {amenity.serviceStatus === 'unavailable' && (
-                              <span className={styles['sr-only']}>(unavailable)</span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </article>
-                </li>
-              ))}
-            </ul>
-          </section>
+          <StationServicesPanel panel={ROUTE_STATION_SERVICES_PANEL} />
         </div>
 
         <div className={styles['detail-column']}>

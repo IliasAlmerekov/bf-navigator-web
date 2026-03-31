@@ -1,0 +1,104 @@
+.root {
+  position: relative;
+}
+
+/* Collapsed trigger button */
+.trigger {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  color: var(--color-text-strong);
+  background: rgb(255, 255, 255, 0.72);
+  box-shadow:
+    0 10px 18px rgb(25, 28, 29, 0.04),
+    inset 0 1px 0 rgb(255, 255, 255, 0.92);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.trigger:hover {
+  background: var(--color-surface-container);
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Expanded form */
+.form {
+  position: relative;
+  overflow: hidden;
+}
+
+.input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-outline-variant);
+  background: var(--color-glass-surface);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+
+.input-icon {
+  flex-shrink: 0;
+  margin-left: 14px;
+  width: 14px;
+  height: 14px;
+  color: var(--color-text);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding-right: 12px;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--color-text-strong);
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--color-text);
+  opacity: 0.65;
+}
+
+/* Remove the search (×) icon that browsers add to type="search" */
+.input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.close-btn {
+  flex-shrink: 0;
+  margin-right: 6px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  color: var(--color-text);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.close-btn:hover {
+  background: var(--color-surface-container);
+}
+
+.close-icon {
+  width: 14px;
+  height: 14px;
+}

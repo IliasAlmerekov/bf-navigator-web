@@ -1,78 +1,98 @@
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Navigation, ZoomIn, ZoomOut } from 'lucide-react';
-import germanMap from '../../../assets/RouteOverview/german.png';
+import { ROUTE_OVERVIEW_MAP_DATA } from '../mapData';
+import { RouteMapCanvas } from './RouteMapCanvas';
 import styles from '../RouteOverview.module.css';
 
 export function MapNavigationCard() {
+  const [zoom, setZoom] = useState(ROUTE_OVERVIEW_MAP_DATA.zoom);
+  const facilityMarkers = ROUTE_OVERVIEW_MAP_DATA.markers.filter(
+    (marker) => marker.kind === 'facility'
+  );
+
+  function handleZoomChange(delta: number) {
+    setZoom((currentZoom) =>
+      Math.min(
+        ROUTE_OVERVIEW_MAP_DATA.maxZoom,
+        Math.max(ROUTE_OVERVIEW_MAP_DATA.minZoom, currentZoom + delta)
+      )
+    );
+  }
+
   return (
-    <div className={styles['map-nav-card']}>
+    <section
+      aria-describedby="route-map-copy route-map-attribution"
+      aria-labelledby="route-map-heading"
+      className={styles['map-nav-card']}
+    >
+      <div className={styles['map-nav-header']}>
+        <p className={styles['map-nav-kicker']}>Route preview</p>
+        <h2 className={styles['map-nav-heading']} id="route-map-heading">
+          Live map ready for backend coordinates
+        </h2>
+        <p className={styles['map-nav-copy']} id="route-map-copy">
+          The map uses a dedicated route DTO, so station and facility coordinates can later come
+          directly from the backend without changing the UI layer.
+        </p>
+        <p className={styles['map-nav-hint']}>
+          Drag with mouse or one finger. Use the wheel or pinch gesture to zoom.
+        </p>
+      </div>
+
       <div className={styles['map-nav-map-wrap']}>
-        <img src={germanMap} alt="" className={styles['hero-image']} />
-
-        <svg
-          aria-hidden="true"
-          className={styles['route-svg']}
-          viewBox="0 0 600 700"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <filter id="mapNavRouteGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="4" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          <path
-            className={styles['route-line']}
-            d="M 30 360 Q 300 180 570 230"
-            fill="none"
-            stroke="#00ffff"
-            strokeWidth="3"
-            strokeLinecap="round"
-            filter="url(#mapNavRouteGlow)"
-          />
-
-          <circle cx="30" cy="360" r="5" fill="#ffffff" filter="url(#mapNavRouteGlow)" />
-          <circle
-            className={styles['pulse-ring']}
-            cx="30"
-            cy="360"
-            r="5"
-            fill="none"
-            stroke="#00ffff"
-            strokeWidth="2"
-          />
-
-          <circle cx="570" cy="230" r="5" fill="#ffffff" filter="url(#mapNavRouteGlow)" />
-          <circle
-            id="map-nav-berlin-pulse"
-            className={styles['pulse-ring']}
-            cx="570"
-            cy="230"
-            r="5"
-            fill="none"
-            stroke="#00ffff"
-            strokeWidth="2"
-          />
-        </svg>
+        <RouteMapCanvas mapData={ROUTE_OVERVIEW_MAP_DATA} zoom={zoom} />
 
         <div className={styles['map-nav-controls']}>
-          <span aria-hidden="true" className={styles['map-nav-zoom-btn']}>
+          <button
+            aria-label="Zoom in route preview"
+            className={styles['map-nav-zoom-btn']}
+            disabled={zoom >= ROUTE_OVERVIEW_MAP_DATA.maxZoom}
+            type="button"
+            onClick={() => handleZoomChange(1)}
+          >
             <ZoomIn className={styles['map-nav-zoom-icon']} />
-          </span>
-          <span aria-hidden="true" className={styles['map-nav-zoom-btn']}>
+          </button>
+          <button
+            aria-label="Zoom out route preview"
+            className={styles['map-nav-zoom-btn']}
+            disabled={zoom <= ROUTE_OVERVIEW_MAP_DATA.minZoom}
+            type="button"
+            onClick={() => handleZoomChange(-1)}
+          >
             <ZoomOut className={styles['map-nav-zoom-icon']} />
-          </span>
+          </button>
         </div>
       </div>
+
+      <ul
+        aria-label="Mapped facilities preview"
+        className={styles['map-nav-facilities']}
+        role="list"
+      >
+        {facilityMarkers.map((marker) => (
+          <li className={styles['map-nav-facility-item']} key={marker.id}>
+            <span
+              aria-hidden="true"
+              className={styles['map-nav-facility-status']}
+              data-status={marker.status}
+            />
+            <div className={styles['map-nav-facility-copy']}>
+              <span className={styles['map-nav-facility-title']}>{marker.label}</span>
+              <span className={styles['map-nav-facility-description']}>{marker.description}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <p className={styles['map-nav-attribution']} id="route-map-attribution">
+        Map data © OpenStreetMap contributors
+      </p>
 
       <Link to="/live-navigation" className={styles['live-nav-button']}>
         <Navigation aria-hidden="true" />
         <span>Live Navigation</span>
       </Link>
-    </div>
+    </section>
   );
 }

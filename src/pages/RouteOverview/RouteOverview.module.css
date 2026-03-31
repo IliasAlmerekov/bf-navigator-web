@@ -321,88 +321,6 @@
   color: #7a8298;
 }
 
-.station-services-section {
-  display: grid;
-  gap: 10px;
-  padding: 16px;
-  border-radius: 16px;
-  border: 1px solid #dbe1ef;
-  background: #fff;
-}
-
-.station-services-station-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 10px;
-}
-
-.station-service-card {
-  display: grid;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 12px;
-  background: var(--color-surface-container-low);
-}
-
-.station-service-station-name {
-  margin: 0;
-  font-size: 0.84rem;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--color-text-strong);
-}
-
-.station-services-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.station-service-chip {
-  min-height: 32px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--color-text-strong);
-  background: #fff;
-  border: 1px solid #dbe1ef;
-}
-
-.station-service-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #16a34a;
-}
-
-.station-service-icon {
-  width: 14px;
-  height: 14px;
-  color: var(--color-primary-container);
-}
-
-.station-service-chip[data-status='available'] .station-service-dot {
-  background: #16a34a;
-}
-
-.station-service-chip[data-status='limited'] .station-service-dot {
-  background: #d97706;
-}
-
-.station-service-chip[data-status='unavailable'] .station-service-dot {
-  background: #dc2626;
-}
-
 .timeline-column {
   display: grid;
   gap: 16px;
@@ -700,15 +618,61 @@
   padding: 16px;
   border-radius: 16px;
   color: #fff;
-  background: linear-gradient(180deg, #0f3db8 0%, #072a8f 100%);
+  background:
+    radial-gradient(circle at top left, rgb(110, 231, 249, 0.22), transparent 32%),
+    linear-gradient(180deg, #0f3db8 0%, #072a8f 100%);
   box-shadow: 0 20px 34px rgb(0, 32, 104, 0.26);
+}
+
+.map-nav-header {
+  display: grid;
+  gap: 6px;
+}
+
+.map-nav-kicker {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(224, 231, 255, 0.88);
+}
+
+.map-nav-heading {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.2;
+  color: #fff;
+}
+
+.map-nav-copy {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgb(224, 231, 255, 0.86);
+}
+
+.map-nav-hint {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: rgb(191, 219, 254, 0.88);
 }
 
 .map-nav-map-wrap {
   position: relative;
   overflow: hidden;
   border-radius: 12px;
-  min-height: 160px;
+  min-height: 220px;
+  border: 1px solid rgb(191, 219, 254, 0.3);
+  background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 100%);
+}
+
+.leaflet-map {
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
 }
 
 .map-nav-controls {
@@ -723,6 +687,7 @@
 .map-nav-zoom-btn {
   width: 44px;
   height: 44px;
+  border: 0;
   border-radius: 16px;
   display: grid;
   place-items: center;
@@ -731,11 +696,88 @@
   box-shadow:
     0 10px 20px rgb(17, 24, 39, 0.08),
     inset 0 1px 0 rgb(255, 255, 255, 0.96);
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.map-nav-zoom-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.map-nav-zoom-btn:disabled {
+  opacity: 0.52;
+}
+
+.map-nav-zoom-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
 }
 
 .map-nav-zoom-icon {
   width: 18px;
   height: 18px;
+}
+
+.map-nav-facilities {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.map-nav-facility-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgb(255, 255, 255, 0.1);
+}
+
+.map-nav-facility-status {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  background: #e2e8f0;
+}
+
+.map-nav-facility-status[data-status='available'] {
+  background: #86efac;
+}
+
+.map-nav-facility-status[data-status='limited'] {
+  background: #fdba74;
+}
+
+.map-nav-facility-status[data-status='unavailable'] {
+  background: #fda4af;
+}
+
+.map-nav-facility-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.map-nav-facility-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #fff;
+}
+
+.map-nav-facility-description,
+.map-nav-attribution {
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: rgb(224, 231, 255, 0.82);
+}
+
+.map-nav-attribution {
+  margin: -2px 0 0;
 }
 
 .live-nav-button {
@@ -771,11 +813,25 @@
 
 .station-services-below {
   display: grid;
-  gap: 10px;
+  gap: 16px;
   padding: 16px;
-  border-radius: 16px;
+  border-radius: 24px;
   border: 1px solid #dbe1ef;
   background: #fff;
+  box-shadow: var(--shadow-soft);
+}
+
+.station-services-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.station-services-title-wrap {
+  display: grid;
+  gap: 4px;
 }
 
 .station-services-below h2 {
@@ -785,21 +841,287 @@
   color: #0f172a;
 }
 
-.station-warning-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
+.station-services-subtitle,
+.station-services-updated,
+.live-equipment-copy,
+.elevator-status-description,
+.elevator-status-route-text,
+.station-status-summary {
+  margin: 0;
   font-size: 0.78rem;
-  font-weight: 700;
-  color: #dc2626;
+  line-height: 1.5;
+  color: #5b6788;
 }
 
-.station-warning-row svg {
-  width: 16px;
-  height: 16px;
+.station-services-subtitle {
+  font-weight: 600;
+  color: #44506e;
+}
+
+.station-services-updated {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.elevator-status-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  background: #fff;
+  border: 1px solid #dbe1ef;
+  box-shadow: inset 0 0 0 1px rgb(255, 255, 255, 0.4);
+}
+
+.elevator-status-card[data-status='available'] {
+  border-color: #86efac;
+}
+
+.elevator-status-card[data-status='limited'] {
+  border-color: #fdba74;
+}
+
+.elevator-status-card[data-status='out_of_service'] {
+  border-color: #fda4af;
+}
+
+.equipment-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.elevator-status-icon-wrap,
+.station-status-icon-wrap {
+  display: grid;
+  place-items: center;
   flex-shrink: 0;
-  color: #dc2626;
+  border-radius: 16px;
+}
+
+.elevator-status-icon-wrap {
+  width: 48px;
+  height: 48px;
+}
+
+.elevator-status-icon-wrap[data-status='available'] {
+  color: #166534;
+  background: rgb(22, 163, 74, 0.14);
+}
+
+.elevator-status-icon-wrap[data-status='limited'] {
+  color: #b45309;
+  background: rgb(217, 119, 6, 0.14);
+}
+
+.elevator-status-icon-wrap[data-status='out_of_service'] {
+  color: #b91c1c;
+  background: rgb(220, 38, 38, 0.12);
+}
+
+.elevator-status-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.equipment-card-units {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #dbe1ef;
+}
+
+.equipment-card-copy {
+  display: grid;
+  gap: 10px;
+}
+
+.elevator-status-kicker,
+.elevator-status-route-label {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7a8298;
+}
+
+.elevator-status-title {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  color: #111827;
+}
+
+.equipment-card-metrics {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.equipment-card-metric {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.equipment-card-metric dt,
+.equipment-card-metric dd {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.equipment-card-metric dt {
+  color: #5b6788;
+}
+
+.equipment-card-metric dd {
+  font-weight: 700;
+  text-align: right;
+}
+
+.equipment-card-value-available {
+  color: #15803d;
+}
+
+.equipment-card-value-unavailable {
+  color: #b91c1c;
+}
+
+.elevator-status-route {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgb(255, 255, 255, 0.64);
+}
+
+.elevator-status-route-icon-wrap {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 12px;
+  color: var(--color-primary-container);
+  background: rgb(0, 51, 153, 0.08);
+}
+
+.elevator-status-route-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.elevator-status-route-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.live-equipment-heading-row {
+  display: grid;
+  gap: 4px;
+}
+
+.live-equipment-heading {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.2;
+  color: #111827;
+}
+
+.station-services-grid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.station-status-card {
+  height: 100%;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow:
+    0 16px 32px rgb(15, 23, 42, 0.08),
+    inset 0 0 0 1px rgb(255, 255, 255, 0.4);
+}
+
+.station-status-card[data-status='available'] {
+  box-shadow:
+    0 16px 32px rgb(15, 23, 42, 0.08),
+    inset 0 0 0 1px rgb(255, 255, 255, 0.4);
+}
+
+.station-status-card[data-status='limited'] {
+  box-shadow:
+    0 16px 32px rgb(15, 23, 42, 0.08),
+    inset 0 0 0 1px rgb(255, 255, 255, 0.4);
+}
+
+.station-status-card[data-status='unavailable'] {
+  box-shadow:
+    0 16px 32px rgb(15, 23, 42, 0.08),
+    inset 0 0 0 1px rgb(255, 255, 255, 0.4);
+}
+
+.station-status-icon-wrap {
+  width: 42px;
+  height: 42px;
+}
+
+.station-status-icon-wrap[data-status='available'] {
+  color: #166534;
+}
+
+.station-status-icon-wrap[data-status='limited'] {
+  color: #b45309;
+}
+
+.station-status-icon-wrap[data-status='unavailable'] {
+  color: #b91c1c;
+}
+
+.station-status-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.station-status-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.station-status-title {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.2;
+  color: #111827;
+}
+
+.station-status-summary {
+  color: #43506d;
 }
 
 @media (width < 1024px) {
@@ -836,6 +1158,10 @@
 
   .timeline-item {
     gap: 14px;
+  }
+
+  .station-services-grid {
+    grid-template-columns: 1fr;
   }
 
   .action-row {
@@ -883,7 +1209,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .icon-button,
-  .action-button {
+  .action-button,
+  .map-nav-zoom-btn {
     transition: none;
   }
 

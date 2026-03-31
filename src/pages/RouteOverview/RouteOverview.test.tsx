@@ -27,6 +27,10 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
 }));
 
+vi.mock('./components/RouteMapCanvas', () => ({
+  RouteMapCanvas: () => <div data-testid="route-map" />,
+}));
+
 describe('RouteOverview', () => {
   it('renders the detailed timeline heading and train badges', () => {
     render(<RouteOverview />);
@@ -98,23 +102,39 @@ describe('RouteOverview', () => {
     expect(screen.getByRole('link', { name: /live navigation/i })).toBeInTheDocument();
   });
 
+  it('renders the map preview heading and facility list', () => {
+    render(<RouteOverview />);
+
+    expect(
+      screen.getByRole('heading', { level: 2, name: /live map ready for backend coordinates/i })
+    ).toBeInTheDocument();
+
+    const facilitiesList = screen.getByRole('list', { name: /mapped facilities preview/i });
+    expect(within(facilitiesList).getByText('Escalator')).toBeInTheDocument();
+    expect(within(facilitiesList).getByText(/north concourse lift/i)).toBeInTheDocument();
+  });
+
   it('renders the station services section heading', () => {
     render(<RouteOverview />);
 
     expect(screen.getByRole('heading', { name: /station services/i })).toBeInTheDocument();
   });
 
-  it('renders "Lift out of service" warning for Berlin Hbf', () => {
+  it('renders the elevator warning card for Berlin Hbf', () => {
     render(<RouteOverview />);
 
-    expect(screen.getByText(/lift out of service/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 3, name: /station accessibility/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/platform 11 elevator is currently unavailable/i)).toBeInTheDocument();
   });
 
-  it('renders the elevator platform label Gleis 11 for Berlin Hbf', () => {
+  it('renders the rerouted path guidance for the elevator outage', () => {
     render(<RouteOverview />);
 
     const servicesSection = screen.getByRole('region', { name: /station services/i });
-    expect(within(servicesSection).getByText(/gleis 11/i)).toBeInTheDocument();
+    expect(within(servicesSection).getByText(/rerouted path/i)).toBeInTheDocument();
+    expect(within(servicesSection).getByText(/platform 9 elevator/i)).toBeInTheDocument();
   });
 
   it('does not announce anything on initial load', () => {
@@ -136,16 +156,44 @@ describe('RouteOverview', () => {
     expect(screen.getByText(/route saved to your trips/i)).toBeInTheDocument();
   });
 
-  it('renders sr-only unavailable label for out-of-service amenities', () => {
+  it('renders the live equipment status cards from station accessibility', () => {
     render(<RouteOverview />);
 
-    const unavailableLabels = screen.getAllByText('(unavailable)');
-    expect(unavailableLabels.length).toBeGreaterThan(0);
+    const servicesSection = screen.getByRole('region', { name: /station services/i });
+    expect(
+      within(servicesSection).getByRole('heading', { name: /live equipment status/i })
+    ).toBeInTheDocument();
+    expect(within(servicesSection).getByText('Elevators')).toBeInTheDocument();
+    expect(within(servicesSection).getByText('Escalators')).toBeInTheDocument();
+    expect(within(servicesSection).getByText('Tactile Guidance')).toBeInTheDocument();
+    expect(within(servicesSection).getByText('Accessible Toilets')).toBeInTheDocument();
   });
 
-  it('shows gleis label next to unavailable service chip', () => {
+  it('renders the station services update timestamp and equipment summaries', () => {
     render(<RouteOverview />);
 
-    expect(screen.getByText(/escalators — gleis 7/i)).toBeInTheDocument();
+    const servicesSection = screen.getByRole('region', { name: /station services/i });
+    const stationAccessibilityCard = within(servicesSection)
+      .getByRole('heading', { level: 3, name: /station accessibility/i })
+      .closest('article');
+    const escalatorsCard = within(servicesSection)
+      .getByRole('heading', { level: 4, name: /escalators/i })
+      .closest('article');
+
+    expect(stationAccessibilityCard).not.toBeNull();
+    expect(escalatorsCard).not.toBeNull();
+
+    if (!stationAccessibilityCard || !escalatorsCard) {
+      throw new Error('Expected station services cards were not rendered.');
+    }
+
+    expect(within(servicesSection).getByText(/updated 1 minute ago/i)).toBeInTheDocument();
+    expect(within(stationAccessibilityCard).getByText(/12 units/i)).toBeInTheDocument();
+    expect(within(stationAccessibilityCard).getByText(/11 working/i)).toBeInTheDocument();
+    expect(within(stationAccessibilityCard).getByText(/1 out of service/i)).toBeInTheDocument();
+    expect(
+      within(servicesSection).getByText(/platform 11 elevator unavailable/i)
+    ).toBeInTheDocument();
+    expect(within(escalatorsCard).getByText(/1 outage on gleis 4/i)).toBeInTheDocument();
   });
 });

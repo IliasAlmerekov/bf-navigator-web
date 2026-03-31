@@ -1,9 +1,30 @@
 import type { LucideIcon } from 'lucide-react';
 
+export type ServiceAvailability = 'available' | 'limited' | 'unavailable';
+
+export type RouteMapLatLng = [number, number];
+
+export type RouteMapMarkerKind = 'origin' | 'transfer' | 'destination' | 'facility';
+
+export type RouteMapMarkerStatus = ServiceAvailability | 'default';
+
 export type RouteStop = {
   label: 'Departure' | 'Arrival';
   time: string;
   station: string;
+};
+
+export type DbStationFacility = {
+  description: string;
+  equipmentnumber: number;
+  geocoordX: number | null;
+  geocoordY: number | null;
+  operationalResumeDate: string | null;
+  operatorname: string;
+  state: string;
+  stateExplanation: string | null;
+  stationnumber: number;
+  type: string;
 };
 
 export type RouteHeroData = {
@@ -20,15 +41,35 @@ export type TimelineAmenity = {
   gleis?: string;
   icon: LucideIcon;
   label: string;
-  serviceStatus?: 'available' | 'limited' | 'unavailable';
+  serviceStatus?: ServiceAvailability;
 };
 
 export type ElevatorStatus = 'available' | 'limited' | 'out_of_service';
 
-export type StationServiceStatus = {
-  amenities: TimelineAmenity[];
-  elevatorsGleis?: string;
-  elevatorsStatus: ElevatorStatus;
+export type ElevatorStatusCard = {
+  alternateRoute?: string;
+  availableUnits: number;
+  description: string;
+  outOfServiceUnits: number;
+  status: ElevatorStatus;
+  totalUnits: number;
+  title: string;
+};
+
+export type LiveEquipmentStatusCard = {
+  availableUnits: number;
+  id: 'accessible_toilets' | 'elevators' | 'escalators' | 'tactile_guidance';
+  outOfServiceUnits: number;
+  status: ServiceAvailability;
+  summary: string;
+  totalUnits: number;
+  title: string;
+};
+
+export type RouteStationServicesPanel = {
+  elevatorCard: ElevatorStatusCard;
+  lastUpdated: string;
+  liveEquipmentCards: LiveEquipmentStatusCard[];
   stationId: string;
   stationName: string;
 };
@@ -49,4 +90,23 @@ export type StationAccessibilityItem = {
   station: string;
   status: 'LIVE' | 'WARNING';
   summary: string;
+};
+
+export type RouteMapMarker = {
+  description?: string;
+  id: string;
+  kind: RouteMapMarkerKind;
+  label: string;
+  position: RouteMapLatLng;
+  status: RouteMapMarkerStatus;
+};
+
+export type RouteMapData = {
+  ariaLabel: string;
+  center: RouteMapLatLng;
+  markers: RouteMapMarker[];
+  maxZoom: number;
+  minZoom: number;
+  routePath: RouteMapLatLng[];
+  zoom: number;
 };
