@@ -1,14 +1,5 @@
-import {
-  Accessibility,
-  ArrowUpDown,
-  BusFront,
-  Footprints,
-  HandHeart,
-  Toilet,
-  Utensils,
-  Wifi,
-} from 'lucide-react';
-import type { RouteHeroData, StationServiceStatus, TimelineItem } from './types';
+import { BusFront, Footprints, Utensils, Wifi } from 'lucide-react';
+import type { RouteHeroData, RouteStationServicesPanel, TimelineItem } from './types';
 
 export const ROUTE_HERO: RouteHeroData = {
   confidence: '98%',
@@ -63,42 +54,56 @@ export const ROUTE_TIMELINE: TimelineItem[] = [
   },
 ];
 
-export const ROUTE_STATION_SERVICES: StationServiceStatus[] = [
-  {
-    amenities: [
-      { icon: Wifi, label: 'WLAN', serviceStatus: 'available' },
-      { icon: ArrowUpDown, label: 'Escalators', serviceStatus: 'unavailable', gleis: 'Gleis 7' },
-      { icon: Footprints, label: 'Tactile guidance', serviceStatus: 'available' },
-      { icon: Toilet, label: 'Accessible toilets', serviceStatus: 'available' },
-      { icon: HandHeart, label: 'Assistance desk', serviceStatus: 'available' },
-    ],
-    elevatorsStatus: 'available',
-    stationId: 'frankfurt-main-hbf',
-    stationName: 'Frankfurt (Main) Hbf',
+export const ROUTE_STATION_SERVICES_PANEL: RouteStationServicesPanel = {
+  elevatorCard: {
+    alternateRoute: 'Use the Platform 9 elevator and cross via Sector C to reach platforms 11-14.',
+    availableUnits: 11,
+    description:
+      'Platform 11 elevator is currently unavailable. Maintenance is in progress and step-free routing has been adjusted.',
+    outOfServiceUnits: 1,
+    status: 'out_of_service',
+    title: 'Station Accessibility',
+    totalUnits: 12,
   },
-  {
-    amenities: [
-      { icon: Footprints, label: 'Step-free paths', serviceStatus: 'available' },
-      { icon: ArrowUpDown, label: 'Escalators', serviceStatus: 'unavailable' },
-      { icon: Footprints, label: 'Tactile guidance', serviceStatus: 'available' },
-      { icon: Toilet, label: 'Accessible toilets', serviceStatus: 'available' },
-      { icon: Accessibility, label: 'Elevators', serviceStatus: 'available' },
-    ],
-    elevatorsStatus: 'available',
-    stationId: 'kassel-wilhelmshoehe',
-    stationName: 'Kassel-Wilhelmshöhe',
-  },
-  {
-    amenities: [
-      { icon: Wifi, label: 'WLAN', serviceStatus: 'available' },
-      { icon: ArrowUpDown, label: 'Escalators', serviceStatus: 'unavailable', gleis: 'Gleis 4' },
-      { icon: Footprints, label: 'Tactile guidance', serviceStatus: 'available' },
-      { icon: Toilet, label: 'Accessible toilets', serviceStatus: 'available' },
-      { icon: Accessibility, label: 'Elevators', serviceStatus: 'available' },
-    ],
-    elevatorsGleis: 'Gleis 11',
-    elevatorsStatus: 'out_of_service',
-    stationId: 'berlin-hbf',
-    stationName: 'Berlin Hbf',
-  },
-];
+  lastUpdated: 'Updated 1 minute ago',
+  liveEquipmentCards: [
+    {
+      availableUnits: 11,
+      id: 'elevators',
+      outOfServiceUnits: 1,
+      status: 'unavailable',
+      summary: 'Platform 11 elevator unavailable',
+      totalUnits: 12,
+      title: 'Elevators',
+    },
+    {
+      availableUnits: 5,
+      id: 'escalators',
+      outOfServiceUnits: 1,
+      status: 'limited',
+      summary: '1 outage on Gleis 4',
+      totalUnits: 6,
+      title: 'Escalators',
+    },
+    {
+      availableUnits: 1,
+      id: 'tactile_guidance',
+      outOfServiceUnits: 0,
+      status: 'available',
+      summary: 'Active throughout the concourse and all transfer paths',
+      totalUnits: 1,
+      title: 'Tactile Guidance',
+    },
+    {
+      availableUnits: 2,
+      id: 'accessible_toilets',
+      outOfServiceUnits: 0,
+      status: 'available',
+      summary: 'Euro-key required',
+      totalUnits: 2,
+      title: 'Accessible Toilets',
+    },
+  ],
+  stationId: 'berlin-hbf',
+  stationName: 'Berlin Hbf',
+};
