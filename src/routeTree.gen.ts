@@ -15,6 +15,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedTripsRouteImport } from './routes/saved-trips'
 import { Route as RouteOverviewRouteImport } from './routes/route-overview'
 import { Route as RouteDetailsRouteImport } from './routes/route-details'
+import { Route as RegisterDesktopRouteImport } from './routes/register-desktop'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OnboardingDesktopRouteImport } from './routes/onboarding-desktop'
@@ -53,6 +54,11 @@ const RouteOverviewRoute = RouteOverviewRouteImport.update({
 const RouteDetailsRoute = RouteDetailsRouteImport.update({
   id: '/route-details',
   path: '/route-details',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterDesktopRoute = RegisterDesktopRouteImport.update({
+  id: '/register-desktop',
+  path: '/register-desktop',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/onboarding-desktop': typeof OnboardingDesktopRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/register-desktop': typeof RegisterDesktopRoute
   '/route-details': typeof RouteDetailsRoute
   '/route-overview': typeof RouteOverviewRoute
   '/saved-trips': typeof SavedTripsRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/onboarding-desktop': typeof OnboardingDesktopRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/register-desktop': typeof RegisterDesktopRoute
   '/route-details': typeof RouteDetailsRoute
   '/route-overview': typeof RouteOverviewRoute
   '/saved-trips': typeof SavedTripsRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/onboarding-desktop': typeof OnboardingDesktopRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
+  '/register-desktop': typeof RegisterDesktopRoute
   '/route-details': typeof RouteDetailsRoute
   '/route-overview': typeof RouteOverviewRoute
   '/saved-trips': typeof SavedTripsRoute
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/onboarding-desktop'
     | '/profile'
     | '/register'
+    | '/register-desktop'
     | '/route-details'
     | '/route-overview'
     | '/saved-trips'
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/onboarding-desktop'
     | '/profile'
     | '/register'
+    | '/register-desktop'
     | '/route-details'
     | '/route-overview'
     | '/saved-trips'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/onboarding-desktop'
     | '/profile'
     | '/register'
+    | '/register-desktop'
     | '/route-details'
     | '/route-overview'
     | '/saved-trips'
@@ -217,6 +229,7 @@ export interface RootRouteChildren {
   OnboardingDesktopRoute: typeof OnboardingDesktopRoute
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
+  RegisterDesktopRoute: typeof RegisterDesktopRoute
   RouteDetailsRoute: typeof RouteDetailsRoute
   RouteOverviewRoute: typeof RouteOverviewRoute
   SavedTripsRoute: typeof SavedTripsRoute
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/route-details'
       fullPath: '/route-details'
       preLoaderRoute: typeof RouteDetailsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register-desktop': {
+      id: '/register-desktop'
+      path: '/register-desktop'
+      fullPath: '/register-desktop'
+      preLoaderRoute: typeof RegisterDesktopRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -345,6 +365,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingDesktopRoute: OnboardingDesktopRoute,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
+  RegisterDesktopRoute: RegisterDesktopRoute,
   RouteDetailsRoute: RouteDetailsRoute,
   RouteOverviewRoute: RouteOverviewRoute,
   SavedTripsRoute: SavedTripsRoute,
