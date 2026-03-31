@@ -16,13 +16,8 @@ export type RouteHeroData = {
   arrival: RouteStop;
 };
 
-export type RouteHighlight = {
-  description: string;
-  icon: LucideIcon;
-  title: string;
-};
-
 export type TimelineAmenity = {
+  gleis?: string;
   icon: LucideIcon;
   label: string;
   serviceStatus?: 'available' | 'limited' | 'unavailable';
@@ -32,6 +27,7 @@ export type ElevatorStatus = 'available' | 'limited' | 'out_of_service';
 
 export type StationServiceStatus = {
   amenities: TimelineAmenity[];
+  elevatorsGleis?: string;
   elevatorsStatus: ElevatorStatus;
   stationId: string;
   stationName: string;

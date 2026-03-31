@@ -3,14 +3,12 @@ import {
   ArrowUpDown,
   BusFront,
   Footprints,
-  Gauge,
   HandHeart,
-  Leaf,
   Toilet,
   Utensils,
   Wifi,
 } from 'lucide-react';
-import type { RouteHeroData, RouteHighlight, StationServiceStatus, TimelineItem } from './types';
+import type { RouteHeroData, StationServiceStatus, TimelineItem } from './types';
 
 export const ROUTE_HERO: RouteHeroData = {
   confidence: '98%',
@@ -65,24 +63,11 @@ export const ROUTE_TIMELINE: TimelineItem[] = [
   },
 ];
 
-export const ROUTE_HIGHLIGHTS: RouteHighlight[] = [
-  {
-    description: 'This route emits 84% less CO2 than an equivalent flight between the same cities.',
-    icon: Leaf,
-    title: 'Green journey',
-  },
-  {
-    description: 'Reaches up to 300 km/h between Kassel and Berlin with one transfer.',
-    icon: Gauge,
-    title: 'High-speed section',
-  },
-];
-
 export const ROUTE_STATION_SERVICES: StationServiceStatus[] = [
   {
     amenities: [
       { icon: Wifi, label: 'WLAN', serviceStatus: 'available' },
-      { icon: ArrowUpDown, label: 'Escalators', serviceStatus: 'unavailable' },
+      { icon: ArrowUpDown, label: 'Escalators', serviceStatus: 'unavailable', gleis: 'Gleis 7' },
       { icon: Footprints, label: 'Tactile guidance', serviceStatus: 'available' },
       { icon: Toilet, label: 'Accessible toilets', serviceStatus: 'available' },
       { icon: HandHeart, label: 'Assistance desk', serviceStatus: 'available' },
@@ -106,12 +91,13 @@ export const ROUTE_STATION_SERVICES: StationServiceStatus[] = [
   {
     amenities: [
       { icon: Wifi, label: 'WLAN', serviceStatus: 'available' },
-      { icon: ArrowUpDown, label: 'Escalators', serviceStatus: 'unavailable' },
+      { icon: ArrowUpDown, label: 'Escalators', serviceStatus: 'unavailable', gleis: 'Gleis 4' },
       { icon: Footprints, label: 'Tactile guidance', serviceStatus: 'available' },
       { icon: Toilet, label: 'Accessible toilets', serviceStatus: 'available' },
       { icon: Accessibility, label: 'Elevators', serviceStatus: 'available' },
     ],
-    elevatorsStatus: 'available',
+    elevatorsGleis: 'Gleis 11',
+    elevatorsStatus: 'out_of_service',
     stationId: 'berlin-hbf',
     stationName: 'Berlin Hbf',
   },

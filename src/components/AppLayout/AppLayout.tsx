@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { Bell, Bookmark, House, Search, UserRound } from 'lucide-react';
+import { Bell, Bookmark, House, LifeBuoy, Search } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import styles from './AppLayout.module.css';
@@ -15,7 +15,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: 'home', icon: House, label: 'Home Search', to: '/' },
   { key: 'saved', icon: Bookmark, label: 'Saved Trips', to: '/saved-trips' },
   { key: 'alerts', icon: Bell, label: 'Alerts', to: '/alerts' },
-  { key: 'profile', icon: UserRound, label: 'Profile', to: '/profile' },
+  { key: 'profile', icon: LifeBuoy, label: 'Support', to: '/profile' },
 ];
 
 const HOME_SECTION_PATHS = new Set([
@@ -78,8 +78,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <button aria-label="Search" className={styles['top-nav-button']} type="button">
             <Search aria-hidden="true" />
           </button>
-          <button aria-label="Profile" className={styles['top-nav-button']} type="button">
-            <UserRound aria-hidden="true" />
+          <button aria-label="Support" className={styles['top-nav-button']} type="button">
+            <LifeBuoy aria-hidden="true" />
           </button>
         </div>
       </header>
