@@ -1,34 +1,147 @@
-import { ArrowLeft, BookmarkPlus, Share2 } from 'lucide-react';
+import { BookmarkPlus, Share2 } from 'lucide-react';
+import germanMap from '../../../assets/RouteOverview/german.png';
 import type { RouteHeroData } from '../types';
 import styles from '../RouteOverview.module.css';
 
 type RouteHeroProps = {
-  onBack: () => void;
+  isSaved?: boolean;
   onSave: () => void;
   route: RouteHeroData;
 };
 
-export function RouteHero({ onBack, onSave, route }: RouteHeroProps) {
+export function RouteHero({ isSaved = false, onSave, route }: RouteHeroProps) {
   return (
     <header className={styles.hero}>
-      <div className={styles['hero-toolbar']}>
-        <button
-          aria-label="Back to home search"
-          className={styles['icon-button']}
-          type="button"
-          onClick={onBack}
+      <h1 className={styles['sr-only']}>
+        {route.departure.station} to {route.arrival.station}
+      </h1>
+
+      {route.eyebrow ? (
+        <div className={styles['hero-toolbar']}>
+          <p className={styles.eyebrow}>{route.eyebrow}</p>
+        </div>
+      ) : null}
+
+      <div className={styles['hero-image-wrap']}>
+        <img src={germanMap} alt="" className={styles['hero-image']} />
+
+        <svg
+          aria-hidden="true"
+          className={styles['route-svg']}
+          viewBox="0 0 600 700"
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <ArrowLeft aria-hidden="true" />
-        </button>
+          <defs>
+            <filter id="routeGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
 
-        <p className={styles.eyebrow}>{route.eyebrow}</p>
+          <path
+            className={`${styles['route-line']} ${styles['route-desktop-shape']}`}
+            d="M 30 360 Q 300 180 570 230"
+            fill="none"
+            stroke="#00ffff"
+            strokeWidth="3"
+            strokeLinecap="round"
+            filter="url(#routeGlow)"
+          />
 
-        <div className={styles['hero-toolbar-actions']}>
-          <button aria-label="Share route" className={styles['icon-button']} type="button">
+          <path
+            className={`${styles['route-line']} ${styles['route-mobile-shape']}`}
+            d="M 155 402 Q 300 248 445 294"
+            fill="none"
+            stroke="#00ffff"
+            strokeWidth="3"
+            strokeLinecap="round"
+            filter="url(#routeGlow)"
+          />
+
+          <circle
+            className={styles['route-desktop-shape']}
+            cx="30"
+            cy="360"
+            r="5"
+            fill="#ffffff"
+            filter="url(#routeGlow)"
+          />
+          <circle
+            className={`${styles['pulse-ring']} ${styles['route-desktop-shape']}`}
+            cx="30"
+            cy="360"
+            r="5"
+            fill="none"
+            stroke="#00ffff"
+            strokeWidth="2"
+          />
+
+          <circle
+            className={styles['route-mobile-shape']}
+            cx="155"
+            cy="402"
+            r="5"
+            fill="#ffffff"
+            filter="url(#routeGlow)"
+          />
+          <circle
+            className={`${styles['pulse-ring']} ${styles['route-mobile-shape']}`}
+            cx="155"
+            cy="402"
+            r="5"
+            fill="none"
+            stroke="#00ffff"
+            strokeWidth="2"
+          />
+
+          <circle
+            className={styles['route-desktop-shape']}
+            cx="570"
+            cy="230"
+            r="5"
+            fill="#ffffff"
+            filter="url(#routeGlow)"
+          />
+          <circle
+            id="berlin-pulse"
+            className={`${styles['pulse-ring']} ${styles['route-desktop-shape']}`}
+            cx="570"
+            cy="230"
+            r="5"
+            fill="none"
+            stroke="#00ffff"
+            strokeWidth="2"
+          />
+
+          <circle
+            className={styles['route-mobile-shape']}
+            cx="445"
+            cy="294"
+            r="5"
+            fill="#ffffff"
+            filter="url(#routeGlow)"
+          />
+          <circle
+            className={`${styles['pulse-ring']} ${styles['route-mobile-shape']}`}
+            cx="445"
+            cy="294"
+            r="5"
+            fill="none"
+            stroke="#00ffff"
+            strokeWidth="2"
+          />
+        </svg>
+
+        <div className={styles['hero-image-actions']}>
+          <button aria-label="Share route" className={styles['icon-button']} disabled type="button">
             <Share2 aria-hidden="true" />
           </button>
           <button
             aria-label="Save route"
+            aria-pressed={isSaved}
             className={styles['icon-button']}
             type="button"
             onClick={onSave}
@@ -36,64 +149,34 @@ export function RouteHero({ onBack, onSave, route }: RouteHeroProps) {
             <BookmarkPlus aria-hidden="true" />
           </button>
         </div>
-      </div>
 
-      <div className={styles['hero-surface']}>
-        <div className={styles['hero-copy']}>
-          <span className={styles['route-pill']}>ICE 772 direct</span>
-          <h1>{route.title}</h1>
-          <p className={styles.lead}>{route.summary}</p>
+        <div className={styles['hero-route-card']} aria-hidden="true">
+          <div className={styles['hero-stop']}>
+            <p className={styles['hero-stop-label']}>{route.departure.label}</p>
+            <strong className={styles['hero-stop-time']}>{route.departure.time}</strong>
+            <span className={styles['hero-stop-station']}>{route.departure.station}</span>
+          </div>
 
-          <dl className={styles.metrics} aria-label="Route snapshot">
-            <div className={styles.metric}>
-              <dt>Duration</dt>
-              <dd>{route.duration}</dd>
-            </div>
-            <div className={styles.metric}>
-              <dt>Transfers</dt>
-              <dd>{route.transfers}</dd>
-            </div>
-            <div className={styles.metric} data-tone="accent">
-              <dt>Accessibility confidence</dt>
-              <dd>{route.confidence}</dd>
-            </div>
-          </dl>
-        </div>
+          <div className={styles['hero-divider']}>
+            <div className={styles['hero-divider-line']} />
+            <span className={styles['hero-duration']}>{route.duration}</span>
+          </div>
 
-        <div aria-hidden="true" className={styles['hero-visual']}>
-          <div className={styles['hero-visual-glow']} />
-          <div className={styles['hero-visual-card']}>
-            <span>Step-free corridor</span>
-            <strong>Frankfurt → Kassel → Berlin</strong>
-            <div className={styles['hero-visual-line']} />
-            <small>Live lifts checked before each transfer</small>
+          <div className={`${styles['hero-stop']} ${styles['hero-stop-right']}`}>
+            <p className={styles['hero-stop-label']}>{route.arrival.label}</p>
+            <strong className={styles['hero-stop-time']}>{route.arrival.time}</strong>
+            <span className={styles['hero-stop-station']}>{route.arrival.station}</span>
           </div>
         </div>
       </div>
 
-      <div className={styles['stop-grid']}>
-        <article className={styles['stop-card']}>
-          <p>{route.departure.label}</p>
-          <strong>{route.departure.time}</strong>
-          <span>{route.departure.station}</span>
-          <small>{route.departure.platform}</small>
-        </article>
-
-        <article
-          className={styles['route-bridge']}
-          aria-label={`${route.duration}, ${route.transfers}`}
-        >
-          <span>{route.duration}</span>
-          <small>{route.transfers}</small>
-        </article>
-
-        <article className={styles['stop-card']}>
-          <p>{route.arrival.label}</p>
-          <strong>{route.arrival.time}</strong>
-          <span>{route.arrival.station}</span>
-          <small>{route.arrival.platform}</small>
-        </article>
-      </div>
+      {route.eyebrow ? (
+        <div className={styles['hero-meta']}>
+          <div className={styles['hero-badges']}>
+            <span className={styles['badge-primary']}>{route.eyebrow}</span>
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 }

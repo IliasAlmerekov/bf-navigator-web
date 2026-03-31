@@ -4,14 +4,12 @@ export type RouteStop = {
   label: 'Departure' | 'Arrival';
   time: string;
   station: string;
-  platform: string;
 };
 
 export type RouteHeroData = {
   confidence: string;
   duration: string;
   eyebrow: string;
-  summary: string;
   title: string;
   transfers: string;
   departure: RouteStop;
@@ -19,21 +17,31 @@ export type RouteHeroData = {
 };
 
 export type TimelineAmenity = {
+  gleis?: string;
   icon: LucideIcon;
   label: string;
+  serviceStatus?: 'available' | 'limited' | 'unavailable';
+};
+
+export type ElevatorStatus = 'available' | 'limited' | 'out_of_service';
+
+export type StationServiceStatus = {
+  amenities: TimelineAmenity[];
+  elevatorsGleis?: string;
+  elevatorsStatus: ElevatorStatus;
+  stationId: string;
+  stationName: string;
 };
 
 export type TimelineItem = {
-  detail: string;
-  kind: 'ride' | 'transfer' | 'arrival';
-  phase: string;
-  station: string;
-  statusLabel: string;
-  statusTone: 'accent' | 'neutral' | 'warning';
-  time: string;
-  title: string;
-  icon: LucideIcon;
   amenities: TimelineAmenity[];
+  kind: 'departure' | 'transfer' | 'arrival';
+  label: string;
+  platformInfo: string;
+  station: string;
+  time: string;
+  transferNote?: string;
+  transferTrain?: string;
 };
 
 export type StationAccessibilityItem = {
@@ -41,18 +49,4 @@ export type StationAccessibilityItem = {
   station: string;
   status: 'LIVE' | 'WARNING';
   summary: string;
-};
-
-export type RouteHighlight = {
-  description: string;
-  icon: LucideIcon;
-  title: string;
-};
-
-export type WeatherSnapshot = {
-  condition: string;
-  icon: LucideIcon;
-  station: string;
-  temperature: string;
-  time: string;
 };
