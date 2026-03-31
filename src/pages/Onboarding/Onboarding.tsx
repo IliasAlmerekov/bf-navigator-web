@@ -1,45 +1,49 @@
 import { useRef, useState } from 'react';
-import styles from './Onboarding.module.css';
+import { Baby } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import {
+  ACCESSIBILITY_PREFERENCES,
+  type AccessibilityPreferenceId,
+} from '../../constants/accessibilityPreferences';
 import wheelChairIcon from '../../assets/Onboarding/icons8-rollstuhl-26.png';
 import lowVisionIcon from '../../assets/Onboarding/icons8-sehschwäche-48.png';
 import hearingIcon from '../../assets/Onboarding/icons8-taub-67.png';
 import limitedMobilityIcon from '../../assets/Onboarding/icons8-zugang-für-blinde-50.png';
 import confirmationIcon from '../../assets/Onboarding/icons8-anerkennung-50.png';
 import trainPhoto from '../../assets/Onboarding/ice taufe europa europe.webp';
+import { storeAccessibilityPreference, storeCompletedOnboarding } from '../../utils/accountStorage';
+import styles from './Onboarding.module.css';
 
 type Step = 1 | 2 | 3;
 
 type MobilityOption = {
-  id: string;
-  title: string;
+  Icon?: typeof Baby;
+  iconSrc?: string;
+  id: AccessibilityPreferenceId;
   subtitle: string;
-  iconSrc: string;
+  title: string;
 };
 
 const mobilityOptions: MobilityOption[] = [
   {
-    id: 'wheelchair',
-    title: 'Rollstuhlzugang',
-    subtitle: 'Routen mit Rampen und Aufzügen',
+    ...ACCESSIBILITY_PREFERENCES[0],
     iconSrc: wheelChairIcon,
   },
   {
-    id: 'vision',
-    title: 'Sehbehinderung',
-    subtitle: 'Taktile Leitsysteme & Ansagen',
+    ...ACCESSIBILITY_PREFERENCES[1],
     iconSrc: lowVisionIcon,
   },
   {
-    id: 'hearing',
-    title: 'Hörbehinderung',
-    subtitle: 'Visuelle Signale & Anzeigen',
+    ...ACCESSIBILITY_PREFERENCES[2],
     iconSrc: hearingIcon,
   },
   {
-    id: 'mobility',
-    title: 'Eingeschränkte Mobilität',
-    subtitle: 'Minimale Stufen und kurze Wege',
+    ...ACCESSIBILITY_PREFERENCES[3],
     iconSrc: limitedMobilityIcon,
+  },
+  {
+    ...ACCESSIBILITY_PREFERENCES[4],
+    Icon: Baby,
   },
 ];
 
@@ -62,7 +66,10 @@ function ProgressDots({ currentStep }: { currentStep: Step }) {
 }
 
 export default function Onboarding() {
-  const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(['wheelchair']);
+  const navigate = useNavigate();
+  const [selectedOptionIds, setSelectedOptionIds] = useState<AccessibilityPreferenceId[]>([
+    'wheelchair',
+  ]);
   const stepOneRef = useRef<HTMLElement | null>(null);
   const stepTwoRef = useRef<HTMLElement | null>(null);
   const stepThreeRef = useRef<HTMLElement | null>(null);
@@ -83,12 +90,28 @@ export default function Onboarding() {
     target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
   };
 
-  const handleSelectOption = (optionId: string) => {
+  const handleSelectOption = (optionId: AccessibilityPreferenceId) => {
     setSelectedOptionIds([optionId]);
 
     if (optionId === 'vision') {
       scrollToStep(3);
     }
+  };
+
+  const completeOnboardingAndOpenSearch = () => {
+    const selectedPreferenceId = selectedOptionIds[0];
+
+    if (selectedPreferenceId) {
+      storeAccessibilityPreference(selectedPreferenceId);
+    }
+
+    storeCompletedOnboarding();
+    void navigate({ to: '/' });
+  };
+
+  const skipOnboardingAndOpenSearch = () => {
+    storeCompletedOnboarding();
+    void navigate({ to: '/' });
   };
 
   return (
@@ -114,7 +137,11 @@ export default function Onboarding() {
             <a href="#sprache" className={styles['mobile-nav-link']}>
               Sprache
             </a>
-            <button type="button" className={styles['mobile-nav-button']}>
+            <button
+              type="button"
+              className={styles['mobile-nav-button']}
+              onClick={() => navigate({ to: '/login' })}
+            >
               Anmelden
             </button>
           </nav>
@@ -177,7 +204,11 @@ export default function Onboarding() {
                     onClick={() => handleSelectOption(option.id)}
                   >
                     <span className={styles['option-icon']} aria-hidden="true">
-                      <img src={option.iconSrc} alt="" className={styles['option-icon-image']} />
+                      {option.iconSrc ? (
+                        <img src={option.iconSrc} alt="" className={styles['option-icon-image']} />
+                      ) : option.Icon ? (
+                        <option.Icon className={styles['option-icon-image']} />
+                      ) : null}
                     </span>
                     <span className={styles['option-content']}>
                       <span className={styles['option-title']}>{option.title}</span>
@@ -232,13 +263,17 @@ export default function Onboarding() {
 
           <p className={styles['neutral-chip']}>Schritt für Schritt barrierefrei</p>
 
-          <button type="button" className={styles['primary-button']}>
+          <button
+            type="button"
+            className={styles['primary-button']}
+            onClick={completeOnboardingAndOpenSearch}
+          >
             Route finden -&gt;
           </button>
           <button
             type="button"
             className={styles['secondary-button']}
-            onClick={() => scrollToStep(1)}
+            onClick={skipOnboardingAndOpenSearch}
           >
             Einrichtung überspringen
           </button>

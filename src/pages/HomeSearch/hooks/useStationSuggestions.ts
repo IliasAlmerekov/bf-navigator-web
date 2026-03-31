@@ -70,7 +70,7 @@ export function useStationSuggestions(
 
         if (!response.ok) {
           setSuggestions([]);
-          setError('Station suggestions are temporarily unavailable.');
+          setError('Bahnhofsvorschläge sind vorübergehend nicht verfügbar.');
           setHasSearched(true);
           return;
         }
@@ -85,7 +85,7 @@ export function useStationSuggestions(
         }
 
         setSuggestions([]);
-        setError('Station suggestions are temporarily unavailable.');
+        setError('Bahnhofsvorschläge sind vorübergehend nicht verfügbar.');
         setHasSearched(true);
       } finally {
         setLoading(false);
