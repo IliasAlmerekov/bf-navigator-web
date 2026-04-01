@@ -56,6 +56,7 @@ Agent prompts: `.claude/agents/` (Claude Code) and `.github/github-instruction/a
 - `coder` is the only agent allowed to make source-code changes unless the user explicitly asks otherwise.
 - Prefer local code evidence first. If framework or API behavior is uncertain, query Context7 MCP.
 - Every spawned subagent must read and follow `CONVENTION.md`.
+- Do not add `Co-authored-by` trailers to commit messages.
 
 ---
 

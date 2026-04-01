@@ -37,6 +37,7 @@ For every UI change, verify:
 - Ignore pure style nits unless they hide a real bug.
 - Produce explicit findings or the single word `PASSED`.
 - All shell commands must go through `rtk`.
+- Do not add `Co-authored-by` trailers to commit messages.
 
 ## Output
 

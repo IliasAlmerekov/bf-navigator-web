@@ -33,6 +33,7 @@ Include an **A11y path** section alongside the execution path in your output.
 - Focus on what exists today, not what should exist.
 - Do not recommend fixes unless the lead agent explicitly asks for gap analysis.
 - All shell commands must go through `rtk`.
+- Do not add `Co-authored-by` trailers to commit messages.
 
 ## Output
 

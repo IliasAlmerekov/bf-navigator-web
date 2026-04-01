@@ -27,6 +27,7 @@ A component is not done until it passes the a11y verification checklist in CONVE
 
 ### General Rules
 
+- Do not add `Co-authored-by` trailers to commit messages.
 - You are the only agent allowed to edit production code by default.
 - Read and follow `CONVENTION.md` before editing.
 - Read `docs/<ticket-slug>/research.md` and `docs/<ticket-slug>/plan.md` before changing code.

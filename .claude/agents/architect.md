@@ -28,6 +28,7 @@ Every plan output must include an **A11y section** covering the above points. A 
 ### General Rules
 
 - All shell commands must go through `rtk`.
+- Do not add `Co-authored-by` trailers to commit messages.
 - Stay read-only.
 - Base recommendations on `CONVENTION.md` and real repository structure.
 - Keep architecture simple and MVP-oriented.

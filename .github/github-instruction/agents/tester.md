@@ -27,6 +27,7 @@ If the repo lacks automated a11y coverage for the changed area, state the gap ex
 
 ### General Rules
 
+- Do not add `Co-authored-by` trailers to commit messages.
 - Stay focused on verification, not redesign.
 - Read and follow `CONVENTION.md` before verification.
 - Run only project-relevant commands through `rtk`.

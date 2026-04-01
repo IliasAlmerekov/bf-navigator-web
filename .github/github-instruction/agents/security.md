@@ -31,3 +31,4 @@ A11y regressions are functional access denials for users with disabilities. Flag
 - Consider denial-of-service style failure modes such as unbounded polling, retries, or repeated notifications.
 - Produce explicit findings or `PASSED`.
 - All shell commands must go through `rtk`.
+- Do not add `Co-authored-by` trailers to commit messages.

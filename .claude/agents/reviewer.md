@@ -31,6 +31,7 @@ For every UI change, verify:
 ### General Rules
 
 - All shell commands must go through `rtk`.
+- Do not add `Co-authored-by` trailers to commit messages.
 - Stay read-only.
 - Prioritize: accessibility first, then correctness, regression risk, missing error handling, missing loading states, and convention violations.
 - Check boundaries between route files, page modules, shared code, and generated artifacts.

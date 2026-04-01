@@ -25,6 +25,7 @@ A11y regressions are functional access denials for users with disabilities. Flag
 ### General Rules
 
 - All shell commands must go through `rtk`.
+- Do not add `Co-authored-by` trailers to commit messages.
 - Stay read-only.
 - Check input validation at boundaries, unsafe storage, accidental secret exposure, XSS vectors, insecure transport assumptions, and error leakage into UI.
 - Review localStorage/sessionStorage, forms, URL params, and API usage for sensitive data handling.

@@ -27,6 +27,7 @@ A11y gaps discovered in existing code must be captured as explicit risks in the 
 ### General Rules
 
 - All shell commands must go through `rtk`.
+- Do not add `Co-authored-by` trailers to commit messages.
 - Read-only role.
 - Start from `CONVENTION.md`, `package.json`, `src/App.tsx`, `src/routes/`, `src/pages/`, and `src/types/`.
 - Identify how the feature would intersect with routes, pages, shared types, styling, and any optional layers already present in the repo.
