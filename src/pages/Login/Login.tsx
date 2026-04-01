@@ -1,6 +1,8 @@
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import logoMarkImage from '../../assets/Login/route.png';
 import googleIcon from '../../assets/Login/icons8-google-48.png';
+import { useLogin } from '../../hooks/useLogin';
 import { storeCompletedOnboarding } from '../../utils/accountStorage';
 import styles from './Login.module.css';
 
@@ -37,13 +39,73 @@ function EyeIcon() {
 }
 
 export default function Login() {
-  const navigate = useNavigate();
+  const { error, isLoading, login } = useLogin();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    storeCompletedOnboarding();
-    void navigate({ to: '/' });
+  function validateForm() {
+    const nextErrors: {
+      email?: string;
+      password?: string;
+    } = {};
+
+    if (!email.trim()) {
+      nextErrors.email = 'E-Mail-Adresse ist erforderlich';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      nextErrors.email = 'Bitte geben Sie eine gültige E-Mail-Adresse ein';
+    }
+
+    if (!password) {
+      nextErrors.password = 'Passwort ist erforderlich';
+    }
+
+    setFieldErrors(nextErrors);
+
+    return Object.keys(nextErrors).length === 0;
   }
+
+  function handleEmailChange(event: React.ChangeEvent<HTMLInputElement>) {
+    setEmail(event.target.value);
+
+    if (fieldErrors.email) {
+      setFieldErrors((currentErrors) => ({
+        ...currentErrors,
+        email: undefined,
+      }));
+    }
+  }
+
+  function handlePasswordChange(event: React.ChangeEvent<HTMLInputElement>) {
+    setPassword(event.target.value);
+
+    if (fieldErrors.password) {
+      setFieldErrors((currentErrors) => ({
+        ...currentErrors,
+        password: undefined,
+      }));
+    }
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      await login(email, password);
+      storeCompletedOnboarding();
+    } catch {
+      // The hook exposes a localized error state for the form.
+    }
+  }
+
+  const statusMessage = isLoading ? 'Anmeldung wird durchgeführt' : error;
 
   return (
     <main className={styles.page}>
@@ -98,17 +160,29 @@ export default function Login() {
               </p>
             </div>
 
-            <form className={styles.form} onSubmit={handleSubmit}>
-              <label className={styles.field}>
-                <span className={styles.label}>E-Mail-Adresse</span>
+            <form className={styles.form} onSubmit={handleSubmit} noValidate>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="login-email">
+                  E-Mail-Adresse
+                </label>
                 <input
-                  className={styles.input}
+                  aria-describedby={fieldErrors.email ? 'login-email-error' : undefined}
+                  aria-invalid={fieldErrors.email ? 'true' : 'false'}
+                  className={`${styles.input} ${fieldErrors.email ? styles['input-error'] : ''}`}
+                  id="login-email"
                   type="email"
                   name="email"
                   autoComplete="email"
                   placeholder="name@beispiel.de"
+                  value={email}
+                  onChange={handleEmailChange}
                 />
-              </label>
+                {fieldErrors.email && (
+                  <span className={styles['error-message']} id="login-email-error">
+                    {fieldErrors.email}
+                  </span>
+                )}
+              </div>
 
               <div className={styles.field}>
                 <div className={styles['password-label-row']}>
@@ -121,12 +195,16 @@ export default function Login() {
                 </div>
                 <div className={styles['password-input-wrap']}>
                   <input
-                    className={styles.input}
+                    aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
+                    aria-invalid={fieldErrors.password ? 'true' : 'false'}
+                    className={`${styles.input} ${fieldErrors.password ? styles['input-error'] : ''}`}
                     id="login-password"
                     type="password"
                     name="password"
                     autoComplete="current-password"
                     placeholder="••••••••"
+                    value={password}
+                    onChange={handlePasswordChange}
                   />
                   <button
                     aria-label="Passwort anzeigen"
@@ -136,14 +214,23 @@ export default function Login() {
                     <EyeIcon />
                   </button>
                 </div>
+                {fieldErrors.password && (
+                  <span className={styles['error-message']} id="login-password-error">
+                    {fieldErrors.password}
+                  </span>
+                )}
               </div>
 
-              <button className={styles['primary-button']} type="submit">
+              <button className={styles['primary-button']} type="submit" disabled={isLoading}>
                 <span>Anmelden</span>
                 <span aria-hidden="true" className={styles['button-arrow']}>
                   →
                 </span>
               </button>
+
+              <p aria-live="polite" className={styles['status-message']} role="status">
+                {statusMessage}
+              </p>
             </form>
 
             <div className={styles.divider} aria-hidden="true">
