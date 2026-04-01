@@ -2,49 +2,87 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 0 0 4px;
+  padding: 12px 0 4px;
 }
 
+/* ── Route headline ── */
+.route {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--color-text-strong);
+  margin: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Meta row ── */
 .meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.meta-text {
-  font-size: var(--font-size-body-sm);
+.metaText {
+  font-size: 0.8125rem;
   color: var(--color-text);
   font-weight: 500;
 }
 
-.change-btn {
-  font-size: var(--font-size-body-sm);
+.changeBtn {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-primary-container);
   background: transparent;
   border: none;
-  padding: 0;
+  padding: 4px 0;
   cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  white-space: nowrap;
   font-family: var(--font-body);
+  white-space: nowrap;
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--color-primary-container) 40%, transparent);
 }
 
-.change-btn:hover {
-  opacity: 0.8;
+.changeBtn:hover {
+  text-decoration-color: var(--color-primary-container);
 }
 
-.change-btn:focus-visible {
+.changeBtn:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
   border-radius: 2px;
 }
 
+/* ── Result count ── */
 .count {
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--color-outline-variant);
   font-weight: 400;
   margin: 0;
+}
+
+@media (width >= 480px) {
+  .route {
+    font-size: 1.375rem;
+  }
+}
+
+@media (width >= 768px) {
+  .route {
+    font-size: var(--font-size-title-lg);
+  }
+
+  .bar {
+    gap: 6px;
+  }
 }
