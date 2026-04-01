@@ -1,7 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
+import {
+  ACCESSIBILITY_PREFERENCES,
+  type AccessibilityPreferenceId,
+} from '../constants/accessibilityPreferences';
 import TrainSearchResults from '../pages/TrainSearchResults';
 
 type TrainSearchRouteSearch = {
+  accessibilityPreference: AccessibilityPreferenceId | '';
   originEva: string;
   originName: string;
   destinationEva: string;
@@ -11,6 +16,7 @@ type TrainSearchRouteSearch = {
 };
 
 const DEFAULT_SEARCH: TrainSearchRouteSearch = {
+  accessibilityPreference: '',
   date: '',
   destinationEva: '',
   destinationName: 'Berlin Hbf',
@@ -18,6 +24,10 @@ const DEFAULT_SEARCH: TrainSearchRouteSearch = {
   originName: 'Hamburg Hbf',
   time: '',
 };
+
+const accessibilityPreferenceIds = new Set<string>(
+  ACCESSIBILITY_PREFERENCES.map((preference) => preference.id)
+);
 
 function readSearchValue(
   search: Record<string, unknown>,
@@ -28,8 +38,21 @@ function readSearchValue(
   return typeof value === 'string' ? value : DEFAULT_SEARCH[key];
 }
 
+function readAccessibilityPreference(
+  search: Record<string, unknown>
+): TrainSearchRouteSearch['accessibilityPreference'] {
+  const value = search.accessibilityPreference;
+
+  if (typeof value !== 'string' || value === '') {
+    return DEFAULT_SEARCH.accessibilityPreference;
+  }
+
+  return accessibilityPreferenceIds.has(value) ? (value as AccessibilityPreferenceId) : '';
+}
+
 export const Route = createFileRoute('/train-search-results')({
   validateSearch: (search): TrainSearchRouteSearch => ({
+    accessibilityPreference: readAccessibilityPreference(search),
     date: readSearchValue(search, 'date'),
     destinationEva: readSearchValue(search, 'destinationEva'),
     destinationName: readSearchValue(search, 'destinationName'),

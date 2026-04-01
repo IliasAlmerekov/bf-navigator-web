@@ -13,10 +13,10 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'home', icon: House, label: 'Home Search', to: '/' },
-  { key: 'saved', icon: Bookmark, label: 'Saved Trips', to: '/saved-trips' },
-  { key: 'alerts', icon: Bell, label: 'Alerts', to: '/alerts' },
-  { key: 'profile', icon: LifeBuoy, label: 'Support', to: '/profile' },
+  { key: 'home', icon: House, label: 'Startsuche', to: '/' },
+  { key: 'saved', icon: Bookmark, label: 'Gespeicherte Reisen', to: '/saved-trips' },
+  { key: 'alerts', icon: Bell, label: 'Meldungen', to: '/alerts' },
+  { key: 'profile', icon: LifeBuoy, label: 'Hilfe', to: '/profile' },
 ];
 
 const HOME_SECTION_PATHS = new Set([
@@ -62,7 +62,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <Link className={styles.brand} to="/">
           BF-NAVIGATOR
         </Link>
-        <nav aria-label="Primary" className={styles['top-nav-links']}>
+        <nav aria-label="Primärnavigation" className={styles['top-nav-links']}>
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.key}
@@ -77,7 +77,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </nav>
         <div className={styles['top-nav-actions']}>
           <ExpandingSearchDock />
-          <button aria-label="Support" className={styles['top-nav-button']} type="button">
+          <button aria-label="Hilfe" className={styles['top-nav-button']} type="button">
             <LifeBuoy aria-hidden="true" />
           </button>
         </div>
@@ -85,7 +85,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       <div className={styles.content}>{children}</div>
 
-      <nav aria-label="Footer navigation" className={styles['footer-nav']}>
+      <nav aria-label="Fußnavigation" className={styles['footer-nav']}>
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
 

@@ -3,13 +3,24 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Onboarding from './Onboarding';
 
+const mockNavigate = vi.fn();
+const HAS_COMPLETED_ONBOARDING_STORAGE_KEY = 'bf-navigator-completed-onboarding';
+const ACCESSIBILITY_PREFERENCE_STORAGE_KEY = 'bf-navigator-accessibility-preference';
+
+vi.mock('@tanstack/react-router', () => ({
+  useNavigate: () => mockNavigate,
+}));
+
 describe('Onboarding', () => {
   afterEach(() => {
     cleanup();
+    mockNavigate.mockReset();
     vi.restoreAllMocks();
   });
 
   beforeEach(() => {
+    window.localStorage.removeItem(HAS_COMPLETED_ONBOARDING_STORAGE_KEY);
+    window.localStorage.removeItem(ACCESSIBILITY_PREFERENCE_STORAGE_KEY);
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: vi.fn().mockImplementation((query: string) => {
@@ -75,7 +86,7 @@ describe('Onboarding', () => {
     expect(mobilityOptionsList.tagName).toBe('UL');
     const optionCards = within(mobilityOptionsList).getAllByRole('button');
 
-    expect(optionCards).toHaveLength(4);
+    expect(optionCards).toHaveLength(5);
     expect(
       within(mobilityOptionsList).getByRole('button', { name: /Rollstuhlzugang/i })
     ).toBeInTheDocument();
@@ -100,10 +111,17 @@ describe('Onboarding', () => {
     expect(
       within(mobilityOptionsList).getByRole('button', { name: /Minimale Stufen und kurze Wege/i })
     ).toBeInTheDocument();
+    expect(
+      within(mobilityOptionsList).getByRole('button', { name: /Kinderwagen/i })
+    ).toBeInTheDocument();
+    expect(
+      within(mobilityOptionsList).getByRole('button', { name: /Mehr Platz und stufenarme Wege/i })
+    ).toBeInTheDocument();
     expect(optionCards[0]).toHaveAttribute('aria-pressed', 'true');
     expect(optionCards[1]).toHaveAttribute('aria-pressed', 'false');
     expect(optionCards[2]).toHaveAttribute('aria-pressed', 'false');
     expect(optionCards[3]).toHaveAttribute('aria-pressed', 'false');
+    expect(optionCards[4]).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('scrolls down to step 2 and step 3 when CTA buttons are clicked', () => {
@@ -131,5 +149,39 @@ describe('Onboarding', () => {
 
     fireEvent.click(within(stepTwoSection as HTMLElement).getByRole('button', { name: 'Weiter' }));
     expect(scrollIntoViewMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('completes onboarding and opens home search from the primary and skip actions', () => {
+    render(<Onboarding />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Route finden ->' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Einrichtung überspringen' }));
+
+    expect(window.localStorage.getItem(HAS_COMPLETED_ONBOARDING_STORAGE_KEY)).toBe('true');
+    expect(mockNavigate).toHaveBeenNthCalledWith(1, { to: '/' });
+    expect(mockNavigate).toHaveBeenNthCalledWith(2, { to: '/' });
+  });
+
+  it('stores the selected accessibility preference when route finding starts', () => {
+    render(<Onboarding />);
+
+    const mobilityOptionsList = screen.getAllByLabelText('Mobilitätsoptionen')[0];
+
+    fireEvent.click(within(mobilityOptionsList).getByRole('button', { name: /Kinderwagen/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Route finden ->' }));
+
+    expect(window.localStorage.getItem(HAS_COMPLETED_ONBOARDING_STORAGE_KEY)).toBe('true');
+    expect(window.localStorage.getItem(ACCESSIBILITY_PREFERENCE_STORAGE_KEY)).toBe('stroller');
+    expect(mockNavigate).toHaveBeenCalledWith({ to: '/' });
+  });
+
+  it('does not store an accessibility preference when setup is skipped', () => {
+    render(<Onboarding />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Einrichtung überspringen' }));
+
+    expect(window.localStorage.getItem(HAS_COMPLETED_ONBOARDING_STORAGE_KEY)).toBe('true');
+    expect(window.localStorage.getItem(ACCESSIBILITY_PREFERENCE_STORAGE_KEY)).toBeNull();
+    expect(mockNavigate).toHaveBeenCalledWith({ to: '/' });
   });
 });

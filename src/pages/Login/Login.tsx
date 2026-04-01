@@ -1,6 +1,7 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import logoMarkImage from '../../assets/Login/route.png';
 import googleIcon from '../../assets/Login/icons8-google-48.png';
+import { storeCompletedOnboarding } from '../../utils/accountStorage';
 import styles from './Login.module.css';
 
 function BrandGlyph() {
@@ -36,6 +37,14 @@ function EyeIcon() {
 }
 
 export default function Login() {
+  const navigate = useNavigate();
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    storeCompletedOnboarding();
+    void navigate({ to: '/' });
+  }
+
   return (
     <main className={styles.page}>
       <div className={styles.shell}>
@@ -89,7 +98,7 @@ export default function Login() {
               </p>
             </div>
 
-            <form className={styles.form}>
+            <form className={styles.form} onSubmit={handleSubmit}>
               <label className={styles.field}>
                 <span className={styles.label}>E-Mail-Adresse</span>
                 <input

@@ -62,11 +62,11 @@ export function StationAutocompleteField(props: StationAutocompleteFieldProps) {
     trimmedValue.length >= MIN_STATION_QUERY_LENGTH &&
     (props.loading || Boolean(props.error) || props.suggestions.length > 0 || showEmptyState);
   const statusMessage = props.loading
-    ? 'Searching stations.'
+    ? 'Bahnhöfe werden gesucht.'
     : props.error
       ? props.error
       : showEmptyState
-        ? 'No stations found for this city.'
+        ? 'Für diese Stadt wurden keine Bahnhöfe gefunden.'
         : '';
   const describedByParts = [
     props.invalid && props.errorId ? props.errorId : undefined,
@@ -192,7 +192,7 @@ export function StationAutocompleteField(props: StationAutocompleteFieldProps) {
             props.onActiveChange(true);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Start typing a city"
+          placeholder="Stadt eingeben"
           role="combobox"
           type="text"
           value={props.value}
@@ -207,13 +207,13 @@ export function StationAutocompleteField(props: StationAutocompleteFieldProps) {
 
       {showDropdown ? (
         <div className={styles.dropdown}>
-          {props.loading ? <p className={styles.status}>Searching stations...</p> : null}
+          {props.loading ? <p className={styles.status}>Bahnhöfe werden gesucht...</p> : null}
 
           {props.error ? (
             <p className={`${styles.status} ${styles['status-error']}`}>{props.error}</p>
           ) : null}
 
-          {showEmptyState ? <p className={styles.status}>No stations found.</p> : null}
+          {showEmptyState ? <p className={styles.status}>Keine Bahnhöfe gefunden.</p> : null}
 
           {!props.loading && !props.error && props.suggestions.length > 0 ? (
             <div id={listboxId} role="listbox">
