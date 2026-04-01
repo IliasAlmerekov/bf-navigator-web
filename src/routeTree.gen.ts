@@ -18,7 +18,6 @@ import { Route as RouteDetailsRouteImport } from './routes/route-details'
 import { Route as RegisterDesktopRouteImport } from './routes/register-desktop'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as OnboardingDesktopRouteImport } from './routes/onboarding-desktop'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LiveNavigationRouteImport } from './routes/live-navigation'
@@ -71,11 +70,6 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OnboardingDesktopRoute = OnboardingDesktopRouteImport.update({
-  id: '/onboarding-desktop',
-  path: '/onboarding-desktop',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -114,7 +108,6 @@ export interface FileRoutesByFullPath {
   '/live-navigation': typeof LiveNavigationRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
-  '/onboarding-desktop': typeof OnboardingDesktopRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/register-desktop': typeof RegisterDesktopRoute
@@ -132,7 +125,6 @@ export interface FileRoutesByTo {
   '/live-navigation': typeof LiveNavigationRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
-  '/onboarding-desktop': typeof OnboardingDesktopRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/register-desktop': typeof RegisterDesktopRoute
@@ -151,7 +143,6 @@ export interface FileRoutesById {
   '/live-navigation': typeof LiveNavigationRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
-  '/onboarding-desktop': typeof OnboardingDesktopRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/register-desktop': typeof RegisterDesktopRoute
@@ -171,7 +162,6 @@ export interface FileRouteTypes {
     | '/live-navigation'
     | '/login'
     | '/onboarding'
-    | '/onboarding-desktop'
     | '/profile'
     | '/register'
     | '/register-desktop'
@@ -189,7 +179,6 @@ export interface FileRouteTypes {
     | '/live-navigation'
     | '/login'
     | '/onboarding'
-    | '/onboarding-desktop'
     | '/profile'
     | '/register'
     | '/register-desktop'
@@ -207,7 +196,6 @@ export interface FileRouteTypes {
     | '/live-navigation'
     | '/login'
     | '/onboarding'
-    | '/onboarding-desktop'
     | '/profile'
     | '/register'
     | '/register-desktop'
@@ -226,7 +214,6 @@ export interface RootRouteChildren {
   LiveNavigationRoute: typeof LiveNavigationRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
-  OnboardingDesktopRoute: typeof OnboardingDesktopRoute
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
   RegisterDesktopRoute: typeof RegisterDesktopRoute
@@ -303,13 +290,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/onboarding-desktop': {
-      id: '/onboarding-desktop'
-      path: '/onboarding-desktop'
-      fullPath: '/onboarding-desktop'
-      preLoaderRoute: typeof OnboardingDesktopRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -362,7 +342,6 @@ const rootRouteChildren: RootRouteChildren = {
   LiveNavigationRoute: LiveNavigationRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
-  OnboardingDesktopRoute: OnboardingDesktopRoute,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
   RegisterDesktopRoute: RegisterDesktopRoute,
