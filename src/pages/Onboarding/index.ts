@@ -1,1 +1,1 @@
-export { default } from './OnboardingAdaptive';
+export { default } from './Onboarding';
