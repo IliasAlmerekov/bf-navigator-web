@@ -1,95 +1,134 @@
-import { Train } from 'lucide-react';
-import type { TimetableEntry } from '../types';
+import { ArrowRight, Clock, PersonStanding } from 'lucide-react';
+import type { RouteResult, RouteStep } from '../types';
 import styles from './TrainResultCard.module.css';
 
 interface TrainResultCardProps {
-  result: TimetableEntry;
+  route: RouteResult;
   onSelect: () => void;
   isRecommended?: boolean;
 }
 
-function parseMinutes(t: string): number {
-  if (t.includes(':')) {
-    const [h, m] = t.split(':').map(Number);
-    return h * 60 + m;
-  }
-  return parseInt(t.slice(0, 2), 10) * 60 + parseInt(t.slice(2, 4), 10);
+interface TransitSegment {
+  lineName: string;
+  lineColor: string;
+  lineTextColor: string;
+  departureTime: string;
+  arrivalTime: string;
+  departureStop: string;
+  arrivalStop: string;
+  vehicleType: string;
 }
 
-function calcDuration(dep: string | null, arr: string | null): string | null {
-  if (!dep || !arr) return null;
-  const totalDep = parseMinutes(dep);
-  let totalArr = parseMinutes(arr);
-  if (totalArr < totalDep) totalArr += 24 * 60;
-  const diff = totalArr - totalDep;
-  const h = Math.floor(diff / 60);
-  const m = diff % 60;
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+function getTransitSegments(steps: RouteStep[]): TransitSegment[] {
+  return steps
+    .filter((s) => s.travelMode === 'TRANSIT' && s.transitDetails)
+    .map((s) => {
+      const td = s.transitDetails!;
+      const line = td.transitLine;
+      return {
+        lineName: line.nameShort ?? line.name ?? td.headsign,
+        lineColor: line.color ?? '#002068',
+        lineTextColor: line.textColor ?? '#ffffff',
+        departureTime: td.localizedValues.departureTime.time.text,
+        arrivalTime: td.localizedValues.arrivalTime.time.text,
+        departureStop: td.stopDetails.departureStop.name,
+        arrivalStop: td.stopDetails.arrivalStop.name,
+        vehicleType: line.vehicle.type,
+      };
+    });
 }
 
-function formatDisplayTime(t: string | null): string {
-  if (!t) return '—';
-  if (t.includes(':')) return t.slice(0, 5);
-  if (t.length >= 4) return `${t.slice(0, 2)}:${t.slice(2, 4)}`;
-  return t;
+function hasWalkSegment(steps: RouteStep[]): boolean {
+  return steps.some((s) => s.travelMode === 'WALK');
 }
 
-export function TrainResultCard({ result, onSelect, isRecommended = false }: TrainResultCardProps) {
-  const trainLabel = `${result.trainType} ${result.trainNumber}`.trim();
-  const depDisplay = formatDisplayTime(result.departureTime);
-  const arrDisplay = formatDisplayTime(result.arrivalTime);
-  const duration = calcDuration(result.departureTime, result.arrivalTime);
-  const originStation = result.route[0] ?? null;
-  const destStation = result.route.length > 1 ? result.route[result.route.length - 1] : null;
+export function TrainResultCard({ route, onSelect, isRecommended = false }: TrainResultCardProps) {
+  const leg = route.legs?.[0];
+  if (!leg) return null;
+
+  const segments = getTransitSegments(leg.steps);
+  const duration = route.localizedValues.duration.text;
+
+  const firstTransit = segments[0];
+  const lastTransit = segments[segments.length - 1];
+  const overallDep = firstTransit?.departureTime ?? '—';
+  const overallArr = lastTransit?.arrivalTime ?? '—';
+  const transfers = segments.length > 1 ? segments.length - 1 : 0;
+  const hasWalk = hasWalkSegment(leg.steps);
+
+  const ariaLabel = `${overallDep} bis ${overallArr}, Dauer ${duration}${transfers > 0 ? `, ${transfers} Umstieg${transfers > 1 ? 'e' : ''}` : ', Direkt'}`;
 
   return (
-    <article
-      aria-label={`${trainLabel}, Abfahrt ${depDisplay}, Ankunft ${arrDisplay}`}
-      className={styles.card}
-    >
+    <article aria-label={ariaLabel} className={styles.card}>
       {isRecommended && (
-        <span className={styles.recommended} aria-label="Empfohlene Verbindung">
+        <span aria-label="Empfohlene Verbindung" className={styles.recommended}>
           Empfohlen
         </span>
       )}
 
-      <div className={styles.timeRow}>
+      {/* ── Times row ── */}
+      <div className={styles['time-row']}>
         <div className={styles.times}>
-          <span className={styles.timeDep}>{depDisplay}</span>
-          <Train aria-hidden="true" className={styles.trainIcon} />
-          <span className={styles.timeArr}>{arrDisplay}</span>
+          <time className={styles.time}>{overallDep}</time>
+          <span aria-hidden="true" className={styles['time-sep']}>
+            —
+          </span>
+          <time className={styles.time}>{overallArr}</time>
         </div>
-        {duration && <span className={styles.duration}>{duration}</span>}
+        <div className={styles.meta}>
+          <Clock aria-hidden="true" className={styles['meta-icon']} />
+          <span className={styles.duration}>{duration}</span>
+        </div>
       </div>
 
-      <div className={styles.badgeRow}>
-        <span className={styles.trainBadge}>{trainLabel}</span>
-        <span className={styles.directBadge}>Direkt</span>
-        {result.departurePlatform ? (
-          <span className={styles.platformBadge}>Gleis {result.departurePlatform}</span>
-        ) : null}
-      </div>
-
-      {(originStation || destStation) && (
-        <div className={styles.stations} aria-label="Stationen">
-          {originStation && (
-            <span className={styles.station}>
-              <span className={styles.stationDot} aria-hidden="true" />
-              {originStation}
+      {/* ── Transit line badges ── */}
+      {segments.length > 0 && (
+        <div aria-label="Verbindungsübersicht" className={styles['segment-row']}>
+          {segments.map((seg, i) => (
+            <span key={`${seg.lineName}-${i}`} className={styles['segment-item']}>
+              <span
+                className={styles['line-badge']}
+                style={{ background: seg.lineColor, color: seg.lineTextColor }}
+              >
+                {seg.lineName}
+              </span>
+              {i < segments.length - 1 && (
+                <ArrowRight aria-hidden="true" className={styles['transfer-arrow']} />
+              )}
             </span>
-          )}
-          {destStation && (
-            <span className={styles.station}>
-              <span className={styles.stationDot} aria-hidden="true" />
-              {destStation}
-            </span>
-          )}
+          ))}
         </div>
       )}
 
+      {/* ── Journey path ── */}
+      {firstTransit && lastTransit && (
+        <div className={styles.stations} aria-label="Von / Nach">
+          <span className={styles.station}>{firstTransit.departureStop}</span>
+          <span aria-hidden="true" className={styles['station-sep']} />
+          <span className={styles.station}>{lastTransit.arrivalStop}</span>
+        </div>
+      )}
+
+      {/* ── Transfer / walk info ── */}
+      <div className={styles['info-row']}>
+        {transfers === 0 ? (
+          <span className={styles['info-badge']}>Direkt</span>
+        ) : (
+          <span className={styles['info-badge']}>
+            {transfers} Umstieg{transfers > 1 ? 'e' : ''}
+          </span>
+        )}
+        {hasWalk && (
+          <span aria-label="Fußweg erforderlich" className={styles['walk-badge']}>
+            <PersonStanding aria-hidden="true" className={styles['walk-icon']} />
+            Fußweg
+          </span>
+        )}
+      </div>
+
       <button
-        aria-label={`${trainLabel} Route auswählen, Abfahrt ${depDisplay}`}
-        className={styles.selectBtn}
+        aria-label={`Verbindung auswählen: ${overallDep} bis ${overallArr}`}
+        className={styles['select-btn']}
         type="button"
         onClick={onSelect}
       >

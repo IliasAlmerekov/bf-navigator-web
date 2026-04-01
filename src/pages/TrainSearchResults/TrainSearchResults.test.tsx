@@ -1,5 +1,6 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RouteResult } from './types';
 import TrainSearchResults from './TrainSearchResults';
 
 const mockNavigate = vi.fn();
@@ -12,9 +13,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 function createJsonResponse(body: unknown) {
   return new Response(JSON.stringify(body), {
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
@@ -25,13 +24,69 @@ function getRequestedUrl(input: Request | string | URL) {
 function createDeferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
   let reject!: (reason?: unknown) => void;
-
-  const promise = new Promise<T>((promiseResolve, promiseReject) => {
-    resolve = promiseResolve;
-    reject = promiseReject;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
   });
-
   return { promise, reject, resolve };
+}
+
+function makeRoute(overrides?: Partial<RouteResult>): RouteResult {
+  return {
+    distanceMeters: 240215,
+    duration: '8411s',
+    staticDuration: '8411s',
+    localizedValues: {
+      distance: { text: '240 km' },
+      duration: { text: '2 Stunden, 20 Minuten' },
+      staticDuration: { text: '2 Stunden, 20 Minuten' },
+    },
+    legs: [
+      {
+        distanceMeters: 240215,
+        duration: '8411s',
+        staticDuration: '8411s',
+        localizedValues: {
+          distance: { text: '240 km' },
+          duration: { text: '2 Stunden, 20 Minuten' },
+          staticDuration: { text: '2 Stunden, 20 Minuten' },
+        },
+        steps: [
+          {
+            distanceMeters: 178315,
+            staticDuration: '4740s',
+            travelMode: 'TRANSIT',
+            localizedValues: {
+              distance: { text: '178 km' },
+              staticDuration: { text: '1 Stunde, 19 Minuten' },
+            },
+            transitDetails: {
+              stopDetails: {
+                arrivalStop: { name: 'Hannover Hauptbahnhof' },
+                departureStop: { name: 'Hamburg Hauptbahnhof' },
+                arrivalTime: '2026-04-02T09:48:00Z',
+                departureTime: '2026-04-02T08:29:00Z',
+              },
+              localizedValues: {
+                arrivalTime: { time: { text: '11:48' }, timeZone: 'Europe/Berlin' },
+                departureTime: { time: { text: '10:29' }, timeZone: 'Europe/Berlin' },
+              },
+              headsign: 'Stuttgart Hbf',
+              transitLine: {
+                agencies: [{ name: 'DB Fernverkehr AG', uri: 'https://www.bahn.de/' }],
+                color: '#f01414',
+                nameShort: 'ICE 579',
+                textColor: '#ffffff',
+                vehicle: { name: { text: 'Hochgeschwindigkeitszug' }, type: 'HIGH_SPEED_TRAIN' },
+              },
+              stopCount: 3,
+            },
+          },
+        ],
+      },
+    ],
+    ...overrides,
+  };
 }
 
 describe('TrainSearchResults', () => {
@@ -80,106 +135,67 @@ describe('TrainSearchResults', () => {
     );
   });
 
-  it('shows a loading announcement while timetable data is being fetched', () => {
+  it('does not show passenger count in the summary bar', async () => {
+    render(<TrainSearchResults />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    const summary = screen.getByRole('region', { name: /suchanfrage zusammenfassung/i });
+    expect(summary).not.toHaveTextContent(/reisende/i);
+  });
+
+  it('shows a loading announcement while route data is being fetched', () => {
     const deferredResponse = createDeferred<Response>();
     fetchMock.mockReturnValueOnce(deferredResponse.promise);
 
     render(<TrainSearchResults />);
 
-    const loadingStatus = screen.getByText(/loading train results/i);
-
-    expect(loadingStatus).toHaveTextContent(/loading train results/i);
+    const loadingStatus = screen.getByRole('status');
+    expect(loadingStatus).toHaveTextContent(/verbindungen werden geladen/i);
     expect(loadingStatus).toHaveAttribute('aria-live', 'polite');
-    expect(screen.queryByText('ECE 1174')).not.toBeInTheDocument();
   });
 
-  it('shows an error state when the timetable request fails', async () => {
+  it('shows an error state when the route request fails', async () => {
     fetchMock.mockRejectedValueOnce(new Error('Network error'));
 
     render(<TrainSearchResults />);
 
     const errorAlert = await screen.findByRole('alert');
-
-    expect(errorAlert).toHaveTextContent(/unable to load train results/i);
+    expect(errorAlert).toHaveTextContent(/verbindungen konnten nicht geladen werden/i);
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
   });
 
-  it('shows an empty state when the timetable request succeeds without trains', async () => {
+  it('shows an empty state when the request succeeds without routes', async () => {
     fetchMock.mockResolvedValueOnce(createJsonResponse([]));
 
     render(<TrainSearchResults />);
 
-    const emptyState = await screen.findByText(/no trains found for this station and time/i);
-
-    expect(emptyState).toHaveTextContent(/no trains found for this station and time/i);
+    const emptyState = await screen.findByRole('status');
+    expect(emptyState).toHaveTextContent(/keine verbindungen/i);
     expect(screen.queryAllByRole('button', { name: /route auswählen/i })).toHaveLength(0);
   });
 
-  it('renders all trains returned by the timetable endpoint instead of the local mock results', async () => {
-    fetchMock.mockResolvedValueOnce(
-      createJsonResponse([
-        {
-          arrivalPlatform: null,
-          arrivalTime: null,
-          departurePlatform: '5',
-          departureTime: '12:51',
-          line: null,
-          route: [
-            'Schleswig',
-            'Padborg st',
-            'Kolding st',
-            'Odense st',
-            'Ringsted st',
-            'Koebenhavn H',
-          ],
-          trainNumber: '1174',
-          trainType: 'ECE',
-        },
-        {
-          arrivalPlatform: '11',
-          arrivalTime: '12:48',
-          departurePlatform: '11',
-          departureTime: '12:52',
-          line: null,
-          route: ['Lüneburg', 'Uelzen', 'Stendal Hbf', 'Berlin-Spandau', 'Berlin Hbf'],
-          trainNumber: '1907',
-          trainType: 'ICE',
-        },
-      ])
-    );
+  it('renders route cards returned by the endpoint', async () => {
+    fetchMock.mockResolvedValueOnce(createJsonResponse([makeRoute(), makeRoute()]));
 
     render(<TrainSearchResults />);
 
-    expect(await screen.findByText('ECE 1174')).toBeInTheDocument();
-    expect(screen.getByText('ICE 1907')).toBeInTheDocument();
-    expect(screen.getByText(/Koebenhavn H/)).toBeInTheDocument();
-    expect(screen.getByText('Gleis 5')).toBeInTheDocument();
-    expect(screen.queryByText('ICE 789')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /route auswählen/i })).toHaveLength(2);
+    const buttons = await screen.findAllByRole('button', { name: /verbindung auswählen/i });
+    expect(buttons).toHaveLength(2);
+  });
+
+  it('supports new { routes: [] } response shape', async () => {
+    fetchMock.mockResolvedValueOnce(createJsonResponse({ routes: [makeRoute()] }));
+
+    render(<TrainSearchResults />);
+
+    expect(
+      await screen.findByRole('button', { name: /verbindung auswählen/i })
+    ).toBeInTheDocument();
   });
 
   it('keeps loaded results accessible for screen readers and keyboard users', async () => {
-    fetchMock.mockResolvedValueOnce(
-      createJsonResponse([
-        {
-          arrivalPlatform: null,
-          arrivalTime: null,
-          departurePlatform: '5',
-          departureTime: '12:51',
-          line: null,
-          route: [
-            'Schleswig',
-            'Padborg st',
-            'Kolding st',
-            'Odense st',
-            'Ringsted st',
-            'Koebenhavn H',
-          ],
-          trainNumber: '1174',
-          trainType: 'ECE',
-        },
-      ])
-    );
+    fetchMock.mockResolvedValueOnce(createJsonResponse([makeRoute()]));
 
     render(<TrainSearchResults />);
 
@@ -194,10 +210,19 @@ describe('TrainSearchResults', () => {
     });
 
     expect(
-      await within(resultsRegion).findByRole('button', {
-        name: /ece 1174 route auswählen, abfahrt 12:51/i,
-      })
+      await within(resultsRegion).findByRole('button', { name: /verbindung auswählen/i })
     ).toBeEnabled();
     expect(within(resultsRegion).getByRole('list')).toBeInTheDocument();
+  });
+
+  it('shows pagination when there are more results than one page', async () => {
+    const routes = Array.from({ length: 6 }, () => makeRoute());
+    fetchMock.mockResolvedValueOnce(createJsonResponse(routes));
+
+    render(<TrainSearchResults />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('navigation', { name: /seiten navigation/i })).toBeInTheDocument();
+    });
   });
 });

@@ -5,17 +5,23 @@
 
 .list {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
-  padding: 4px 0 8px;
+  padding: 2px 0 10px;
   margin: 0;
   list-style: none;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  flex-wrap: nowrap;
 }
 
 .list::-webkit-scrollbar {
   display: none;
+}
+
+.list li {
+  list-style: none;
+  flex-shrink: 0;
 }
 
 .chip {
@@ -25,23 +31,24 @@
   border-radius: var(--radius-full);
   background: var(--color-surface-container-lowest);
   color: var(--color-text);
-  border: none;
+  border: 1.5px solid var(--color-ghost-border);
   font-family: var(--font-body);
-  font-size: var(--font-size-body-sm);
-  font-weight: 500;
+  font-size: 0.8125rem;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: 0 1px 3px #00000014;
+  min-height: 40px;
+  -webkit-tap-highlight-color: transparent;
   transition:
     background 0.2s ease,
     color 0.2s ease,
-    box-shadow 0.2s ease;
+    border-color 0.2s ease;
 }
 
 .chip[data-active='true'] {
-  background: var(--color-primary-container);
+  background: var(--gradient-cta);
   color: var(--color-on-primary);
-  box-shadow: var(--shadow-soft);
+  border-color: transparent;
 }
 
 .chip:focus-visible {
@@ -50,5 +57,13 @@
 }
 
 .chip:hover:not([data-active='true']) {
-  background: var(--color-surface-container-high);
+  background: var(--color-surface-container);
+  border-color: var(--color-outline-variant);
+}
+
+@media (width >= 768px) {
+  .chip {
+    padding: 9px 18px;
+    font-size: 0.875rem;
+  }
 }

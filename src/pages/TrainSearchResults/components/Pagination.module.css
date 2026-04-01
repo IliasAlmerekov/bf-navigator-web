@@ -1,0 +1,112 @@
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 0 8px;
+}
+
+/* ── Prev / Next buttons ── */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1.5px solid var(--color-outline-variant);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container-lowest);
+  color: var(--color-primary);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-primary-container);
+  outline-offset: 2px;
+}
+
+.btn:not(:disabled):active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.btn:not(:disabled):hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Page number track ── */
+.pages {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: var(--color-surface-container-low);
+  border-radius: var(--radius-full);
+}
+
+.pages li {
+  list-style: none;
+}
+
+/* ── Individual page buttons ── */
+.page-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 4px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.page-btn[data-active='true'] {
+  background: var(--gradient-cta);
+  color: var(--color-on-primary);
+}
+
+.page-btn:focus-visible {
+  outline: 2px solid var(--color-primary-container);
+  outline-offset: 2px;
+}
+
+.page-btn:not([data-active='true']):active {
+  background: var(--color-surface-container-high);
+  color: var(--color-text-strong);
+}
+
+.page-btn:not([data-active='true']):hover {
+  background: var(--color-surface-container-high);
+  color: var(--color-text-strong);
+}
