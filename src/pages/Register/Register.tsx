@@ -1,9 +1,14 @@
 import { useState } from 'react';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { Eye, EyeOff } from 'lucide-react';
+import { useRegister } from '../../hooks/useRegister';
 import openIcon from '../../assets/Onboarding/icons8-open-60.png';
 import trainWindowPhoto from '../../assets/Onboarding/ice taufe europa europe.webp';
-import { storeCompletedOnboarding } from '../../utils/accountStorage';
+import {
+  getStoredAccessibilityPreference,
+  storeCompletedOnboarding,
+} from '../../utils/accountStorage';
+import { toBackendAccessibilityType } from '../../types/auth';
 import styles from './Register.module.css';
 
 type FormData = {
@@ -18,7 +23,7 @@ type FormData = {
 type FormErrors = Partial<Record<keyof FormData, string>>;
 
 export default function Register() {
-  const navigate = useNavigate();
+  const { error: registerError, isLoading, register } = useRegister();
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
@@ -30,7 +35,6 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordRepeat, setShowPasswordRepeat] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -48,8 +52,8 @@ export default function Register() {
     }
     if (!formData.password) {
       newErrors.password = 'Passwort ist erforderlich';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Passwort mindestens 8 Zeichen';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Passwort mindestens 6 Zeichen';
     }
     if (!formData.passwordRepeat) {
       newErrors.passwordRepeat = 'Passwort wiederholen erforderlich';
@@ -90,20 +94,27 @@ export default function Register() {
       return;
     }
 
-    setIsSubmitting(true);
+    const storedPreferenceId = getStoredAccessibilityPreference();
+    const backendAccessibilityType = storedPreferenceId
+      ? toBackendAccessibilityType(storedPreferenceId)
+      : null;
+    const accessibilityTypes = backendAccessibilityType ? [backendAccessibilityType] : [];
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      await register({
+        accessibilityTypes,
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        password: formData.password,
+      });
       storeCompletedOnboarding();
-      await navigate({ to: '/login' });
-    } catch (error) {
-      console.error('Registration failed:', error);
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // The hook exposes a localized error state for the form.
     }
   };
+
+  const statusMessage = isLoading ? 'Registrierung wird durchgeführt' : registerError;
 
   return (
     <main className={styles.page}>
@@ -288,9 +299,13 @@ export default function Register() {
               )}
 
               {/* Submit Button */}
-              <button type="submit" className={styles['submit-button']} disabled={isSubmitting}>
-                {isSubmitting ? 'Wird erstellt...' : 'Konto erstellen'}
+              <button type="submit" className={styles['submit-button']} disabled={isLoading}>
+                {isLoading ? 'Wird erstellt...' : 'Konto erstellen'}
               </button>
+
+              <p aria-live="polite" className={styles['status-message']} role="status">
+                {statusMessage}
+              </p>
             </form>
 
             {/* Login Link */}
