@@ -20,8 +20,30 @@
   gap: 24px;
 }
 
+@media (width >= 1024px) {
+  .container {
+    width: min(100%, 1320px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'header header'
+      'hero form'
+      'footer footer';
+    gap: 48px 64px;
+    padding: 24px 48px 40px;
+    align-items: start;
+  }
+}
+
 .header {
   padding: 8px 0;
+}
+
+@media (width >= 1024px) {
+  .header {
+    grid-area: header;
+    padding: 0;
+  }
 }
 
 .back-link {
@@ -49,10 +71,26 @@
   gap: 32px;
 }
 
+@media (width >= 1024px) {
+  .form-section {
+    display: contents;
+  }
+}
+
 .form-wrapper {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+@media (width >= 1024px) {
+  .form-wrapper {
+    grid-area: form;
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 2px 16px rgb(0, 0, 0, 0.08);
+  }
 }
 
 .title {
@@ -283,12 +321,25 @@
   gap: 16px;
 }
 
+@media (width >= 1024px) {
+  .hero-section {
+    grid-area: hero;
+    gap: 24px;
+  }
+}
+
 .hero-image {
   width: 100%;
   border-radius: 16px;
   height: 200px;
   object-fit: cover;
   display: block;
+}
+
+@media (width >= 1024px) {
+  .hero-image {
+    height: 320px;
+  }
 }
 
 .benefit-box {
@@ -346,6 +397,16 @@
   padding-top: 16px;
   border-top: 1px solid #e0e0e0;
   text-align: center;
+}
+
+@media (width >= 1024px) {
+  .footer {
+    grid-area: footer;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+  }
 }
 
 .footer-text {
