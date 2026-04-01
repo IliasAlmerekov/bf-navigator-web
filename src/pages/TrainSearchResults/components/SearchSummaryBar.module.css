@@ -28,13 +28,13 @@
   flex-wrap: wrap;
 }
 
-.metaText {
+.meta-text {
   font-size: 0.8125rem;
   color: var(--color-text);
   font-weight: 500;
 }
 
-.changeBtn {
+.change-btn {
   display: inline-flex;
   align-items: center;
   font-size: 0.8125rem;
@@ -53,11 +53,11 @@
   text-decoration-color: color-mix(in srgb, var(--color-primary-container) 40%, transparent);
 }
 
-.changeBtn:hover {
+.change-btn:hover {
   text-decoration-color: var(--color-primary-container);
 }
 
-.changeBtn:focus-visible {
+.change-btn:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
   border-radius: 2px;

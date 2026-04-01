@@ -67,33 +67,33 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
       )}
 
       {/* ── Times row ── */}
-      <div className={styles.timeRow}>
+      <div className={styles['time-row']}>
         <div className={styles.times}>
           <time className={styles.time}>{overallDep}</time>
-          <span aria-hidden="true" className={styles.timeSep}>
+          <span aria-hidden="true" className={styles['time-sep']}>
             —
           </span>
           <time className={styles.time}>{overallArr}</time>
         </div>
         <div className={styles.meta}>
-          <Clock aria-hidden="true" className={styles.metaIcon} />
+          <Clock aria-hidden="true" className={styles['meta-icon']} />
           <span className={styles.duration}>{duration}</span>
         </div>
       </div>
 
       {/* ── Transit line badges ── */}
       {segments.length > 0 && (
-        <div aria-label="Verbindungsübersicht" className={styles.segmentRow}>
+        <div aria-label="Verbindungsübersicht" className={styles['segment-row']}>
           {segments.map((seg, i) => (
-            <span key={`${seg.lineName}-${i}`} className={styles.segmentItem}>
+            <span key={`${seg.lineName}-${i}`} className={styles['segment-item']}>
               <span
-                className={styles.lineBadge}
+                className={styles['line-badge']}
                 style={{ background: seg.lineColor, color: seg.lineTextColor }}
               >
                 {seg.lineName}
               </span>
               {i < segments.length - 1 && (
-                <ArrowRight aria-hidden="true" className={styles.transferArrow} />
+                <ArrowRight aria-hidden="true" className={styles['transfer-arrow']} />
               )}
             </span>
           ))}
@@ -104,23 +104,23 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
       {firstTransit && lastTransit && (
         <div className={styles.stations} aria-label="Von / Nach">
           <span className={styles.station}>{firstTransit.departureStop}</span>
-          <span aria-hidden="true" className={styles.stationSep} />
+          <span aria-hidden="true" className={styles['station-sep']} />
           <span className={styles.station}>{lastTransit.arrivalStop}</span>
         </div>
       )}
 
       {/* ── Transfer / walk info ── */}
-      <div className={styles.infoRow}>
+      <div className={styles['info-row']}>
         {transfers === 0 ? (
-          <span className={styles.infoBadge}>Direkt</span>
+          <span className={styles['info-badge']}>Direkt</span>
         ) : (
-          <span className={styles.infoBadge}>
+          <span className={styles['info-badge']}>
             {transfers} Umstieg{transfers > 1 ? 'e' : ''}
           </span>
         )}
         {hasWalk && (
-          <span aria-label="Fußweg erforderlich" className={styles.walkBadge}>
-            <PersonStanding aria-hidden="true" className={styles.walkIcon} />
+          <span aria-label="Fußweg erforderlich" className={styles['walk-badge']}>
+            <PersonStanding aria-hidden="true" className={styles['walk-icon']} />
             Fußweg
           </span>
         )}
@@ -128,7 +128,7 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
 
       <button
         aria-label={`Verbindung auswählen: ${overallDep} bis ${overallArr}`}
-        className={styles.selectBtn}
+        className={styles['select-btn']}
         type="button"
         onClick={onSelect}
       >

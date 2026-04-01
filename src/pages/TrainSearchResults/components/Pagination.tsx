@@ -30,7 +30,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
             <button
               aria-current={page === currentPage ? 'page' : undefined}
               aria-label={`Seite ${page}`}
-              className={styles.pageBtn}
+              className={styles['page-btn']}
               data-active={page === currentPage}
               type="button"
               onClick={() => onPageChange(page)}

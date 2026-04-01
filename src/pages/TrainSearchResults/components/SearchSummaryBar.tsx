@@ -27,10 +27,10 @@ export function SearchSummaryBar({
         </p>
       )}
       <div className={styles.meta}>
-        {scheduleLabel && <span className={styles.metaText}>{scheduleLabel}</span>}
+        {scheduleLabel && <span className={styles['meta-text']}>{scheduleLabel}</span>}
         <button
           aria-label="Suche ändern"
-          className={styles.changeBtn}
+          className={styles['change-btn']}
           type="button"
           onClick={onChangeSearch}
         >

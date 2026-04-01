@@ -131,26 +131,26 @@ export default function TrainSearchResults() {
         />
       )}
 
-      <section aria-labelledby="results-heading" className={styles.resultsSection}>
-        <h2 className={styles.srOnly} id="results-heading">
+      <section aria-labelledby="results-heading" className={styles['results-section']}>
+        <h2 className={styles['sr-only']} id="results-heading">
           Suchergebnisse: Zugverbindungen von {summaryOrigin} nach {summaryDestination}
         </h2>
 
         {loading ? (
-          <p aria-live="polite" className={styles.emptyState} role="status">
+          <p aria-live="polite" className={styles['empty-state']} role="status">
             Verbindungen werden geladen…
           </p>
         ) : hasError ? (
-          <p className={styles.emptyState} role="alert">
+          <p className={styles['empty-state']} role="alert">
             Verbindungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.
           </p>
         ) : hasLoaded && results.length === 0 ? (
-          <p aria-live="polite" className={styles.emptyState} role="status">
+          <p aria-live="polite" className={styles['empty-state']} role="status">
             Keine Verbindungen für diese Strecke gefunden.
           </p>
         ) : (
           <>
-            <ul className={styles.resultsList} role="list">
+            <ul className={styles['results-list']} role="list">
               {pagedResults.map((route, index) => (
                 <li key={`route-${(currentPage - 1) * RESULTS_PER_PAGE + index}`}>
                   <TrainResultCard

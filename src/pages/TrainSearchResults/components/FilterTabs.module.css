@@ -12,7 +12,6 @@
   list-style: none;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  /* Ensure chips don't shrink */
   flex-wrap: nowrap;
 }
 

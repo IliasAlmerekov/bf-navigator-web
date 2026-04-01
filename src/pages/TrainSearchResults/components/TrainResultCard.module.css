@@ -8,7 +8,9 @@
   gap: 12px;
   box-shadow: var(--shadow-ambient);
   border: 1.5px solid transparent;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .card:focus-within {
@@ -32,7 +34,7 @@
 }
 
 /* ── Time row ── */
-.timeRow {
+.time-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -56,7 +58,7 @@
   line-height: 1;
 }
 
-.timeSep {
+.time-sep {
   font-family: var(--font-display);
   font-size: 1rem;
   color: var(--color-outline-variant);
@@ -73,7 +75,7 @@
   flex-shrink: 0;
 }
 
-.metaIcon {
+.meta-icon {
   width: 12px;
   height: 12px;
   color: var(--color-text);
@@ -89,20 +91,20 @@
 }
 
 /* ── Segment row (line badges) ── */
-.segmentRow {
+.segment-row {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
 }
 
-.segmentItem {
+.segment-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
-.lineBadge {
+.line-badge {
   display: inline-flex;
   align-items: center;
   padding: 3px 8px;
@@ -114,7 +116,7 @@
   white-space: nowrap;
 }
 
-.transferArrow {
+.transfer-arrow {
   width: 12px;
   height: 12px;
   color: var(--color-outline-variant);
@@ -140,7 +142,7 @@
   min-width: 0;
 }
 
-.stationSep {
+.station-sep {
   flex: 1;
   height: 1px;
   background: var(--color-outline-variant);
@@ -149,14 +151,14 @@
 }
 
 /* ── Info row ── */
-.infoRow {
+.info-row {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
 }
 
-.infoBadge {
+.info-badge {
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
@@ -168,7 +170,7 @@
   white-space: nowrap;
 }
 
-.walkBadge {
+.walk-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -181,14 +183,14 @@
   white-space: nowrap;
 }
 
-.walkIcon {
+.walk-icon {
   width: 12px;
   height: 12px;
   flex-shrink: 0;
 }
 
 /* ── Select button ── */
-.selectBtn {
+.select-btn {
   width: 100%;
   padding: 14px 20px;
   background: var(--color-primary);
@@ -199,7 +201,10 @@
   font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
   text-align: center;
   margin-top: 4px;
   min-height: 48px;
@@ -207,18 +212,18 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.selectBtn:active {
+.select-btn:active {
   background: var(--color-primary-container);
   border-color: var(--color-primary-container);
 }
 
-.selectBtn:hover {
+.select-btn:hover {
   background: transparent;
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
-.selectBtn:focus-visible {
+.select-btn:focus-visible {
   outline: 3px solid var(--color-primary);
   outline-offset: 3px;
 }
