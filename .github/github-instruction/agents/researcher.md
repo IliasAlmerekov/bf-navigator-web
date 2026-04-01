@@ -35,6 +35,7 @@ A11y gaps discovered in existing code must be captured as explicit risks in the 
 - If external framework behavior is uncertain, use Context7 MCP and cite what was verified.
 - Do not propose code changes, refactors, or implementation steps.
 - All shell commands must go through `rtk`.
+- Do not add `Co-authored-by` trailers to commit messages.
 
 ## Output
 

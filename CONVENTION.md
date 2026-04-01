@@ -190,3 +190,8 @@ Every UI change must be verified against all applicable items:
 - lint/test expectations for the change are satisfied
 - accessibility semantics are preserved
 - docs and agent artifacts reflect the real implementation
+
+## 15. Commit Message Rules
+
+- Do not add `Co-authored-by` trailers to commit messages.
+- Agents and contributors must keep commit messages without automatic co-author attribution.

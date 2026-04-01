@@ -35,6 +35,7 @@ A component is not done until it passes the a11y verification checklist in CONVE
 - Handle happy path, loading, error, empty, responsive, and accessibility requirements that apply to the change.
 - Consider web regressions: route generation, broken navigation, form-state issues, CSS regressions, and keyboard/focus accessibility.
 - All shell commands must go through `rtk`.
+- Do not add `Co-authored-by` trailers to commit messages.
 - If reviewer/security/test findings come back, fix exactly those issues and explain the delta.
 
 ## Output

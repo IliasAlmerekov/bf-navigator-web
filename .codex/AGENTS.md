@@ -50,6 +50,7 @@ Additional layers such as `components/`, `hooks/`, `services/`, `store/`, `const
 ## Execution Rules
 
 - All shell commands must go through `rtk`.
+- Do not add `Co-authored-by` trailers to commit messages.
 - Prefer local code evidence first.
 - Use `rtk cat`, `rtk rg`, `rtk find`, `rtk git`, and project scripts through `rtk`.
 - If external behavior is unclear, query Context7 MCP only after local inspection.

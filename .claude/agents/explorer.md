@@ -27,6 +27,7 @@ Include an **A11y path** section alongside the execution path in your output.
 ### General Rules
 
 - All shell commands must go through `rtk`.
+- Do not add `Co-authored-by` trailers to commit messages.
 - Stay read-only.
 - Prefer targeted searches over broad scans.
 - Follow entry points through routing, pages, shared types, styling, and optional hooks/services/store layers when they exist.

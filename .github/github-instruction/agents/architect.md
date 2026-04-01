@@ -35,6 +35,7 @@ Every plan output must include an **A11y section** covering the above points. A 
 - Identify sequencing, edge cases, rollback risks, and verification scope.
 - Do not write code or speculative abstractions.
 - All shell commands must go through `rtk`.
+- Do not add `Co-authored-by` trailers to commit messages.
 
 ## Output
 
