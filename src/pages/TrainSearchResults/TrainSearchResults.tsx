@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { ArrowLeft, Bell, CircleUserRound, Search, SlidersHorizontal } from 'lucide-react';
-import type { TimetableEntry, FilterKey } from './types';
-import { BahnCardBanner } from './components/BahnCardBanner';
+import type { RouteResult, FilterKey } from './types';
+import { MOCK_ROUTES } from './mockData';
 import { SearchSummaryBar } from './components/SearchSummaryBar';
 import { TrainResultCard } from './components/TrainResultCard';
 import { FilterTabs } from './components/FilterTabs';
+import { Pagination } from './components/Pagination';
 import { FILTER_OPTIONS } from './constants';
 import styles from './TrainSearchResults.module.css';
+
+const RESULTS_PER_PAGE = 5;
 
 function formatTimetableDate(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -23,18 +25,20 @@ function formatTimetableTime(value: string) {
 export default function TrainSearchResults() {
   const navigate = useNavigate();
   const search = useSearch({ from: '/train-search-results' });
-  const [results, setResults] = useState<TimetableEntry[]>([]);
+  const [results, setResults] = useState<RouteResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+
   const summaryOrigin = search.originName || 'Hamburg Hbf';
   const summaryDestination = search.destinationName || 'Berlin Hbf';
-  const routeTitle = `${summaryOrigin} → ${summaryDestination}`;
 
   useEffect(() => {
     if (!search.originEva) {
-      setResults([]);
+      // TODO: Remove mock data before production
+      setResults(MOCK_ROUTES);
       setLoading(false);
       setHasLoaded(true);
       setHasError(false);
@@ -47,25 +51,30 @@ export default function TrainSearchResults() {
       time: formatTimetableTime(search.time),
     });
 
-    async function loadTimetable() {
+    async function loadRoutes() {
       setLoading(true);
       setHasLoaded(false);
       setHasError(false);
+      setCurrentPage(1);
 
       try {
+        // TODO: Replace with Google Routes API endpoint
+        // Expected response shape: { routes: RouteResult[] }
         const response = await fetch(
           `/api/stations/${search.originEva}/timetable?${params.toString()}`,
-          {
-            signal: controller.signal,
-          }
+          { signal: controller.signal }
         );
 
-        if (!response.ok) {
-          throw new Error('Timetable request failed');
-        }
+        if (!response.ok) throw new Error('Route request failed');
 
-        const payload = (await response.json()) as TimetableEntry[];
-        setResults(Array.isArray(payload) ? payload : []);
+        const payload = await response.json();
+        // Supports both legacy array and new { routes: [] } format
+        const routes: RouteResult[] = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.routes)
+            ? payload.routes
+            : [];
+        setResults(routes);
         setHasLoaded(true);
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return;
@@ -76,153 +85,91 @@ export default function TrainSearchResults() {
       }
     }
 
-    void loadTimetable();
-    return () => {
-      controller.abort();
-    };
+    void loadRoutes();
+    return () => controller.abort();
   }, [search.date, search.originEva, search.time]);
 
   function handleSelectRoute() {
-    navigate({ to: '/route-details' });
+    navigate({ to: '/route-overview' });
   }
 
   function handleBack() {
     navigate({ to: '/' });
   }
 
+  function handlePageChange(page: number) {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  const totalPages = Math.ceil(results.length / RESULTS_PER_PAGE);
+  const pagedResults = results.slice(
+    (currentPage - 1) * RESULTS_PER_PAGE,
+    currentPage * RESULTS_PER_PAGE
+  );
   const resultCount = hasLoaded ? results.length : null;
 
   return (
-    <main className={styles.page}>
-      {/* ── Mobile top bar ── */}
-      <header className={styles['mobile-topbar']}>
-        <button
-          aria-label="Zurück zur Suche"
-          className={styles['icon-button']}
-          type="button"
-          onClick={handleBack}
-        >
-          <ArrowLeft aria-hidden="true" />
-        </button>
-        <p className={styles['route-title']} aria-label={`Route: ${routeTitle}`}>
-          {routeTitle}
-        </p>
-        <button aria-label="Filter und Sortierung" className={styles['icon-button']} type="button">
-          <SlidersHorizontal aria-hidden="true" />
-        </button>
-      </header>
+    <div className={styles.page}>
+      <SearchSummaryBar
+        date={search.date}
+        time={search.time}
+        originName={summaryOrigin}
+        destinationName={summaryDestination}
+        resultCount={resultCount}
+        onChangeSearch={handleBack}
+      />
 
-      {/* ── Desktop top bar ── */}
-      <header className={styles['desktop-topbar']}>
-        <p className={styles['desktop-brand']}>BF-NAVIGATOR</p>
-        <nav aria-label="Hauptnavigation" className={styles['desktop-nav']}>
-          <button className={styles['nav-link']} type="button">
-            <Search aria-hidden="true" />
-            <span>Suche</span>
-          </button>
-          <button
-            className={styles['nav-link']}
-            data-active="true"
-            type="button"
-            aria-current="page"
-          >
-            <span>Verbindungen</span>
-          </button>
-          <button className={styles['nav-link']} type="button">
-            <span>Meine Reisen</span>
-          </button>
-          <button className={styles['nav-link']} type="button">
-            <span>Profil</span>
-          </button>
-        </nav>
-        <div className={styles['desktop-topbar-actions']}>
-          <button aria-label="Benachrichtigungen" className={styles['icon-button']} type="button">
-            <Bell aria-hidden="true" />
-          </button>
-          <button aria-label="Profil öffnen" className={styles['icon-button']} type="button">
-            <CircleUserRound aria-hidden="true" />
-          </button>
-        </div>
-      </header>
-
-      <div className={styles.content}>
-        {/* ── Search summary ── */}
-        <SearchSummaryBar
-          date={search.date}
-          time={search.time}
-          originName={summaryOrigin}
-          destinationName={summaryDestination}
-          passengerCount={2}
-          resultCount={resultCount}
-          onChangeSearch={handleBack}
+      {!hasError && (
+        <FilterTabs
+          options={FILTER_OPTIONS}
+          activeFilter={activeFilter}
+          onFilterChange={(key) => {
+            setActiveFilter(key);
+            setCurrentPage(1);
+          }}
         />
+      )}
 
-        {/* ── Filter tabs ── */}
-        {!hasError && (
-          <FilterTabs
-            options={FILTER_OPTIONS}
-            activeFilter={activeFilter}
-            onFilterChange={setActiveFilter}
-          />
-        )}
+      <section aria-labelledby="results-heading" className={styles.resultsSection}>
+        <h2 className={styles.srOnly} id="results-heading">
+          Suchergebnisse: Zugverbindungen von {summaryOrigin} nach {summaryDestination}
+        </h2>
 
-        {/* ── Results list ── */}
-        <section aria-labelledby="results-heading" className={styles['results-section']}>
-          <h1 className={styles['sr-only']} id="results-heading">
-            Suchergebnisse: Zugverbindungen von {summaryOrigin} nach {summaryDestination}
-          </h1>
-
-          {loading ? (
-            <p aria-live="polite" className={styles['empty-state']} role="status">
-              Loading train results…
-            </p>
-          ) : hasError ? (
-            <p className={styles['empty-state']} role="alert">
-              Unable to load train results. Please try again.
-            </p>
-          ) : hasLoaded && results.length === 0 ? (
-            <p aria-live="polite" className={styles['empty-state']} role="status">
-              No trains found for this station and time.
-            </p>
-          ) : (
-            <ul className={styles['results-list']} role="list">
-              {results.map((result, index) => (
-                <li key={`${result.trainType}-${result.trainNumber}-${result.departureTime}`}>
+        {loading ? (
+          <p aria-live="polite" className={styles.emptyState} role="status">
+            Verbindungen werden geladen…
+          </p>
+        ) : hasError ? (
+          <p className={styles.emptyState} role="alert">
+            Verbindungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.
+          </p>
+        ) : hasLoaded && results.length === 0 ? (
+          <p aria-live="polite" className={styles.emptyState} role="status">
+            Keine Verbindungen für diese Strecke gefunden.
+          </p>
+        ) : (
+          <>
+            <ul className={styles.resultsList} role="list">
+              {pagedResults.map((route, index) => (
+                <li key={`route-${(currentPage - 1) * RESULTS_PER_PAGE + index}`}>
                   <TrainResultCard
-                    result={result}
+                    route={route}
                     onSelect={handleSelectRoute}
-                    isRecommended={index === 0}
+                    isRecommended={currentPage === 1 && index === 0}
                   />
                 </li>
               ))}
             </ul>
-          )}
-        </section>
 
-        {/* ── BahnCard promotional banner ── */}
-        <BahnCardBanner onUpgrade={() => {}} />
-      </div>
-
-      {/* ── Mobile bottom navigation ── */}
-      <nav aria-label="Untere Navigation" className={styles['mobile-bottom-nav']}>
-        <button className={styles['bottom-nav-item']} type="button">
-          <Search aria-hidden="true" className={styles['bottom-nav-icon']} />
-          <span>Suche</span>
-        </button>
-        <button
-          aria-current="page"
-          className={styles['bottom-nav-item']}
-          data-active="true"
-          type="button"
-        >
-          <ArrowLeft aria-hidden="true" className={styles['bottom-nav-icon']} />
-          <span>Ergebnisse</span>
-        </button>
-        <button className={styles['bottom-nav-item']} type="button">
-          <CircleUserRound aria-hidden="true" className={styles['bottom-nav-icon']} />
-          <span>Profil</span>
-        </button>
-      </nav>
-    </main>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </>
+        )}
+      </section>
+    </div>
   );
 }

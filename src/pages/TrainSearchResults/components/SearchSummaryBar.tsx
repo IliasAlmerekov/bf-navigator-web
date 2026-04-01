@@ -5,7 +5,6 @@ interface SearchSummaryBarProps {
   time: string;
   originName?: string;
   destinationName?: string;
-  passengerCount: number;
   resultCount: number | null;
   onChangeSearch: () => void;
 }
@@ -15,12 +14,10 @@ export function SearchSummaryBar({
   time,
   originName,
   destinationName,
-  passengerCount,
   resultCount,
   onChangeSearch,
 }: SearchSummaryBarProps) {
   const scheduleLabel = [date, time].filter(Boolean).join(' · ');
-  const passengerLabel = `${passengerCount} ${passengerCount === 1 ? 'Reisender' : 'Reisende'}`;
 
   return (
     <div className={styles.bar} role="region" aria-label="Suchanfrage Zusammenfassung">
@@ -30,9 +27,7 @@ export function SearchSummaryBar({
         </p>
       )}
       <div className={styles.meta}>
-        <span className={styles.metaText}>
-          {scheduleLabel} · {passengerLabel}
-        </span>
+        {scheduleLabel && <span className={styles.metaText}>{scheduleLabel}</span>}
         <button
           aria-label="Suche ändern"
           className={styles.changeBtn}
@@ -43,7 +38,7 @@ export function SearchSummaryBar({
         </button>
       </div>
       {resultCount !== null && (
-        <p className={styles.count} aria-live="polite">
+        <p aria-live="polite" className={styles.count}>
           {resultCount} {resultCount === 1 ? 'Verbindung' : 'Verbindungen'} gefunden
         </p>
       )}
