@@ -3,23 +3,31 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TrainRouteResponse } from './types';
 import TrainSearchResults from './TrainSearchResults';
 
+function createExpectedLocalIsoDateTime(date: string, time: string) {
+  const [year, month, day] = date.split('-').map(Number);
+  const [hours, minutes] = time.split(':').map(Number);
+  const value = new Date(year, month - 1, day, hours, minutes);
+  const offsetMinutes = -value.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? '+' : '-';
+  const absoluteOffsetMinutes = Math.abs(offsetMinutes);
+  const offsetHours = String(Math.floor(absoluteOffsetMinutes / 60)).padStart(2, '0');
+  const offsetRemainderMinutes = String(absoluteOffsetMinutes % 60).padStart(2, '0');
+
+  return `${date}T${time}:00${sign}${offsetHours}:${offsetRemainderMinutes}`;
+}
+
 const mockNavigate = vi.fn();
 const mockSearch = vi.fn();
+const searchTrainRouteMock = vi.fn();
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
   useSearch: () => mockSearch(),
 }));
 
-function createJsonResponse(body: unknown) {
-  return new Response(JSON.stringify(body), {
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-function getRequestedUrl(input: Request | string | URL) {
-  return input instanceof Request ? input.url : String(input);
-}
+vi.mock('../../services/trainRoutesApi', () => ({
+  searchTrainRoute: (...args: unknown[]) => searchTrainRouteMock(...args),
+}));
 
 function createDeferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -81,15 +89,13 @@ function makeRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteResponse 
 }
 
 describe('TrainSearchResults', () => {
-  const fetchMock = vi.mocked(fetch);
-
   afterEach(() => {
     cleanup();
   });
 
   beforeEach(() => {
-    fetchMock.mockReset();
-    fetchMock.mockResolvedValue(createJsonResponse([]));
+    searchTrainRouteMock.mockReset();
+    searchTrainRouteMock.mockResolvedValue(makeRoute());
     mockNavigate.mockReset();
     mockSearch.mockReset();
     mockSearch.mockReturnValue({
@@ -102,16 +108,21 @@ describe('TrainSearchResults', () => {
     });
   });
 
-  it('requests the selected origin timetable using formatted date and time from route search params', async () => {
+  it('requests a train route search with station names and an ISO departure datetime', async () => {
     render(<TrainSearchResults />);
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(searchTrainRouteMock).toHaveBeenCalledTimes(1);
     });
 
-    const [request] = fetchMock.mock.calls[0];
+    const [request, signal] = searchTrainRouteMock.mock.calls[0];
 
-    expect(getRequestedUrl(request)).toContain('/stations/8000207/timetable?date=260402&time=1345');
+    expect(request).toEqual({
+      departureTime: createExpectedLocalIsoDateTime('2026-04-02', '13:45'),
+      destination: 'Dresden Hbf',
+      origin: 'Köln Hbf',
+    });
+    expect(signal).toBeInstanceOf(AbortSignal);
     expect(screen.getByRole('region', { name: /suchanfrage zusammenfassung/i })).toHaveTextContent(
       'Köln Hbf'
     );
@@ -129,15 +140,15 @@ describe('TrainSearchResults', () => {
   it('does not show passenger count in the summary bar', async () => {
     render(<TrainSearchResults />);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(searchTrainRouteMock).toHaveBeenCalledTimes(1));
 
     const summary = screen.getByRole('region', { name: /suchanfrage zusammenfassung/i });
     expect(summary).not.toHaveTextContent(/reisende/i);
   });
 
   it('shows a loading announcement while route data is being fetched', () => {
-    const deferredResponse = createDeferred<Response>();
-    fetchMock.mockReturnValueOnce(deferredResponse.promise);
+    const deferredResponse = createDeferred<TrainRouteResponse>();
+    searchTrainRouteMock.mockReturnValueOnce(deferredResponse.promise);
 
     render(<TrainSearchResults />);
 
@@ -147,7 +158,7 @@ describe('TrainSearchResults', () => {
   });
 
   it('shows an error state when the route request fails', async () => {
-    fetchMock.mockRejectedValueOnce(new Error('Network error'));
+    searchTrainRouteMock.mockRejectedValueOnce(new Error('Network error'));
 
     render(<TrainSearchResults />);
 
@@ -156,8 +167,8 @@ describe('TrainSearchResults', () => {
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
   });
 
-  it('shows an empty state when the request succeeds without routes', async () => {
-    fetchMock.mockResolvedValueOnce(createJsonResponse([]));
+  it('shows an empty state when the service returns no transit segments', async () => {
+    searchTrainRouteMock.mockResolvedValueOnce(makeRoute({ transits: [] }));
 
     render(<TrainSearchResults />);
 
@@ -166,17 +177,8 @@ describe('TrainSearchResults', () => {
     expect(screen.queryAllByRole('button', { name: /route auswählen/i })).toHaveLength(0);
   });
 
-  it('renders route cards returned by the endpoint', async () => {
-    fetchMock.mockResolvedValueOnce(createJsonResponse([makeRoute(), makeRoute()]));
-
-    render(<TrainSearchResults />);
-
-    const buttons = await screen.findAllByRole('button', { name: /verbindung auswählen/i });
-    expect(buttons).toHaveLength(2);
-  });
-
-  it('supports new { routes: [] } response shape', async () => {
-    fetchMock.mockResolvedValueOnce(createJsonResponse({ routes: [makeRoute()] }));
+  it('renders the route card returned by the service', async () => {
+    searchTrainRouteMock.mockResolvedValueOnce(makeRoute());
 
     render(<TrainSearchResults />);
 
@@ -186,7 +188,7 @@ describe('TrainSearchResults', () => {
   });
 
   it('keeps loaded results accessible for screen readers and keyboard users', async () => {
-    fetchMock.mockResolvedValueOnce(createJsonResponse([makeRoute()]));
+    searchTrainRouteMock.mockResolvedValueOnce(makeRoute());
 
     render(<TrainSearchResults />);
 
@@ -206,14 +208,91 @@ describe('TrainSearchResults', () => {
     expect(within(resultsRegion).getByRole('list')).toBeInTheDocument();
   });
 
-  it('shows pagination when there are more results than one page', async () => {
-    const routes = Array.from({ length: 6 }, () => makeRoute());
-    fetchMock.mockResolvedValueOnce(createJsonResponse(routes));
+  it('hides pagination when the backend returns a single route', async () => {
+    searchTrainRouteMock.mockResolvedValueOnce(makeRoute());
+
+    render(<TrainSearchResults />);
+
+    await screen.findByRole('button', { name: /verbindung auswählen/i });
+
+    expect(screen.queryByRole('navigation', { name: /seiten navigation/i })).not.toBeInTheDocument();
+  });
+
+  it('hides filter tabs while the backend exposes only a single route result', async () => {
+    searchTrainRouteMock.mockResolvedValueOnce(makeRoute());
+
+    render(<TrainSearchResults />);
+
+    await screen.findByRole('button', { name: /verbindung auswählen/i });
+
+    expect(
+      screen.queryByRole('navigation', { name: /verbindungsfilter/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it('restarts the search when the destination changes and aborts the previous request', async () => {
+    const firstRequest = createDeferred<TrainRouteResponse>();
+    const secondRequest = createDeferred<TrainRouteResponse>();
+
+    searchTrainRouteMock.mockReturnValueOnce(firstRequest.promise);
+    searchTrainRouteMock.mockReturnValueOnce(secondRequest.promise);
+
+    const { rerender } = render(<TrainSearchResults />);
+
+    await waitFor(() => {
+      expect(searchTrainRouteMock).toHaveBeenCalledTimes(1);
+    });
+
+    const firstSignal = searchTrainRouteMock.mock.calls[0]?.[1] as AbortSignal;
+
+    mockSearch.mockReturnValue({
+      date: '2026-04-02',
+      destinationName: 'Leipzig Hbf',
+      originName: 'Köln Hbf',
+      time: '13:45',
+    });
+
+    rerender(<TrainSearchResults />);
+
+    await waitFor(() => {
+      expect(searchTrainRouteMock).toHaveBeenCalledTimes(2);
+    });
+
+    expect(firstSignal.aborted).toBe(true);
+    expect(searchTrainRouteMock.mock.calls[1]?.[0]).toEqual({
+      departureTime: createExpectedLocalIsoDateTime('2026-04-02', '13:45'),
+      destination: 'Leipzig Hbf',
+      origin: 'Köln Hbf',
+    });
+
+    firstRequest.reject(new DOMException('Aborted', 'AbortError'));
+    secondRequest.resolve(makeRoute({ destination: 'Leipzig Hbf' }));
+
+    expect(
+      await screen.findByRole('heading', {
+        name: /suchergebnisse: zugverbindungen von köln hbf nach leipzig hbf/i,
+      })
+    ).toBeInTheDocument();
+  });
+
+  it('does not fall back to mock routes when eva numbers are missing', async () => {
+    mockSearch.mockReturnValue({
+      date: '2026-04-02',
+      destinationName: 'Dresden Hbf',
+      originName: 'Köln Hbf',
+      time: '13:45',
+    });
 
     render(<TrainSearchResults />);
 
     await waitFor(() => {
-      expect(screen.getByRole('navigation', { name: /seiten navigation/i })).toBeInTheDocument();
+      expect(searchTrainRouteMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(searchTrainRouteMock.mock.calls[0]?.[0]).toEqual({
+      departureTime: createExpectedLocalIsoDateTime('2026-04-02', '13:45'),
+      destination: 'Dresden Hbf',
+      origin: 'Köln Hbf',
     });
   });
 });

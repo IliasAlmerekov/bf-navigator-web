@@ -9,6 +9,7 @@ interface TrainResultCardProps {
 }
 
 interface TransitSegment {
+  agencyName: string;
   lineName: string;
   lineColor: string;
   lineTextColor: string;
@@ -21,6 +22,7 @@ interface TransitSegment {
 
 function getTransitSegments(transits: TrainRouteTransit[]): TransitSegment[] {
   return transits.map((transit) => ({
+    agencyName: transit.agencyName,
     arrivalStop: transit.arrival.stationName,
     arrivalTime: transit.arrival.arrivalTime ?? '—',
     departureStop: transit.departure.stationName,
@@ -32,6 +34,23 @@ function getTransitSegments(transits: TrainRouteTransit[]): TransitSegment[] {
   }));
 }
 
+function formatTransitTime(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+function getUniqueValues(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)));
+}
+
 export function TrainResultCard({ route, onSelect, isRecommended = false }: TrainResultCardProps) {
   if (route.transits.length === 0) return null;
 
@@ -41,10 +60,15 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
   const lastTransit = segments[segments.length - 1];
   const overallDep = firstTransit?.departureTime ?? '—';
   const overallArr = lastTransit?.arrivalTime ?? '—';
+  const overallDepLabel = formatTransitTime(overallDep);
+  const overallArrLabel = formatTransitTime(overallArr);
   const transfers = segments.length > 1 ? segments.length - 1 : 0;
   const hasWalk = false;
+  const agencies = getUniqueValues(segments.map((segment) => segment.agencyName));
+  const vehicleTypes = getUniqueValues(segments.map((segment) => segment.vehicleType));
+  const transitMeta = [...agencies, ...vehicleTypes].join(' · ');
 
-  const ariaLabel = `${overallDep} bis ${overallArr}, Dauer ${duration}${transfers > 0 ? `, ${transfers} Umstieg${transfers > 1 ? 'e' : ''}` : ', Direkt'}`;
+  const ariaLabel = `${overallDepLabel} bis ${overallArrLabel}, Dauer ${duration}${transfers > 0 ? `, ${transfers} Umstieg${transfers > 1 ? 'e' : ''}` : ', Direkt'}`;
 
   return (
     <article aria-label={ariaLabel} className={styles.card}>
@@ -57,11 +81,15 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
       {/* ── Times row ── */}
       <div className={styles['time-row']}>
         <div className={styles.times}>
-          <time className={styles.time}>{overallDep}</time>
+          <time className={styles.time} dateTime={overallDep}>
+            {overallDepLabel}
+          </time>
           <span aria-hidden="true" className={styles['time-sep']}>
             —
           </span>
-          <time className={styles.time}>{overallArr}</time>
+          <time className={styles.time} dateTime={overallArr}>
+            {overallArrLabel}
+          </time>
         </div>
         <div className={styles.meta}>
           <Clock aria-hidden="true" className={styles['meta-icon']} />
@@ -88,6 +116,8 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
           ))}
         </div>
       )}
+
+      {transitMeta && <p className={styles.duration}>{transitMeta}</p>}
 
       {/* ── Journey path ── */}
       {firstTransit && lastTransit && (
@@ -116,7 +146,7 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
       </div>
 
       <button
-        aria-label={`Verbindung auswählen: ${overallDep} bis ${overallArr}`}
+        aria-label={`Verbindung auswählen: ${overallDepLabel} bis ${overallArrLabel}`}
         className={styles['select-btn']}
         type="button"
         onClick={onSelect}
