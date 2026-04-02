@@ -60,8 +60,7 @@
 }
 
 .desktop-hero,
-.desktop-search-grid,
-.footer {
+.desktop-search-grid {
   display: none;
 }
 
@@ -400,7 +399,6 @@
 
   .desktop-hero,
   .desktop-search-grid,
-  .footer,
   .quick-actions-grid {
     display: grid;
   }
@@ -700,44 +698,4 @@
     color: #cbd8ff;
   }
 
-  .footer {
-    grid-template-columns: 1fr auto;
-    align-items: end;
-    gap: 24px;
-    padding-bottom: 18px;
-  }
-
-  .footer-brand,
-  .footer-copy {
-    margin: 0;
-  }
-
-  .footer-brand {
-    font-size: 0.74rem;
-    font-weight: 700;
-    color: #616883;
-  }
-
-  .footer-copy {
-    margin-top: 6px;
-    font-size: 0.66rem;
-    line-height: 1.5;
-    color: #98a0b3;
-  }
-
-  .footer-links {
-    display: inline-flex;
-    align-items: center;
-    gap: 18px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  .footer-links button {
-    padding: 0;
-    border: 0;
-    font: 500 0.64rem/1 var(--font-body);
-    color: #98a0b3;
-    background: none;
-  }
 }

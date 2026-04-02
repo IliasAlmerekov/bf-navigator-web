@@ -10,6 +10,7 @@ interface TrainResultCardProps {
 
 interface TransitSegment {
   agencyName: string;
+  agencyName: string;
   lineName: string;
   lineColor: string;
   lineTextColor: string;
@@ -23,6 +24,7 @@ interface TransitSegment {
 function getTransitSegments(transits: TrainRouteTransit[]): TransitSegment[] {
   return transits.map((transit) => ({
     agencyName: transit.agencyName,
+    agencyName: transit.agencyName,
     arrivalStop: transit.arrival.stationName,
     arrivalTime: transit.arrival.arrivalTime ?? '—',
     departureStop: transit.departure.stationName,
@@ -32,6 +34,23 @@ function getTransitSegments(transits: TrainRouteTransit[]): TransitSegment[] {
     lineTextColor: '#ffffff',
     vehicleType: transit.vehicleType,
   }));
+}
+
+function formatTransitTime(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+function getUniqueValues(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)));
 }
 
 function formatTransitTime(value: string) {
@@ -62,12 +81,18 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
   const overallArr = lastTransit?.arrivalTime ?? '—';
   const overallDepLabel = formatTransitTime(overallDep);
   const overallArrLabel = formatTransitTime(overallArr);
+  const overallDepLabel = formatTransitTime(overallDep);
+  const overallArrLabel = formatTransitTime(overallArr);
   const transfers = segments.length > 1 ? segments.length - 1 : 0;
   const hasWalk = false;
   const agencies = getUniqueValues(segments.map((segment) => segment.agencyName));
   const vehicleTypes = getUniqueValues(segments.map((segment) => segment.vehicleType));
   const transitMeta = [...agencies, ...vehicleTypes].join(' · ');
+  const agencies = getUniqueValues(segments.map((segment) => segment.agencyName));
+  const vehicleTypes = getUniqueValues(segments.map((segment) => segment.vehicleType));
+  const transitMeta = [...agencies, ...vehicleTypes].join(' · ');
 
+  const ariaLabel = `${overallDepLabel} bis ${overallArrLabel}, Dauer ${duration}${transfers > 0 ? `, ${transfers} Umstieg${transfers > 1 ? 'e' : ''}` : ', Direkt'}`;
   const ariaLabel = `${overallDepLabel} bis ${overallArrLabel}, Dauer ${duration}${transfers > 0 ? `, ${transfers} Umstieg${transfers > 1 ? 'e' : ''}` : ', Direkt'}`;
 
   return (
@@ -78,15 +103,20 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
         </span>
       )}
 
-      {/* ── Times row ── */}
       <div className={styles['time-row']}>
         <div className={styles.times}>
+          <time className={styles.time} dateTime={overallDep}>
+            {overallDepLabel}
+          </time>
           <time className={styles.time} dateTime={overallDep}>
             {overallDepLabel}
           </time>
           <span aria-hidden="true" className={styles['time-sep']}>
             —
           </span>
+          <time className={styles.time} dateTime={overallArr}>
+            {overallArrLabel}
+          </time>
           <time className={styles.time} dateTime={overallArr}>
             {overallArrLabel}
           </time>
@@ -97,7 +127,6 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
         </div>
       </div>
 
-      {/* ── Transit line badges ── */}
       {segments.length > 0 && (
         <div aria-label="Verbindungsübersicht" className={styles['segment-row']}>
           {segments.map((seg, i) => (
@@ -128,7 +157,6 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
         </div>
       )}
 
-      {/* ── Transfer / walk info ── */}
       <div className={styles['info-row']}>
         {transfers === 0 ? (
           <span className={styles['info-badge']}>Direkt</span>
@@ -146,6 +174,7 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
       </div>
 
       <button
+        aria-label={`Verbindung auswählen: ${overallDepLabel} bis ${overallArrLabel}`}
         aria-label={`Verbindung auswählen: ${overallDepLabel} bis ${overallArrLabel}`}
         className={styles['select-btn']}
         type="button"

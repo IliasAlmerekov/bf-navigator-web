@@ -19,8 +19,10 @@ export default function TrainSearchResults() {
   const [hasError, setHasError] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const summaryOrigin = search.originName || 'Hamburg Hbf';
-  const summaryDestination = search.destinationName || 'Berlin Hbf';
+  const hasRouteSummary = search.originName !== '' && search.destinationName !== '';
+  const resultsHeading = hasRouteSummary
+    ? `Suchergebnisse: Zugverbindungen von ${search.originName} nach ${search.destinationName}`
+    : 'Suchergebnisse: Zugverbindungen';
 
   useEffect(() => {
     const controller = new AbortController();
@@ -81,15 +83,15 @@ export default function TrainSearchResults() {
       <SearchSummaryBar
         date={search.date}
         time={search.time}
-        originName={summaryOrigin}
-        destinationName={summaryDestination}
+        originName={search.originName}
+        destinationName={search.destinationName}
         resultCount={resultCount}
         onChangeSearch={handleBack}
       />
 
       <section aria-labelledby="results-heading" className={styles['results-section']}>
         <h2 className={styles['sr-only']} id="results-heading">
-          Suchergebnisse: Zugverbindungen von {summaryOrigin} nach {summaryDestination}
+          {resultsHeading}
         </h2>
 
         {loading ? (
