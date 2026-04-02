@@ -9,3 +9,5 @@ Copilot instructions live in `.github/copilot-instructions.md`.
 Always read and follow `CONVENTION.md` before planning or implementation.
 
 **Accessibility is the primary design and implementation constraint — see `CONVENTION.md` section 9 and `AGENTS.md`.**
+
+**Code quality rules (KISS, YAGNI, SRP, SoC, DRY, naming) are mandatory — see `.github/rules/code-quality.md`.**
