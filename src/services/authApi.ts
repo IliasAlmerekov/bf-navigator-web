@@ -1,6 +1,7 @@
 import type { AuthResponse, LoginRequest, RegisterRequest, UserDTO } from '../types/auth';
+import { BASE_URL } from './apiBaseUrl';
 
-export const BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
+export { BASE_URL };
 
 export class InvalidCredentialsError extends Error {
   constructor(message = 'Invalid credentials') {

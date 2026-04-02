@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import type { RouteResult, FilterKey } from './types';
+import type { FilterKey, TrainRouteResponse } from './types';
 import { MOCK_ROUTES } from './mockData';
 import { SearchSummaryBar } from './components/SearchSummaryBar';
 import { TrainResultCard } from './components/TrainResultCard';
@@ -25,7 +25,7 @@ function formatTimetableTime(value: string) {
 export default function TrainSearchResults() {
   const navigate = useNavigate();
   const search = useSearch({ from: '/train-search-results' });
-  const [results, setResults] = useState<RouteResult[]>([]);
+  const [results, setResults] = useState<TrainRouteResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -59,7 +59,7 @@ export default function TrainSearchResults() {
 
       try {
         // TODO: Replace with Google Routes API endpoint
-        // Expected response shape: { routes: RouteResult[] }
+        // Expected response shape: { routes: TrainRouteResponse[] }
         const response = await fetch(
           `/api/stations/${search.originEva}/timetable?${params.toString()}`,
           { signal: controller.signal }
@@ -69,7 +69,7 @@ export default function TrainSearchResults() {
 
         const payload = await response.json();
         // Supports both legacy array and new { routes: [] } format
-        const routes: RouteResult[] = Array.isArray(payload)
+        const routes: TrainRouteResponse[] = Array.isArray(payload)
           ? payload
           : Array.isArray(payload?.routes)
             ? payload.routes

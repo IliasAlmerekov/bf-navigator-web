@@ -31,7 +31,7 @@ Every agent must evaluate accessibility before everything else.
 4. Color contrast: 4.5:1 for body text, 3:1 for large text and UI components
 5. `prefers-reduced-motion`: all transitions/animations suppressed when set
 
-Full requirements are in `CONVENTION.md` section 9.
+Full requirements are in `CONVENTION.md` section 9 and [WCAG 2.1](https://www.w3.org/TR/WCAG21/).
 
 ---
 

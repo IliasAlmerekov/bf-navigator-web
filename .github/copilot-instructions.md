@@ -19,7 +19,7 @@ Always read and follow `CONVENTION.md` before planning or writing code.
 4. Verify ARIA usage — prefer native HTML elements over ARIA roles.
 5. Confirm every interactive element has an accessible name.
 
-### WCAG 2.1 AA requirements
+### [WCAG 2.1](https://www.w3.org/TR/WCAG21/) AA requirements
 
 - Semantic HTML: `<nav>`, `<main>`, `<header>`, `<footer>`, `<section>`, `<button>`, `<a>` for their semantic purpose.
 - Accessible names on all interactive elements via label, `aria-label`, or `aria-labelledby`.
