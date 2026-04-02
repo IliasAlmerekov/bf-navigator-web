@@ -1,9 +1,9 @@
 import { ArrowRight, Clock, PersonStanding } from 'lucide-react';
-import type { RouteResult, RouteStep } from '../types';
+import type { TrainRouteResponse, TrainRouteTransit } from '../types';
 import styles from './TrainResultCard.module.css';
 
 interface TrainResultCardProps {
-  route: RouteResult;
+  route: TrainRouteResponse;
   onSelect: () => void;
   isRecommended?: boolean;
 }
@@ -19,42 +19,30 @@ interface TransitSegment {
   vehicleType: string;
 }
 
-function getTransitSegments(steps: RouteStep[]): TransitSegment[] {
-  return steps
-    .filter((s) => s.travelMode === 'TRANSIT' && s.transitDetails)
-    .map((s) => {
-      const td = s.transitDetails!;
-      const line = td.transitLine;
-      return {
-        lineName: line.nameShort ?? line.name ?? td.headsign,
-        lineColor: line.color ?? '#002068',
-        lineTextColor: line.textColor ?? '#ffffff',
-        departureTime: td.localizedValues.departureTime.time.text,
-        arrivalTime: td.localizedValues.arrivalTime.time.text,
-        departureStop: td.stopDetails.departureStop.name,
-        arrivalStop: td.stopDetails.arrivalStop.name,
-        vehicleType: line.vehicle.type,
-      };
-    });
-}
-
-function hasWalkSegment(steps: RouteStep[]): boolean {
-  return steps.some((s) => s.travelMode === 'WALK');
+function getTransitSegments(transits: TrainRouteTransit[]): TransitSegment[] {
+  return transits.map((transit) => ({
+    arrivalStop: transit.arrival.stationName,
+    arrivalTime: transit.arrival.arrivalTime ?? '—',
+    departureStop: transit.departure.stationName,
+    departureTime: transit.departure.departureTime ?? '—',
+    lineColor: '#002068',
+    lineName: transit.trainName,
+    lineTextColor: '#ffffff',
+    vehicleType: transit.vehicleType,
+  }));
 }
 
 export function TrainResultCard({ route, onSelect, isRecommended = false }: TrainResultCardProps) {
-  const leg = route.legs?.[0];
-  if (!leg) return null;
+  if (route.transits.length === 0) return null;
 
-  const segments = getTransitSegments(leg.steps);
-  const duration = route.localizedValues.duration.text;
-
+  const segments = getTransitSegments(route.transits);
+  const duration = route.localizedDurationText;
   const firstTransit = segments[0];
   const lastTransit = segments[segments.length - 1];
   const overallDep = firstTransit?.departureTime ?? '—';
   const overallArr = lastTransit?.arrivalTime ?? '—';
   const transfers = segments.length > 1 ? segments.length - 1 : 0;
-  const hasWalk = hasWalkSegment(leg.steps);
+  const hasWalk = false;
 
   const ariaLabel = `${overallDep} bis ${overallArr}, Dauer ${duration}${transfers > 0 ? `, ${transfers} Umstieg${transfers > 1 ? 'e' : ''}` : ', Direkt'}`;
 
@@ -88,6 +76,7 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
             <span key={`${seg.lineName}-${i}`} className={styles['segment-item']}>
               <span
                 className={styles['line-badge']}
+                aria-label={`${seg.lineName} ${seg.vehicleType}`}
                 style={{ background: seg.lineColor, color: seg.lineTextColor }}
               >
                 {seg.lineName}
