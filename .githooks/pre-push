@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Git pre-push hook
+# 1. Runs tests (vitest run) — blocks push on failure
+# 2. Blocks force pushes to main/master
+# Activate with: git config core.hooksPath .githooks
+
+set -euo pipefail
+
+# ── Run tests ────────────────────────────────────────────────────────────────
+echo "Running tests before push..."
+if ! npm run test:ci; then
+  echo ""
+  echo "ERROR: Tests failed. Fix them before pushing." >&2
+  exit 1
+fi
+
+# ── Block force push to protected branches ───────────────────────────────────
+PROTECTED_BRANCHES="^(main|master)$"
+
+while read -r local_ref local_sha remote_ref _remote_sha; do
+  branch="${remote_ref##refs/heads/}"
+
+  if printf '%s' "$branch" | grep -qP "$PROTECTED_BRANCHES"; then
+    if [ "$local_sha" != "0000000000000000000000000000000000000000" ]; then
+      merge_base=$(git merge-base "$local_sha" "${_remote_sha:-$local_sha}" 2>/dev/null || echo "")
+      if [ -n "$_remote_sha" ] && [ "$_remote_sha" != "0000000000000000000000000000000000000000" ]; then
+        if [ "$merge_base" != "$_remote_sha" ]; then
+          echo "ERROR: Force push to '$branch' is prohibited." >&2
+          echo "       Use 'git push' without --force, or open a PR." >&2
+          exit 1
+        fi
+      fi
+    fi
+  fi
+done
+
+exit 0
