@@ -36,7 +36,11 @@ function parseTime(value: string) {
   };
 }
 
-function assertValidDateTime(value: Date, date: NonNullable<ReturnType<typeof parseDate>>, time: NonNullable<ReturnType<typeof parseTime>>) {
+function assertValidDateTime(
+  value: Date,
+  date: NonNullable<ReturnType<typeof parseDate>>,
+  time: NonNullable<ReturnType<typeof parseTime>>
+) {
   return (
     value.getFullYear() === date.year &&
     value.getMonth() === date.month - 1 &&

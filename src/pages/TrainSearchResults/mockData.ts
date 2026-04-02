@@ -3,7 +3,12 @@ import type { TrainRouteResponse } from './types';
 function createRoute(
   route: Pick<
     TrainRouteResponse,
-    'arrivalTime' | 'departureTime' | 'destination' | 'localizedDistanceText' | 'localizedDurationText' | 'origin'
+    | 'arrivalTime'
+    | 'departureTime'
+    | 'destination'
+    | 'localizedDistanceText'
+    | 'localizedDurationText'
+    | 'origin'
   >,
   transit: TrainRouteResponse['transits'][number]
 ): TrainRouteResponse {

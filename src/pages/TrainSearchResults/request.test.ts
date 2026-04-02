@@ -20,9 +20,7 @@ describe('train search request helpers', () => {
     const departureTime = toIsoOffsetDateTime('2026-04-02', '13:45');
 
     expect(departureTime).toBe(createExpectedLocalIsoDateTime('2026-04-02', '13:45'));
-    expect(departureTime).toMatch(
-      /^2026-04-02T13:45:00(?:\+|-)\d{2}:\d{2}$/
-    );
+    expect(departureTime).toMatch(/^2026-04-02T13:45:00(?:\+|-)\d{2}:\d{2}$/);
     expect(departureTime.endsWith('Z')).toBe(false);
   });
 
