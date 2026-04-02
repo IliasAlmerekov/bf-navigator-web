@@ -1,6 +1,6 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RouteResult } from './types';
+import type { TrainRouteResponse } from './types';
 import TrainSearchResults from './TrainSearchResults';
 
 const mockNavigate = vi.fn();
@@ -31,58 +31,49 @@ function createDeferred<T>() {
   return { promise, reject, resolve };
 }
 
-function makeRoute(overrides?: Partial<RouteResult>): RouteResult {
+function makeRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteResponse {
   return {
-    distanceMeters: 240215,
-    duration: '8411s',
-    staticDuration: '8411s',
-    localizedValues: {
-      distance: { text: '240 km' },
-      duration: { text: '2 Stunden, 20 Minuten' },
-      staticDuration: { text: '2 Stunden, 20 Minuten' },
-    },
-    legs: [
+    arrivalTime: '2026-04-02T10:45:00Z',
+    departureTime: '2026-04-02T08:29:00Z',
+    destination: 'Dresden Hbf',
+    localizedDistanceText: '240 km',
+    localizedDurationText: '2 Stunden, 20 Minuten',
+    origin: 'Köln Hbf',
+    transits: [
       {
-        distanceMeters: 240215,
-        duration: '8411s',
-        staticDuration: '8411s',
-        localizedValues: {
-          distance: { text: '240 km' },
-          duration: { text: '2 Stunden, 20 Minuten' },
-          staticDuration: { text: '2 Stunden, 20 Minuten' },
-        },
-        steps: [
-          {
-            distanceMeters: 178315,
-            staticDuration: '4740s',
-            travelMode: 'TRANSIT',
-            localizedValues: {
-              distance: { text: '178 km' },
-              staticDuration: { text: '1 Stunde, 19 Minuten' },
-            },
-            transitDetails: {
-              stopDetails: {
-                arrivalStop: { name: 'Hannover Hauptbahnhof' },
-                departureStop: { name: 'Hamburg Hauptbahnhof' },
-                arrivalTime: '2026-04-02T09:48:00Z',
-                departureTime: '2026-04-02T08:29:00Z',
-              },
-              localizedValues: {
-                arrivalTime: { time: { text: '11:48' }, timeZone: 'Europe/Berlin' },
-                departureTime: { time: { text: '10:29' }, timeZone: 'Europe/Berlin' },
-              },
-              headsign: 'Stuttgart Hbf',
-              transitLine: {
-                agencies: [{ name: 'DB Fernverkehr AG', uri: 'https://www.bahn.de/' }],
-                color: '#f01414',
-                nameShort: 'ICE 579',
-                textColor: '#ffffff',
-                vehicle: { name: { text: 'Hochgeschwindigkeitszug' }, type: 'HIGH_SPEED_TRAIN' },
-              },
-              stopCount: 3,
-            },
+        agencyName: 'DB Fernverkehr AG',
+        arrival: {
+          arrivalTime: '2026-04-02T09:48:00Z',
+          facilities: [],
+          station: {
+            category: 1,
+            city: 'Hannover',
+            evaNumber: 8000152,
+            hasMobilityService: 'yes',
+            hasSteplessAccess: 'yes',
+            hasWiFi: true,
+            name: 'Hannover Hbf',
+            number: 23456,
           },
-        ],
+          stationName: 'Hannover Hauptbahnhof',
+        },
+        departure: {
+          departureTime: '2026-04-02T08:29:00Z',
+          facilities: [],
+          station: {
+            category: 1,
+            city: 'Hamburg',
+            evaNumber: 8002549,
+            hasMobilityService: 'yes',
+            hasSteplessAccess: 'yes',
+            hasWiFi: true,
+            name: 'Hamburg Hbf',
+            number: 12345,
+          },
+          stationName: 'Hamburg Hauptbahnhof',
+        },
+        trainName: 'ICE 579',
+        vehicleType: 'Hochgeschwindigkeitszug',
       },
     ],
     ...overrides,

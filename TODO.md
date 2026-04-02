@@ -1,122 +1,224 @@
-# BF Navigator Search Roadmap
+# BF Navigator – Train Search Frontend TODO
 
-## Frontend
+## Backend contract for train search
 
-### Home Search
+### Debug endpoint for frontend integration
 
-- [x] Replace the static date display on the home page with an accessible native calendar input (`type="date"`).
-- [x] Replace the static time display on the home page with an accessible native time input (`type="time"`).
-- [x] Keep the station autocomplete flow for both origin and destination fields.
-- [x] Validate that both origin and destination are selected from autocomplete suggestions before search can proceed.
-- [x] Add inline validation messages with proper `aria-describedby` and `aria-invalid` support.
-- [x] Preserve keyboard support for station autocomplete, date input, time input, and the search button.
+`POST http://localhost:8081/routes/trains/debug`
 
-### Search Interaction
+Use `/debug` during frontend development and testing, because the backend returns a fixed response there and does not spend paid Google Routes quota.
 
-- [x] Add a real search submission flow from the home page to the train results page.
-- [x] Pass search parameters through route search params:
-      `originEva`, `originName`, `destinationEva`, `destinationName`, `date`, `time`.
-- [x] Show a loading state immediately after the user presses `Search`.
-- [x] Disable the search button while the search is in progress.
-- [x] Announce loading updates through an `aria-live="polite"` region.
-- [x] Prevent duplicate submissions while loading.
+### Request body
 
-### Train Search Results
+```json
+{
+  "origin": "Hamburg Hbf",
+  "destination": "Braunschweig Hbf",
+  "departureTime": "2026-04-02T08:00:00Z"
+}
+```
 
-- [ ] Replace mock data on the train results page with real data from the backend timetable endpoint.
-- [ ] Fetch timetable data from `/stations/{originEva}/timetable?date=ddMMyy&time=HHmm`.
-- [ ] In the current iteration, display all trains returned for the selected origin station.
-- [ ] Read and render the selected origin, destination, date, and time from route search params.
-- [ ] Show a loading state while timetable data is being fetched.
-- [ ] Show an error state when the request fails.
-- [ ] Show an empty state when the request succeeds but returns no trains.
-- [ ] Keep the results page usable with keyboard-only navigation and screen readers.
+### Response shape returned by backend
 
-### Data Mapping
+```json
+{
+  "origin": "Hamburg Hbf",
+  "destination": "Braunschweig Hbf",
+  "departureTime": "2026-04-02T08:29:00Z",
+  "arrivalTime": "2026-04-02T10:45:00Z",
+  "localizedDistanceText": "240 km",
+  "localizedDurationText": "2 Stunden, 20 Minuten",
+  "transits": [
+    {
+      "departure": {
+        "stationName": "Hamburg Hauptbahnhof",
+        "departureTime": "2026-04-02T08:29:00Z",
+        "station": {
+          "name": "Hamburg Hbf",
+          "number": 12345,
+          "evaNumber": 8002549,
+          "city": "Hamburg",
+          "category": 1,
+          "hasSteplessAccess": "yes",
+          "hasMobilityService": "yes",
+          "hasWiFi": true
+        },
+        "facilities": []
+      },
+      "arrival": {
+        "stationName": "Hannover Hauptbahnhof",
+        "arrivalTime": "2026-04-02T09:48:00Z",
+        "station": {
+          "name": "Hannover Hbf",
+          "number": 23456,
+          "evaNumber": 8000152,
+          "city": "Hannover",
+          "category": 1,
+          "hasSteplessAccess": "yes",
+          "hasMobilityService": "yes",
+          "hasWiFi": true
+        },
+        "facilities": []
+      },
+      "trainName": "ICE 579",
+      "vehicleType": "Hochgeschwindigkeitszug",
+      "agencyName": "DB Fernverkehr AG"
+    }
+  ]
+}
+```
 
-- [ ] Add shared frontend API types for station search and timetable responses.
-- [ ] Add a mapper from timetable DTOs to the train result card model.
-- [ ] Handle missing backend fields safely, especially arrival time, route, and platform values.
-- [ ] Format backend date/time data into readable UI labels without losing the original request values.
+Notes:
 
-### Testing
+- Backend currently returns a single `TrainRouteResponseDTO`, not `{ routes: [...] }` and not a Google raw response.
+- `transits` contain the actual train segments that should drive the results card UI.
+- `departure.station` and `arrival.station` may contain accessibility metadata that can later be used for filters.
+- I could not verify the live endpoint from this session because `localhost:8081` was not running here, so the contract above is derived from backend code plus the embedded debug payload.
 
-- [ ] Add tests for home page validation when origin or destination is missing.
-- [ ] Add tests for loading state after pressing `Search`.
-- [ ] Add tests for successful navigation with valid search params.
-- [ ] Add tests for train results loading, error, empty, and success states.
-- [ ] Add accessibility-focused tests for labels, live regions, and keyboard interaction.
+## Current frontend mismatch
 
-## Backend
+Today `src/pages/TrainSearchResults` still uses mocked Google-like route data and calls the wrong backend endpoint:
 
-### Route Search API
+- it fetches `/api/stations/:originEva/timetable`
+- it sends only `originEva`, `date`, `time`
+- it does not send `destination`
+- it expects an array or `{ routes: [] }`
+- it uses `MOCK_ROUTES` as fallback
 
-- [ ] Add a dedicated route search endpoint for origin-to-destination journey search.
-- [ ] Accept structured query parameters:
-      `originEva`, `destinationEva`, `date`, `time`, and optional accessibility filters.
-- [ ] Return journey-based results instead of raw single-station timetable entries.
-- [ ] Include direct routes and transfer routes in the same response model.
+The backend train search API does something else:
 
-### Route Search Response Model
+- it expects `origin` and `destination` as station names
+- it expects one ISO datetime field: `departureTime`
+- it returns one mapped route object with `transits`
 
-- [ ] Define a backend response model for journeys with:
-      journey id, legs, transfer stations, departure time, arrival time, total duration, platform data, and route summary.
-- [ ] Include accessibility metadata per leg and per full journey.
-- [ ] Include a machine-readable status for `direct`, `transfer`, or `unavailable`.
-- [ ] Include reason codes for empty results, for example `NO_DIRECT_ROUTE`, `NO_TRANSFER_ROUTE`, or `DOWNSTREAM_UNAVAILABLE`.
+## Frontend tickets
 
-### Matching and Normalization
+### FE-TR-01 Create a dedicated train routes API client
 
-- [ ] Match routes by EVA number whenever possible instead of station display name only.
-- [ ] Add station-name normalization for fallback matching:
-      trim spaces, normalize case, and support equivalent station names.
-- [ ] Avoid duplicate journeys when the same train combination is found through multiple matching paths.
+- [x] Add `src/services/trainRoutesApi.ts`
+- [x] Reuse a shared `BASE_URL` pattern like `authApi.ts`
+- [x] Implement `searchTrainRoute(request, signal?)`
+- [x] Use `POST ${BASE_URL}/routes/trains/debug` for now
+- [x] Send `Content-Type: application/json` and `Accept: application/json`
+- [x] Map non-2xx responses into frontend errors
 
-### Transfer Search Logic
+### FE-TR-02 Build the request payload from current search params
 
-- [ ] Search direct routes from station A first.
-- [ ] If station B is not found in the direct route list, generate transfer candidates from intermediate stations in routes departing from station A.
-- [ ] Rank transfer candidates by:
-      earliest feasible connection, shortest total duration, fewest transfers, and best accessibility.
-- [ ] Fetch timetable data for each transfer candidate station around the expected arrival window.
-- [ ] Search for a second-leg train from each transfer station to station B.
-- [ ] Validate transfer feasibility using a minimum transfer buffer between arrival and next departure.
-- [ ] Build combined journeys such as `A -> X -> B`.
-- [ ] Support an initial implementation with one transfer only.
-- [ ] Add clear depth and time limits so route search stays responsive and does not explode into too many downstream requests.
+- [ ] Read `originName`, `destinationName`, `date`, `time` from `/train-search-results` search params
+- [x] Build request body as:
+      `{ origin, destination, departureTime }`
+- [x] `origin` must come from `search.originName`
+- [x] `destination` must come from `search.destinationName`
+- [x] Combine `date + time` into a valid ISO-8601 datetime with timezone/offset
+- [x] Do not append `Z` blindly unless the conversion is intentionally UTC
+- [x] Add a helper for datetime conversion and unit-test it
 
-### Backend Testing
+### FE-TR-03 Replace obsolete TrainSearchResults types with backend DTO types
 
-- [ ] Add tests for direct-route search success.
-- [ ] Add tests for one-transfer route search success.
-- [ ] Add tests for no-route-found responses.
-- [ ] Add tests for invalid input parameters.
-- [ ] Add tests for downstream API failure and timeout handling.
-- [ ] Add tests for duplicate suppression and result sorting.
+- [x] Update `src/pages/TrainSearchResults/types.ts`
+- [x] Remove the old Google raw route types that the page no longer consumes
+- [x] Add frontend types for:
+      `TrainRouteResponse`
+      `TrainRouteTransit`
+      `TrainRouteStop`
+      `TrainRouteStation`
+      `TrainRouteFacility`
+- [x] Keep types aligned with backend DTO field names to avoid unnecessary mapping noise
 
-## Transfer Search Logic Reference
+### FE-TR-04 Replace the current fetch logic in TrainSearchResults
 
-### Direct Search First
+- [ ] Update `src/pages/TrainSearchResults/TrainSearchResults.tsx`
+- [ ] Remove the `/api/stations/${search.originEva}/timetable` request
+- [ ] Remove `formatTimetableDate()` and `formatTimetableTime()` for this page
+- [ ] Remove `MOCK_ROUTES` fallback
+- [ ] Call the new `searchTrainRoute()` service inside `useEffect`
+- [x] Abort in-flight requests on unmount/search change
+- [x] Reset pagination/state correctly when a new search starts
 
-1. Load departures from station A for the selected date and time.
-2. Check whether any returned train route already contains station B.
-3. If yes, return those journeys as direct candidates.
+### FE-TR-05 Adapt the page state to the real backend response
 
-### Fallback to Transfer Search
+- [ ] Decide on the page model: backend returns one route object, not a list
+- [ ] Short-term pragmatic option: wrap the single response in an array with one item to keep the list layout
+- [ ] If this option is chosen, hide or disable pagination when only one backend route exists
+- [ ] Revisit filter tabs, because most current filters assume multiple results
 
-1. If no direct route contains station B, inspect every intermediate station in the returned routes from station A.
-2. Treat each intermediate station as a possible transfer station.
-3. Rank transfer stations using practical rules:
-   accessibility first, then shorter wait time, fewer transfers, and shorter total travel time.
-4. For each selected transfer station X, request timetable data around the time when the first leg is expected to arrive at X.
-5. Search for trains from X to B.
-6. Keep only feasible connections where the second train departs after the first train arrives plus a minimum transfer buffer.
-7. Build combined journeys and sort them by:
-   fewest transfers, best accessibility, shortest duration, earliest arrival.
-8. If nothing is found, return an empty result with a machine-readable reason.
+### FE-TR-06 Refactor TrainResultCard to render backend transits
 
-### Why This Belongs in Backend
+- [x] Update `src/pages/TrainSearchResults/components/TrainResultCard.tsx`
+- [x] Stop reading `legs[].steps[].transitDetails`
+- [x] Render from `route.transits`
+- [x] Use `trainName` for line badges
+- [ ] Use `agencyName` / `vehicleType` where useful in UI
+- [x] Derive:
+      departure time from first transit departure
+      arrival time from last transit arrival
+      transfers from `transits.length - 1`
+      direct trip if `transits.length === 1`
+- [ ] Format ISO timestamps into user-facing local times
 
-- The frontend should not orchestrate many timetable requests across multiple stations.
-- Transfer search requires batching, ranking, deduplication, and timeout control.
-- Backend ownership keeps route logic deterministic, testable, and reusable for future clients.
+### FE-TR-07 Clean up dead mock code
+
+- [ ] Remove `src/pages/TrainSearchResults/mockData.ts` if it is no longer needed
+- [ ] Remove comments that mention "Replace with Google Routes API endpoint"
+- [ ] Remove comments that mention "Remove mock data before production"
+- [x] Remove unused legacy route/timetable helper types
+
+### FE-TR-08 Fix local API configuration for development
+
+- [ ] Frontend currently proxies `/api` to `http://localhost:8080` in `vite.config.ts`
+- [ ] Backend train search is documented for `http://localhost:8081`
+- [ ] Align dev config before testing:
+      either change Vite proxy to `8081`
+      or set `VITE_API_URL=http://localhost:8081`
+- [ ] Make sure auth/station endpoints still point to the correct backend port after the change
+
+### FE-TR-09 Keep the summary bar sourced from user search
+
+- [ ] Preserve current summary values from query params:
+      `originName`
+      `destinationName`
+      `date`
+      `time`
+- [ ] Ensure the summary never falls back to unrelated mock station names once API integration is complete
+
+### FE-TR-10 Add tests for the new integration
+
+- [ ] Update `src/pages/TrainSearchResults/TrainSearchResults.test.tsx`
+- [ ] Replace expectations for `/stations/:originEva/timetable`
+- [ ] Assert `POST /routes/trains/debug`
+- [ ] Assert JSON body contains `origin`, `destination`, `departureTime`
+- [ ] Assert loading, error, and empty states still work
+- [ ] Assert a successful backend DTO renders at least:
+      summary origin/destination
+      overall departure/arrival time
+      duration
+      transfer count
+      train line badges
+- [ ] Add a test that verifies request recreation when `date` or `time` changes
+
+### FE-TR-11 Optional follow-up: accessibility-driven filtering
+
+- [ ] Re-check whether tabs `accessible` and `step-free` should become functional
+- [ ] If yes, derive filter rules from:
+      `station.hasSteplessAccess`
+      `station.hasMobilityService`
+      facility state/type data in `facilities`
+- [ ] If no, hide these tabs until backend supports a stable filtering contract
+
+## Recommended implementation order
+
+- [ ] 1. `FE-TR-08` align API base URL / proxy
+- [ ] 2. `FE-TR-01` add service client
+- [ ] 3. `FE-TR-02` build request payload correctly
+- [ ] 4. `FE-TR-03` replace types
+- [ ] 5. `FE-TR-04` wire `TrainSearchResults.tsx`
+- [ ] 6. `FE-TR-06` refactor `TrainResultCard.tsx`
+- [ ] 7. `FE-TR-07` remove mocks
+- [ ] 8. `FE-TR-10` update tests
+- [ ] 9. `FE-TR-11` decide accessibility filters
+
+## Main blockers / decisions
+
+- [ ] Backend returns only one route today. Confirm whether frontend should display exactly one result for now or whether backend will later return multiple alternatives.
+- [ ] Confirm which timezone the frontend should send for `departureTime` when the user selects a local German date/time.
+- [ ] Confirm whether `/debug` should be used only in local development or also in preview/staging builds.
