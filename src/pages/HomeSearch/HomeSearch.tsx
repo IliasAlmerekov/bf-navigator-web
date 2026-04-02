@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type React from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import {
   Accessibility,
   Baby,
@@ -69,6 +69,7 @@ const QUICK_ACTIONS = [
     title: 'Berlin → Hamburg',
     subtitle: 'ICE 784 · Bevorzugter Bahnsteig 4',
     cta: 'Fahrplan ansehen',
+    to: '/saved-trips',
     icon: savedActionImage,
     iconAlt: '',
     eyebrow: 'Gespeicherte Reise',
@@ -78,6 +79,7 @@ const QUICK_ACTIONS = [
     title: 'Berlin Friedrichstraße',
     subtitle: '350 m · Stufenfreier Zugang bestätigt',
     cta: 'Karte öffnen',
+    to: '/station-accessibility',
     icon: trainIconImage,
     iconAlt: '',
     eyebrow: 'Bahnhof in der Nähe',
@@ -87,6 +89,7 @@ const QUICK_ACTIONS = [
     title: 'Meldungen',
     subtitle: 'Bahnsteigwechsel und Störungen passend zu Ihrer Route.',
     cta: 'Meldungen öffnen',
+    to: '/alerts',
     icon: alertActionImage,
     iconAlt: '',
     eyebrow: 'Live-Hinweise',
@@ -569,10 +572,10 @@ export default function HomeSearch() {
                 <p>{action.subtitle}</p>
               </div>
 
-              <button className={styles['quick-card-link']} type="button">
+              <Link className={styles['quick-card-link']} to={action.to}>
                 <span>{action.cta}</span>
                 <ChevronRight aria-hidden="true" />
-              </button>
+              </Link>
             </article>
           ))}
 
@@ -603,14 +606,14 @@ export default function HomeSearch() {
 
         <div className={styles['mobile-actions-row']}>
           {QUICK_ACTIONS.map((action) => (
-            <button key={action.title} className={styles['mobile-action-pill']} type="button">
+            <Link key={action.title} className={styles['mobile-action-pill']} to={action.to}>
               <img
                 alt={action.iconAlt}
                 className={styles['mobile-action-icon']}
                 src={action.icon}
               />
               <span>{action.mobileLabel}</span>
-            </button>
+            </Link>
           ))}
         </div>
       </section>

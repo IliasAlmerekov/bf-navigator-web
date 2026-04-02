@@ -153,7 +153,9 @@ describe('RouteOverview', () => {
     await userEvent.click(saveButton);
 
     expect(saveButton).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText(/route saved to your trips/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/route wurde zu deinen gespeicherten reisen hinzugefugt/i)
+    ).toBeInTheDocument();
   });
 
   it('renders the live equipment status cards from station accessibility', () => {

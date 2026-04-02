@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { ROUTE_OVERVIEW_TRIP_ID, buildRouteOverviewSavedTrip } from '../../constants/savedTrips';
+import { hasSavedTrip, removeSavedTrip, upsertSavedTrip } from '../../utils/savedTripsStorage';
 import { ROUTE_HERO, ROUTE_STATION_SERVICES_PANEL, ROUTE_TIMELINE } from './constants';
 import { JourneyTimeline } from './components/JourneyTimeline';
 import { MapNavigationCard } from './components/MapNavigationCard';
@@ -8,13 +10,24 @@ import { StationServicesPanel } from './components/StationServicesPanel';
 import styles from './RouteOverview.module.css';
 
 export default function RouteOverview() {
-  const [isRouteSaved, setIsRouteSaved] = useState(false);
+  const [isRouteSaved, setIsRouteSaved] = useState(() => hasSavedTrip(ROUTE_OVERVIEW_TRIP_ID));
   const [savedAnnouncement, setSavedAnnouncement] = useState('');
 
   function handleSave() {
     setIsRouteSaved((current) => {
       const next = !current;
-      setSavedAnnouncement(next ? 'Route saved to your trips.' : 'Route removed from your trips.');
+
+      if (next) {
+        upsertSavedTrip(buildRouteOverviewSavedTrip());
+      } else {
+        removeSavedTrip(ROUTE_OVERVIEW_TRIP_ID);
+      }
+
+      setSavedAnnouncement(
+        next
+          ? 'Route wurde zu deinen gespeicherten Reisen hinzugefugt.'
+          : 'Route wurde aus deinen gespeicherten Reisen entfernt.'
+      );
       return next;
     });
   }

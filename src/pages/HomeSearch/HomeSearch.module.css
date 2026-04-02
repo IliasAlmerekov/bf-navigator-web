@@ -371,6 +371,7 @@
   border-radius: 20px;
   font: 600 0.67rem/1.2 var(--font-body);
   color: #515b79;
+  text-decoration: none;
   text-align: center;
   background: rgb(255, 255, 255, 0.78);
   box-shadow:
@@ -633,6 +634,7 @@
     padding: 0;
     font: 700 0.75rem/1 var(--font-body);
     color: var(--color-primary-container);
+    text-decoration: none;
     background: none;
   }
 
