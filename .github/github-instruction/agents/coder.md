@@ -25,6 +25,23 @@ Before writing any UI component:
 
 A component is not done until it passes the a11y verification checklist in CONVENTION.md section 9.
 
+### Code Quality
+
+Read `.github/rules/code-quality.md` before writing any module. Apply rules proportionally to scale:
+- < 50 lines, single concern → KISS + DRY only
+- 1–3 files, one feature → KISS + DRY + selective SRP
+- Cross-cutting → full principle evaluation
+
+Mandatory rules for every implementation:
+- **SRP**: component > 150 lines or hook with 2+ concerns → split
+- **SoC**: no `fetch()` in components or pages — belongs in `src/api/`
+- **DRY**: Rule of Three — 1–2 uses: tolerate; 3+ uses: extract
+- **Naming**: verb phrases for functions, `is/has/can` for booleans, `useNoun` for hooks
+- **Flat render logic**: early returns, not nested ternaries in JSX
+- **No `any`**: define an interface
+- **No commented-out code**: delete it — git history exists
+- **YAGNI**: no speculative abstractions; no flags for non-existent features
+
 ### General Rules
 
 - Do not add `Co-authored-by` trailers to commit messages.

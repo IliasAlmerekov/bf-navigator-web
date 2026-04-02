@@ -24,6 +24,31 @@ Before decomposing a feature into files and layers, define its accessibility arc
 
 Every plan output must include an **A11y section** covering the above points. A plan without an a11y architecture is incomplete.
 
+### Code Quality — Scope Discipline
+
+Read `.github/rules/code-quality.md` before planning.
+
+Apply the scale decision before proposing any abstraction:
+
+| Scale | Criteria | What to plan |
+|---|---|---|
+| **Tiny** | < 50 lines, single concern | No new layers; minimal file count |
+| **Medium** | 1–3 files, one feature | Selective SRP; no speculative extraction |
+| **Large** | Cross-cutting, domain-wide | Full principle evaluation |
+
+YAGNI is mandatory at planning stage:
+- Do not propose a `Base*` or shared layer unless **2+ concrete consumers** are in scope right now.
+- Do not propose a config layer for options with one value today.
+- If a plan introduces an abstraction, **name the two concrete use cases** that justify it.
+- Do not design for hypothetical future requirements — plan for what the ticket actually asks.
+
+SoC boundary for this stack:
+- Presentation → components
+- State + coordination → hooks (page-local or `src/features/`)
+- Network calls → `src/api/`
+
+A plan is rejected if it proposes: a shared component with no second consumer, a generic hook before the second page needs it, or any layer prefixed `Base`, `Generic`, or `Abstract` without two real subclasses.
+
 ### General Rules
 
 - Stay read-only.

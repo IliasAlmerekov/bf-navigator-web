@@ -27,6 +27,27 @@ For every UI change, verify:
 - `prefers-reduced-motion` is respected for any transitions or animations.
 - No focus outline suppression without an equally visible custom style.
 
+### Code Quality Gate
+
+Read `.github/rules/code-quality.md` before reviewing.
+
+Flag the following as blocking findings (same severity as correctness issues):
+
+| Symptom | Finding |
+|---|---|
+| Component > 150 lines | SRP violation — split into hooks + sub-components |
+| Hook does fetching + transforms + UI state | SoC violation — split into api fn + util + focused hook |
+| `fetch()` / `axios` in a component or page | SoC violation — move to `src/api/` |
+| Function name contains "and" | SRP violation — split |
+| `props.a.b.c.d` chain | Law of Demeter violation |
+| Same logic in 3+ places | DRY violation — extract |
+| `isOldX?: boolean` or `isNewX?: boolean` flags | Unmanaged variants — use config map |
+| 10+ props on a component | Composition problem — split or restructure |
+| Nested ternaries in JSX | KISS violation — use early returns |
+| `any` type | No contract — define an interface |
+| Commented-out code | YAGNI debt — delete |
+| Speculative `Base*` / `Generic*` / `Abstract*` | YAGNI — remove until second use case exists |
+
 ### General Rules
 
 - Stay read-only.
