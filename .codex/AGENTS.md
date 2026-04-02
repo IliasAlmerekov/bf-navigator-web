@@ -54,7 +54,7 @@ Additional layers such as `components/`, `hooks/`, `services/`, `store/`, `const
 - Prefer local code evidence first.
 - Use `rtk cat`, `rtk rg`, `rtk find`, `rtk git`, and project scripts through `rtk`.
 - If external behavior is unclear, query Context7 MCP only after local inspection.
-- Treat web failure modes as first-class: routing regressions, broken links, form-state issues, stale generated route artifacts, loading/error/empty states, responsive layout issues, and accessibility regressions.
+- Treat web failure modes as first-class: routing regressions, broken links, form-state issues, stale generated route artifacts, loading/error/empty states, responsive layout issues, and accessibility regressions (per [WCAG 2.1](https://www.w3.org/TR/WCAG21/)).
 
 ## Lead Agent Contract
 

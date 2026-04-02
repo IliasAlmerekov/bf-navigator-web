@@ -23,7 +23,7 @@ For every UI change, verify:
 - No `role="button"` on non-button elements — use `<button>`.
 - `aria-live` regions are present for errors, loading states, and notifications.
 - Forms: inputs have associated labels, errors use `aria-describedby`, invalid state uses `aria-invalid="true"`.
-- Color contrast meets WCAG 2.1 AA minimums for all new or modified values.
+- Color contrast meets [WCAG 2.1](https://www.w3.org/TR/WCAG21/) AA minimums for all new or modified values.
 - `prefers-reduced-motion` is respected for any transitions or animations.
 - No focus outline suppression without an equally visible custom style.
 

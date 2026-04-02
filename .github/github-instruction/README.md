@@ -24,7 +24,7 @@ Always read and follow `CONVENTION.md` before planning or implementation.
 - **tester**: Run the a11y test matrix before any other verification. A11y failures are P0.
 - **security**: Flag a11y regressions as functional access denials.
 
-The full a11y requirement is defined in `CONVENTION.md` section 9.
+The full a11y requirement is defined in `CONVENTION.md` section 9 and [WCAG 2.1](https://www.w3.org/TR/WCAG21/).
 
 ## Global Rules
 

@@ -122,7 +122,7 @@ Rules:
 
 **BF Navigator is built first for users with disabilities. Accessibility is the primary design and implementation constraint, not a checklist item. Every agent and developer must evaluate accessibility before everything else.**
 
-### WCAG 2.1 AA — Mandatory
+### [WCAG 2.1](https://www.w3.org/TR/WCAG21/) AA — Mandatory
 
 - Semantic HTML first: use `<nav>`, `<main>`, `<header>`, `<footer>`, `<section>`, `<article>`, `<button>`, `<a>` for their semantic purpose.
 - Every interactive element must have an accessible name via visible label, `aria-label`, or `aria-labelledby`.
