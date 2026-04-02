@@ -1,5 +1,6 @@
-import { BASE_URL } from './apiBaseUrl';
 import type { TrainRouteResponse } from '../pages/TrainSearchResults/types';
+
+export const BASE_URL = import.meta.env.VITE_TRAIN_ROUTES_API_URL ?? '/train-api';
 
 export interface TrainRouteSearchRequest {
   origin: string;
@@ -16,8 +17,6 @@ export class TrainRoutesApiError extends Error {
     this.status = status;
   }
 }
-
-export { BASE_URL };
 
 async function handleResponse(response: Response): Promise<TrainRouteResponse> {
   if (response.ok) {

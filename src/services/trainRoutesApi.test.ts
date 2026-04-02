@@ -20,18 +20,18 @@ describe('trainRoutesApi', () => {
     vi.unstubAllEnvs();
   });
 
-  it('uses VITE_API_URL for BASE_URL when provided', async () => {
-    vi.stubEnv('VITE_API_URL', 'https://api.example.test');
+  it('uses VITE_TRAIN_ROUTES_API_URL for BASE_URL when provided', async () => {
+    vi.stubEnv('VITE_TRAIN_ROUTES_API_URL', 'https://train-routes.example.test');
 
     const { BASE_URL } = await import('./trainRoutesApi');
 
-    expect(BASE_URL).toBe('https://api.example.test');
+    expect(BASE_URL).toBe('https://train-routes.example.test');
   });
 
-  it('falls back to /api when VITE_API_URL is not provided', async () => {
+  it('falls back to /train-api when VITE_TRAIN_ROUTES_API_URL is not provided', async () => {
     const { BASE_URL } = await import('./trainRoutesApi');
 
-    expect(BASE_URL).toBe('/api');
+    expect(BASE_URL).toBe('/train-api');
   });
 
   it('posts train route search requests and returns the backend response', async () => {
@@ -57,7 +57,7 @@ describe('trainRoutesApi', () => {
 
     await expect(searchTrainRoute(request, signal)).resolves.toEqual(routeResponse);
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/routes/trains/debug', {
+    expect(fetchMock).toHaveBeenCalledWith('/train-api/routes/trains/debug', {
       body: JSON.stringify(request),
       headers: {
         Accept: 'application/json',
