@@ -10,11 +10,11 @@
 
 Before applying any principle, determine the scale of what you are writing:
 
-| Scale | Criteria | Apply |
-|---|---|---|
-| **Tiny** | < 50 lines, single concern | KISS + DRY only. Stop there. |
-| **Medium** | 1–3 files, one feature | KISS + DRY + selective SRP |
-| **Large** | Cross-cutting, multiple pages or domains | Full principle evaluation |
+| Scale      | Criteria                                 | Apply                        |
+| ---------- | ---------------------------------------- | ---------------------------- |
+| **Tiny**   | < 50 lines, single concern               | KISS + DRY only. Stop there. |
+| **Medium** | 1–3 files, one feature                   | KISS + DRY + selective SRP   |
+| **Large**  | Cross-cutting, multiple pages or domains | Full principle evaluation    |
 
 Applying SOLID to a 30-line utility is over-engineering.
 Not applying SRP to a 400-line God component is negligence.
@@ -43,18 +43,18 @@ When principles conflict, resolve in this order:
 Write the simplest code that solves the actual problem. Complexity must be justified by a real requirement, not an anticipated future need.
 
 - A function does one thing and its name says exactly what that thing is.
-- If you need a comment to explain *what* code does (not *why*), rewrite the code.
+- If you need a comment to explain _what_ code does (not _why_), rewrite the code.
 - Prefer `if/else` over clever ternary chains.
 - Prefer explicit over implicit.
 - If the implementation feels clever, treat that as a warning sign. Rewrite it to be obvious.
 
 ```ts
 // ❌ Requires mental parsing
-const getLabel = (t: string) => t === 'a' ? 'Active' : t === 'c' ? 'Cancelled' : 'Unknown';
+const getLabel = (t: string) => (t === 'a' ? 'Active' : t === 'c' ? 'Cancelled' : 'Unknown');
 
 // ✅ Simple and extensible
 const STATUS_LABELS: Record<string, string> = {
-  active:    'Active',
+  active: 'Active',
   cancelled: 'Cancelled',
 };
 const getLabel = (status: string): string => STATUS_LABELS[status] ?? 'Unknown';
@@ -94,6 +94,7 @@ Every piece of knowledge should have a single, unambiguous representation. Apply
 **One module, one reason to change.**
 
 Apply when:
+
 - A component exceeds ~150 lines
 - A hook does fetching + transforms + UI state simultaneously
 - You catch yourself writing "and" in a function name
@@ -114,11 +115,11 @@ Split pattern for this stack:
 
 The three concerns in this frontend:
 
-| Concern | What it does | Lives in |
-|---|---|---|
-| **Presentation** | Render UI, handle user events | Components |
-| **State & coordination** | Data fetching, derived state, side effects | Hooks |
-| **Data access** | Network calls, serialisation | `src/api/` |
+| Concern                  | What it does                               | Lives in   |
+| ------------------------ | ------------------------------------------ | ---------- |
+| **Presentation**         | Render UI, handle user events              | Components |
+| **State & coordination** | Data fetching, derived state, side effects | Hooks      |
+| **Data access**          | Network calls, serialisation               | `src/api/` |
 
 Never put `fetch()` calls inside components or page modules directly. They belong in `src/api/`.
 
@@ -131,16 +132,16 @@ When a `switch`/`if-else` grows every time a new variant is added, convert it to
 ```ts
 // ❌ Modified every time a new status is added
 function getStatusConfig(status: string) {
-  if (status === 'active')    return { color: 'green',  label: 'Active' };
-  if (status === 'delayed')   return { color: 'yellow', label: 'Delayed' };
-  if (status === 'cancelled') return { color: 'red',    label: 'Cancelled' };
+  if (status === 'active') return { color: 'green', label: 'Active' };
+  if (status === 'delayed') return { color: 'yellow', label: 'Delayed' };
+  if (status === 'cancelled') return { color: 'red', label: 'Cancelled' };
 }
 
 // ✅ New status = add a record. Core function never changes.
 const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
-  active:    { color: 'green',  label: 'Active' },
-  delayed:   { color: 'yellow', label: 'Delayed' },
-  cancelled: { color: 'red',    label: 'Cancelled' },
+  active: { color: 'green', label: 'Active' },
+  delayed: { color: 'yellow', label: 'Delayed' },
+  cancelled: { color: 'red', label: 'Cancelled' },
 };
 const getStatusConfig = (status: string) => STATUS_CONFIG[status] ?? STATUS_CONFIG['active'];
 ```
@@ -155,12 +156,22 @@ When extending a component's props interface, never make a previously required p
 
 ```tsx
 // ❌ Violates LSP — removes a required prop
-interface ButtonProps  { onClick: () => void; label: string; }
-interface IconButtonProps extends ButtonProps { label?: never; }
+interface ButtonProps {
+  onClick: () => void;
+  label: string;
+}
+interface IconButtonProps extends ButtonProps {
+  label?: never;
+}
 
 // ✅ Extends without removing
-interface ButtonProps  { onClick: () => void; label: string; }
-interface IconButtonProps extends ButtonProps { icon: ReactNode; }
+interface ButtonProps {
+  onClick: () => void;
+  label: string;
+}
+interface IconButtonProps extends ButtonProps {
+  icon: ReactNode;
+}
 ```
 
 ---
@@ -178,8 +189,7 @@ Apply at the component → hook → api boundary. Within a single layer, direct 
 ```ts
 // src/api/routes.ts
 export const routesApi = {
-  search: (params: RouteSearchParams): Promise<Route[]> =>
-    client.post('/routes/search', params),
+  search: (params: RouteSearchParams): Promise<Route[]> => client.post('/routes/search', params),
 };
 
 // src/pages/SearchPage/hooks/useRouteSearch.ts
@@ -353,22 +363,22 @@ return <TrainList data={data} />;
 
 These patterns require restructuring before merging:
 
-| Symptom | Root cause | Fix |
-|---|---|---|
-| Component > 150 lines | Missing SRP | Extract hooks + sub-components |
-| Hook does fetching + transforms + UI state | Missing SoC | Split: api fn → transform util → focused hook |
-| `fetch()` / `axios` in a component or page | SoC violation | Move to `src/api/` |
-| Function name contains "and" | Missing SRP | Split into two functions |
-| `props.trip.route.departure.station.name` | LoD violation | Pass `station` or `departure` directly |
-| Same validation logic in 3+ places | DRY violation | Extract to `src/shared/utils/` |
-| `isOldDesign?: boolean`, `isNewFlow?: boolean` | Unmanaged variants | OCP — use config map or composition |
-| 10+ props on a component | ISP / poor composition | Split or use composition pattern |
-| Nested ternaries in JSX | KISS violation | Early return pattern |
-| `any` type in TypeScript | No contract | Define an interface |
-| Commented-out code blocks | YAGNI debt | Delete. Git history exists. |
-| `src/components/` flat dump | Scope violation | Move to page folder or `src/shared/` |
-| `useEffect` with `fetch()` inside a component | SoC violation | Move to hook → `src/api/` |
-| Speculative `Base*`, `Generic*`, `Abstract*` names | YAGNI | Build when the second use case arrives |
+| Symptom                                            | Root cause             | Fix                                           |
+| -------------------------------------------------- | ---------------------- | --------------------------------------------- |
+| Component > 150 lines                              | Missing SRP            | Extract hooks + sub-components                |
+| Hook does fetching + transforms + UI state         | Missing SoC            | Split: api fn → transform util → focused hook |
+| `fetch()` / `axios` in a component or page         | SoC violation          | Move to `src/api/`                            |
+| Function name contains "and"                       | Missing SRP            | Split into two functions                      |
+| `props.trip.route.departure.station.name`          | LoD violation          | Pass `station` or `departure` directly        |
+| Same validation logic in 3+ places                 | DRY violation          | Extract to `src/shared/utils/`                |
+| `isOldDesign?: boolean`, `isNewFlow?: boolean`     | Unmanaged variants     | OCP — use config map or composition           |
+| 10+ props on a component                           | ISP / poor composition | Split or use composition pattern              |
+| Nested ternaries in JSX                            | KISS violation         | Early return pattern                          |
+| `any` type in TypeScript                           | No contract            | Define an interface                           |
+| Commented-out code blocks                          | YAGNI debt             | Delete. Git history exists.                   |
+| `src/components/` flat dump                        | Scope violation        | Move to page folder or `src/shared/`          |
+| `useEffect` with `fetch()` inside a component      | SoC violation          | Move to hook → `src/api/`                     |
+| Speculative `Base*`, `Generic*`, `Abstract*` names | YAGNI                  | Build when the second use case arrives        |
 
 ---
 

@@ -29,11 +29,13 @@ A component is not done until it passes the a11y verification checklist in CONVE
 ### Code Quality
 
 Read `.claude/rules/code-quality.md` before writing any module. Apply rules proportionally to scale:
+
 - < 50 lines, single concern → KISS + DRY only
 - 1–3 files, one feature → KISS + DRY + selective SRP
 - Cross-cutting → full principle evaluation
 
 Mandatory rules for every implementation:
+
 - **SRP**: component > 150 lines or hook with 2+ concerns → split
 - **SoC**: no `fetch()` in components or pages — belongs in `src/api/`
 - **DRY**: Rule of Three — 1–2 uses: tolerate; 3+ uses: extract
