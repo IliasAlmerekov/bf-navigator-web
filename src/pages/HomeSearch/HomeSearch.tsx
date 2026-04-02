@@ -617,7 +617,6 @@ export default function HomeSearch() {
           ))}
         </div>
       </section>
-
     </main>
   );
 }

@@ -69,9 +69,7 @@ describe('TrainResultCard', () => {
     expect(screen.getByText('Hannover Hauptbahnhof')).toBeInTheDocument();
     expect(screen.getByText(formatExpectedLocalTime('2026-04-02T08:29:00Z'))).toBeInTheDocument();
     expect(screen.getByText(formatExpectedLocalTime('2026-04-02T09:48:00Z'))).toBeInTheDocument();
-    expect(
-      screen.getByText('DB Fernverkehr AG · Hochgeschwindigkeitszug')
-    ).toBeInTheDocument();
+    expect(screen.getByText('DB Fernverkehr AG · Hochgeschwindigkeitszug')).toBeInTheDocument();
     expect(screen.getByText('Direkt')).toBeInTheDocument();
   });
 });
