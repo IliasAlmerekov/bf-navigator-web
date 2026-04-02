@@ -1,11 +1,17 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ReactNode } from 'react';
 import HomeSearch from './HomeSearch';
 
 const mockNavigate = vi.fn();
 const ACCESSIBILITY_PREFERENCE_STORAGE_KEY = 'bf-navigator-accessibility-preference';
 
 vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, className, to }: { children: ReactNode; className?: string; to: string }) => (
+    <a className={className} href={to}>
+      {children}
+    </a>
+  ),
   useNavigate: () => mockNavigate,
 }));
 
