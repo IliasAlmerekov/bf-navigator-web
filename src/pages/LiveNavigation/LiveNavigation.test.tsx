@@ -2,12 +2,14 @@ import type { ReactNode } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TrainRouteResponse } from '../TrainSearchResults/types';
 import LiveNavigation from './LiveNavigation';
 import * as liveNavigationUtils from './liveNavigationUtils';
 
 const liveNavigationMapMock = vi.fn();
 const watchPositionMock = vi.fn();
 const clearWatchMock = vi.fn();
+const getSelectedTrainRouteMock = vi.fn();
 
 type WatchSuccess = Parameters<typeof navigator.geolocation.watchPosition>[0];
 type WatchError = Parameters<typeof navigator.geolocation.watchPosition>[1];
@@ -33,6 +35,10 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }));
 
+vi.mock('../../utils/selectedTrainRouteStorage', () => ({
+  getSelectedTrainRoute: () => getSelectedTrainRouteMock(),
+}));
+
 vi.mock('./components/LiveNavigationMap', () => ({
   LiveNavigationMap: (props: unknown) => {
     liveNavigationMapMock(props);
@@ -49,18 +55,85 @@ vi.mock('./components/LiveNavigationMap', () => ({
   },
 }));
 
+function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteResponse {
+  return {
+    accessibilitySummary: {
+      activeElevators: 1,
+      activeEscalators: 1,
+      inactiveElevators: 0,
+      inactiveEscalators: 0,
+      mobilityServiceStations: 2,
+      status: 'ACCESSIBLE',
+      stepFreeStations: 2,
+      summary: '2/2 stations step-free',
+      totalStations: 2,
+    },
+    arrivalTime: '2026-04-02T11:45:00Z',
+    departureTime: '2026-04-02T09:10:00Z',
+    destination: 'Köln Hbf',
+    localizedDistanceText: '190 km',
+    localizedDurationText: '2 Stunden, 35 Minuten',
+    origin: 'Düsseldorf Hbf',
+    touchpoints: [
+      {
+        accessibility: {
+          activeElevators: 1,
+          activeEscalators: 1,
+          hasFacilityData: true,
+          inactiveElevators: 0,
+          inactiveEscalators: 0,
+          mobilityServiceAvailable: true,
+          status: 'ACCESSIBLE',
+          stepFreeAvailable: true,
+          summary: 'Step-free access available',
+        },
+        arrivalTime: null,
+        departureTime: '2026-04-02T09:10:00Z',
+        facilities: [],
+        kind: 'ORIGIN',
+        station: null,
+        stationName: 'Düsseldorf Hbf',
+      },
+      {
+        accessibility: {
+          activeElevators: 1,
+          activeEscalators: 1,
+          hasFacilityData: true,
+          inactiveElevators: 0,
+          inactiveEscalators: 0,
+          mobilityServiceAvailable: true,
+          status: 'ACCESSIBLE',
+          stepFreeAvailable: true,
+          summary: 'Step-free access available',
+        },
+        arrivalTime: '2026-04-02T11:45:00Z',
+        departureTime: null,
+        facilities: [],
+        kind: 'DESTINATION',
+        station: null,
+        stationName: 'Köln Hbf',
+      },
+    ],
+    transits: [],
+    ...overrides,
+  };
+}
+
 describe('LiveNavigation', () => {
   afterEach(() => {
     cleanup();
     liveNavigationMapMock.mockReset();
     watchPositionMock.mockReset();
     clearWatchMock.mockReset();
+    getSelectedTrainRouteMock.mockReset();
     watchSuccessCallback = undefined;
     watchErrorCallback = undefined;
     vi.restoreAllMocks();
   });
 
   beforeEach(() => {
+    getSelectedTrainRouteMock.mockReturnValue(null);
+
     Object.defineProperty(window.navigator, 'geolocation', {
       configurable: true,
       value: {
@@ -120,6 +193,36 @@ describe('LiveNavigation', () => {
         destinationLabel: 'Gleis 1',
       })
     );
+  });
+
+  it('uses selected API route heading and map destination label when touchpoints are available', () => {
+    getSelectedTrainRouteMock.mockReturnValue(makeSelectedRoute());
+    render(<LiveNavigation />);
+
+    watchSuccessCallback?.({
+      coords: {
+        accuracy: 5,
+        altitude: null,
+        altitudeAccuracy: null,
+        heading: null,
+        latitude: 50.10736,
+        longitude: 8.66312,
+        speed: null,
+      },
+      timestamp: Date.now(),
+    } as GeolocationPosition);
+
+    expect(
+      screen.getByRole('heading', { level: 2, name: /düsseldorf hbf → köln hbf/i })
+    ).toBeInTheDocument();
+    expect(liveNavigationMapMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        destinationLabel: 'Köln Hbf',
+      })
+    );
+    expect(
+      screen.queryByRole('heading', { level: 2, name: /frankfurt → berlin/i })
+    ).not.toBeInTheDocument();
   });
 
   it('shows manual fallback controls when geolocation permission is denied', async () => {
