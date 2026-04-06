@@ -37,18 +37,24 @@ function toLatLng(position: GeolocationPosition): LiveNavigationLatLng {
 }
 
 export default function LiveNavigation() {
-  const [geolocationState, setGeolocationState] = useState<GeolocationState>('requesting-location');
+  const geolocation = typeof navigator !== 'undefined' ? navigator.geolocation : undefined;
+  const hasGeolocationSupport =
+    typeof geolocation?.watchPosition === 'function' &&
+    typeof geolocation.clearWatch === 'function';
+  const [geolocationState, setGeolocationState] = useState<GeolocationState>(
+    hasGeolocationSupport ? 'requesting-location' : 'location-unavailable'
+  );
   const [livePosition, setLivePosition] = useState<LiveNavigationLatLng | null>(null);
-  const [manualStartId, setManualStartId] = useState<string | null>(null);
+  const [manualStartId, setManualStartId] = useState<string | null>(
+    hasGeolocationSupport ? null : DEFAULT_MANUAL_START_ID
+  );
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setGeolocationState('location-unavailable');
-      setManualStartId(DEFAULT_MANUAL_START_ID);
+    if (!hasGeolocationSupport) {
       return;
     }
 
-    const watchId = navigator.geolocation.watchPosition(
+    const watchId = geolocation.watchPosition(
       (position) => {
         flushSync(() => {
           setLivePosition(toLatLng(position));
@@ -69,9 +75,9 @@ export default function LiveNavigation() {
     );
 
     return () => {
-      navigator.geolocation.clearWatch(watchId);
+      geolocation.clearWatch(watchId);
     };
-  }, []);
+  }, [geolocation, hasGeolocationSupport]);
 
   const fallbackRoute = getRoutePointsFromManualStart(
     manualStartId ?? DEFAULT_MANUAL_START_ID,

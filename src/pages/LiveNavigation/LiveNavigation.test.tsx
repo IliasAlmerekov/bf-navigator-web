@@ -35,7 +35,16 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('./components/LiveNavigationMap', () => ({
   LiveNavigationMap: (props: unknown) => {
     liveNavigationMapMock(props);
-    return <div data-testid="live-navigation-map" />;
+    return (
+      <div data-testid="live-navigation-map">
+        <button aria-label="Karte vergrößern" type="button">
+          +
+        </button>
+        <button aria-label="Karte verkleinern" type="button">
+          -
+        </button>
+      </div>
+    );
   },
 }));
 
@@ -124,8 +133,55 @@ describe('LiveNavigation', () => {
 
     await user.click(screen.getByRole('radio', { name: /info point/i }));
 
+    expect(screen.getByRole('status')).toHaveTextContent(/manueller startpunkt aktiv/i);
     expect(screen.getByText(/startpunkt: info point/i)).toBeInTheDocument();
     expect(screen.getByText(/biegen sie links ab/i)).toBeInTheDocument();
+  });
+
+  it('keeps keyboard tab order from back link to manual fallback radios and map zoom controls', async () => {
+    const user = userEvent.setup();
+    render(<LiveNavigation />);
+
+    watchErrorCallback?.({
+      code: 1,
+      message: 'Permission denied',
+      PERMISSION_DENIED: 1,
+      POSITION_UNAVAILABLE: 2,
+      TIMEOUT: 3,
+    } as GeolocationPositionError);
+
+    await user.tab();
+    expect(screen.getByRole('link', { name: /zurück zur routenübersicht/i })).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole('radio', { name: /haupteingang/i })).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole('button', { name: /karte vergrößern/i })).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole('button', { name: /karte verkleinern/i })).toHaveFocus();
+  });
+
+  it('supports keyboard-only manual start selection and updates route copy', async () => {
+    const user = userEvent.setup();
+    render(<LiveNavigation />);
+
+    watchErrorCallback?.({
+      code: 1,
+      message: 'Permission denied',
+      PERMISSION_DENIED: 1,
+      POSITION_UNAVAILABLE: 2,
+      TIMEOUT: 3,
+    } as GeolocationPositionError);
+
+    await user.tab();
+    await user.tab();
+    await user.keyboard('{ArrowDown}');
+
+    expect(screen.getByRole('radio', { name: /aufzug e4/i })).toBeChecked();
+    expect(screen.getByRole('status')).toHaveTextContent(/manueller startpunkt aktiv/i);
+    expect(screen.getByText(/startpunkt: aufzug e4/i)).toBeInTheDocument();
   });
 
   it('falls back immediately when browser geolocation is unavailable', () => {
