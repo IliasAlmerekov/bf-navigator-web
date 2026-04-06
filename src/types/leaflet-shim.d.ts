@@ -13,6 +13,7 @@ declare module 'leaflet' {
 
   export type LeafletPathOptions = {
     color?: string;
+    dashArray?: string;
     fillColor?: string;
     fillOpacity?: number;
     lineCap?: 'butt' | 'round' | 'square';
@@ -22,10 +23,25 @@ declare module 'leaflet' {
     weight?: number;
   };
 
+  export type LeafletDivIconOptions = {
+    className?: string;
+    html?: string;
+    iconAnchor?: [number, number];
+    iconSize?: [number, number];
+  };
+
+  export type LeafletMarkerOptions = {
+    icon?: LeafletDivIcon;
+  };
+
+  export type LeafletDivIcon = Record<string, unknown>;
+
   export type LeafletCoordinate = [number, number];
 
   const Leaflet: {
     circleMarker(position: LeafletCoordinate, options?: LeafletPathOptions): LeafletLayer;
+    divIcon(options: LeafletDivIconOptions): LeafletDivIcon;
+    marker(position: LeafletCoordinate, options?: LeafletMarkerOptions): LeafletLayer;
     polyline(positions: LeafletCoordinate[], options?: LeafletPathOptions): LeafletLayer;
   };
 
@@ -39,9 +55,11 @@ declare module 'react-leaflet' {
     boxZoom: { disable(): void };
     doubleClickZoom: { disable(): void };
     dragging: { disable(): void };
+    getCenter(): [number, number];
+    getZoom(): number;
     keyboard: { disable(): void };
     removeLayer(layer: unknown): void;
-    scrollWheelZoom: { disable(): void };
+    scrollWheelZoom: { disable(): void; enable(): void };
     setView(center: [number, number], zoom: number, options?: { animate?: boolean }): void;
     tap?: { disable(): void };
     touchZoom: { disable(): void };
@@ -52,11 +70,13 @@ declare module 'react-leaflet' {
     center: [number, number];
     children?: ReactNode;
     className?: string;
+    scrollWheelZoom?: boolean;
     zoom: number;
     zoomControl?: boolean;
   };
 
   export type TileLayerProps = {
+    attribution?: string;
     url: string;
   };
 
