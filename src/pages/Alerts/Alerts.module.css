@@ -21,7 +21,7 @@
   color: #1f2435;
 }
 
-.filterButton {
+.filter-button {
   width: 44px;
   height: 44px;
   border: 0;
@@ -35,21 +35,12 @@
   cursor: pointer;
 }
 
-.filterButton svg {
+.filter-button svg {
   width: 19px;
   height: 19px;
 }
 
-.filterButton:focus-visible,
-.scopeTab:focus-visible,
-.primaryAction:focus-visible,
-.resolvedRow:focus-visible,
-.liveSupportButton:focus-visible {
-  outline: 2px solid var(--color-primary-container);
-  outline-offset: 2px;
-}
-
-.segmentedControl {
+.segmented-control {
   min-height: 44px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -59,7 +50,7 @@
   background: #eceef3;
 }
 
-.scopeTab {
+.scope-tab {
   min-height: 36px;
   border: 0;
   display: inline-flex;
@@ -78,7 +69,7 @@
     box-shadow 0.2s ease;
 }
 
-.scopeTab[data-active='true'] {
+.scope-tab[data-active='true'] {
   color: #1f3d9a;
   background: #fff;
   box-shadow: 0 3px 9px rgb(25, 28, 29, 0.09);
@@ -89,14 +80,14 @@
   gap: 10px;
 }
 
-.sectionHeader {
+.section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.sectionHeader h2 {
+.section-header h2 {
   margin: 0;
   font-size: 1.38rem;
   line-height: 1;
@@ -104,7 +95,7 @@
   color: #252b3f;
 }
 
-.alertCount {
+.alert-count {
   min-height: 24px;
   margin: 0;
   padding: 0 9px;
@@ -119,15 +110,15 @@
   background: #86331b;
 }
 
-.tabPanel[hidden] {
+.tab-panel[hidden] {
   display: none;
 }
 
-.tabPanel {
+.tab-panel {
   display: block;
 }
 
-.alertList {
+.alert-list {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -135,7 +126,7 @@
   gap: 10px;
 }
 
-.alertCard {
+.alert-card {
   display: grid;
   gap: 10px;
   padding: 12px;
@@ -146,28 +137,28 @@
     inset 0 0 0 1px rgb(33, 42, 66, 0.05);
 }
 
-.highAlert {
+.high-alert {
   background: linear-gradient(180deg, #fff 0%, #fcfcff 100%);
 }
 
-.infoAlert {
+.info-alert {
   background: #f5f6fb;
 }
 
-.delayAlert {
+.delay-alert {
   gap: 8px;
   background: #f8f9fb;
 }
 
-.cardHeader {
+.card-header {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
 }
 
-.iconBubble,
-.emptyIconBubble {
+.icon-bubble,
+.empty-icon-bubble {
   width: 28px;
   height: 28px;
   border-radius: 999px;
@@ -178,24 +169,24 @@
   background: #edf0f8;
 }
 
-.cardIcon {
+.card-icon {
   width: 15px;
   height: 15px;
 }
 
-.cardIconImage {
+.card-icon-image {
   width: 16px;
   height: 16px;
   object-fit: contain;
 }
 
-.cardTitleGroup {
+.card-title-group {
   min-width: 0;
   display: grid;
   gap: 2px;
 }
 
-.cardTitleGroup h3 {
+.card-title-group h3 {
   margin: 0;
   font-size: 0.96rem;
   line-height: 1.2;
@@ -203,7 +194,7 @@
   color: #1f2538;
 }
 
-.cardTitleGroup p {
+.card-title-group p {
   margin: 0;
   font-size: 0.69rem;
   font-weight: 600;
@@ -211,14 +202,14 @@
   color: #7f89a4;
 }
 
-.cardTime {
+.card-time {
   font-size: 0.62rem;
   font-weight: 600;
   line-height: 1;
   color: #8d96af;
 }
 
-.severityBadge {
+.severity-badge {
   min-height: 22px;
   width: fit-content;
   margin: 0;
@@ -234,7 +225,7 @@
   background: #f9e8df;
 }
 
-.cardBodyText {
+.card-body-text {
   margin: 0;
   max-width: none;
   font-size: 0.72rem;
@@ -242,7 +233,7 @@
   color: #65708d;
 }
 
-.primaryAction {
+.primary-action {
   min-height: 44px;
   border: 0;
   display: inline-flex;
@@ -259,16 +250,16 @@
   transition: transform 0.2s ease;
 }
 
-.primaryAction svg {
+.primary-action svg {
   width: 14px;
   height: 14px;
 }
 
-.primaryAction:hover {
+.primary-action:hover {
   transform: translateY(-1px);
 }
 
-.infoChip {
+.info-chip {
   min-height: 22px;
   padding: 0 8px;
   border-radius: 999px;
@@ -283,7 +274,7 @@
   background: #e7eaf3;
 }
 
-.platformMetrics {
+.platform-metrics {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
@@ -291,12 +282,12 @@
   padding: 2px 0;
 }
 
-.metricBlock {
+.metric-block {
   display: grid;
   gap: 2px;
 }
 
-.metricLabel {
+.metric-label {
   margin: 0;
   font-size: 0.55rem;
   font-weight: 700;
@@ -306,8 +297,8 @@
   color: #8e96ad;
 }
 
-.metricValueMuted,
-.metricValueStrong {
+.metric-value-muted,
+.metric-value-strong {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.62rem;
@@ -315,22 +306,22 @@
   letter-spacing: -0.03em;
 }
 
-.metricValueMuted {
+.metric-value-muted {
   color: #919ab1;
   text-decoration: line-through;
 }
 
-.metricValueStrong {
+.metric-value-strong {
   color: #0e42a3;
 }
 
-.metricDivider {
+.metric-divider {
   width: 1px;
   height: 36px;
   background: rgb(69, 80, 110, 0.2);
 }
 
-.assistanceBadge {
+.assistance-badge {
   min-height: 32px;
   margin: 0;
   border-radius: 10px;
@@ -345,7 +336,7 @@
   background: #eceff5;
 }
 
-.delayText {
+.delay-text {
   margin: 0;
   font-size: 0.79rem;
   font-weight: 500;
@@ -353,7 +344,7 @@
   color: #59627e;
 }
 
-.delayText strong {
+.delay-text strong {
   margin-right: 4px;
   font-family: var(--font-display);
   font-size: 1.3rem;
@@ -361,7 +352,7 @@
   color: #111727;
 }
 
-.resolvedRow {
+.resolved-row {
   min-height: 56px;
   border: 0;
   display: grid;
@@ -376,56 +367,56 @@
   cursor: pointer;
 }
 
-.resolvedBullet {
+.resolved-bullet {
   width: 18px;
   height: 18px;
   border-radius: 999px;
   background: radial-gradient(circle at center, #2253c0 30%, #d7e1f7 31%);
 }
 
-.resolvedTextGroup {
+.resolved-text-group {
   min-width: 0;
   display: grid;
   gap: 1px;
 }
 
-.resolvedTitle {
+.resolved-title {
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 1.2;
   color: #2b334a;
 }
 
-.resolvedSubtitle {
+.resolved-subtitle {
   font-size: 0.62rem;
   font-weight: 600;
   line-height: 1.2;
   color: #78819c;
 }
 
-.resolvedArrow {
+.resolved-arrow {
   width: 14px;
   height: 14px;
   color: #8c95ad;
 }
 
-.otherRoutesCard,
-.emptyStateCard {
+.other-routes-card,
+.empty-state-card {
   justify-items: center;
   text-align: center;
   background: #f1f3f7;
 }
 
-.otherRoutesCard h2,
-.emptyStateCard h3 {
+.other-routes-card h2,
+.empty-state-card h3 {
   margin: 0;
   font-size: 1rem;
   line-height: 1.1;
   color: #4b5679;
 }
 
-.otherRoutesCard p,
-.emptyStateCard p {
+.other-routes-card p,
+.empty-state-card p {
   margin: 0;
   max-width: 30ch;
   font-size: 0.69rem;
@@ -433,7 +424,7 @@
   color: #8c94ab;
 }
 
-.liveSupportButton {
+.live-support-button {
   position: fixed;
   right: 24px;
   bottom: calc(92px + env(safe-area-inset-bottom));
@@ -455,7 +446,16 @@
   cursor: pointer;
 }
 
-.supportIcon {
+.filter-button:focus-visible,
+.scope-tab:focus-visible,
+.primary-action:focus-visible,
+.resolved-row:focus-visible,
+.live-support-button:focus-visible {
+  outline: 2px solid var(--color-primary-container);
+  outline-offset: 2px;
+}
+
+.support-icon {
   width: 13px;
   height: 13px;
 }
@@ -467,12 +467,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scopeTab,
-  .primaryAction {
+  .scope-tab,
+  .primary-action {
     transition: none;
   }
 
-  .primaryAction:hover {
+  .primary-action:hover {
     transform: none;
   }
 }
