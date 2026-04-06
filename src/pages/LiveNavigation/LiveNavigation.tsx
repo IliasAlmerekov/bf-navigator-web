@@ -77,16 +77,18 @@ const ROUTE_STOPS: RouteStop[] = [
   },
 ];
 
-const RouteOverviewBackLink = Link as unknown as (
-  props: RouteOverviewBackLinkProps
-) => JSX.Element;
+const RouteOverviewBackLink = Link as unknown as (props: RouteOverviewBackLinkProps) => JSX.Element;
 
 function toLatLng(position: GeolocationPosition): LiveNavigationLatLng {
   return [position.coords.latitude, position.coords.longitude];
 }
 
 function getStatusTone(state: GeolocationState) {
-  if (state === 'location-denied' || state === 'location-unavailable' || state === 'tracking-error') {
+  if (
+    state === 'location-denied' ||
+    state === 'location-unavailable' ||
+    state === 'tracking-error'
+  ) {
     return 'warning';
   }
 
@@ -177,7 +179,7 @@ export default function LiveNavigation() {
   const activeRoute = shouldUseLivePosition ? LIVE_NAVIGATION_ROUTE_POINTS : fallbackRoute;
   const activePosition = shouldUseLivePosition
     ? livePosition
-    : activeRoute[0]?.position ?? LIVE_NAVIGATION_DESTINATION.position;
+    : (activeRoute[0]?.position ?? LIVE_NAVIGATION_DESTINATION.position);
   const hasActiveRoute = activeRoute.length > 0;
   const routeInstruction = buildInstructionState({
     destination: LIVE_NAVIGATION_DESTINATION,

@@ -109,16 +109,12 @@ describe('LiveNavigation', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: /aufzug e4/i })).toBeInTheDocument();
     expect(screen.getByText(/gleis 1 · ca\./i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /alternativweg: südrampe/i })).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /alternativweg: südrampe/i })
+      screen.getByRole('heading', { level: 2, name: /frankfurt → berlin/i })
     ).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: /frankfurt → berlin/i })).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /hilfe anfordern/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /navigation beenden/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /hilfe anfordern/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /navigation beenden/i })).toBeInTheDocument();
     expect(liveNavigationMapMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
         destinationLabel: 'Gleis 1',
@@ -142,16 +138,18 @@ describe('LiveNavigation', () => {
     expect(
       screen.getByRole('radiogroup', { name: /manuellen startpunkt wählen/i })
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /alternativweg: südrampe/i })).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /alternativweg: südrampe/i })
+      screen.getByRole('heading', { level: 2, name: /frankfurt → berlin/i })
     ).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: /frankfurt → berlin/i })).toBeInTheDocument();
 
     await user.click(screen.getByRole('radio', { name: /info point/i }));
 
     expect(screen.getByRole('status')).toHaveTextContent(/manueller startpunkt aktiv/i);
     expect(screen.getByRole('radio', { name: /info point/i })).toBeChecked();
-    expect(screen.getByRole('heading', { level: 1, name: /biegen sie links ab/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: /biegen sie links ab/i })
+    ).toBeInTheDocument();
   });
 
   it.each([2, 3])(
@@ -187,7 +185,9 @@ describe('LiveNavigation', () => {
       expect(
         screen.getByRole('radiogroup', { name: /manuellen startpunkt wählen/i })
       ).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1, name: /gehen sie geradeaus/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { level: 1, name: /gehen sie geradeaus/i })
+      ).toBeInTheDocument();
 
       await user.click(screen.getByRole('radio', { name: /info point/i }));
 

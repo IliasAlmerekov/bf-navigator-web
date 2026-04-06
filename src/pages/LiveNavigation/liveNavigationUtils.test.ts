@@ -13,9 +13,7 @@ import {
 
 describe('liveNavigationUtils', () => {
   it('finds the nearest route point for a live browser position', () => {
-    expect(
-      findNearestRoutePointIndex([50.10712, 8.66376], LIVE_NAVIGATION_ROUTE_POINTS)
-    ).toBe(0);
+    expect(findNearestRoutePointIndex([50.10712, 8.66376], LIVE_NAVIGATION_ROUTE_POINTS)).toBe(0);
   });
 
   it('calculates a non-zero remaining distance from the active route point to the destination', () => {

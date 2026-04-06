@@ -18,8 +18,8 @@ export function ManualStartSelector({
         Manuellen Startpunkt wählen
       </h2>
       <p className={styles['manual-start-description']}>
-        Wählen Sie einen barrierefreien Orientierungspunkt, wenn der Live-Standort nicht
-        verfügbar ist.
+        Wählen Sie einen barrierefreien Orientierungspunkt, wenn der Live-Standort nicht verfügbar
+        ist.
       </p>
       <div
         aria-label="Manuellen Startpunkt wählen"

@@ -97,31 +97,20 @@ function LiveNavigationMapLayers({
     layers.push(currentMarker);
 
     const nextPosition = routePath[1] ?? destinationPosition;
-    const nextMarker = L.marker(
-      nextPosition,
-      {
-        icon: createMarkerIcon(
-          'live-nav-dest-marker',
-          getMarkerShortLabel(nextLabel),
-          40,
-          20
-        ),
-      }
-    ).addTo(map);
+    const nextMarker = L.marker(nextPosition, {
+      icon: createMarkerIcon('live-nav-dest-marker', getMarkerShortLabel(nextLabel), 40, 20),
+    }).addTo(map);
     nextMarker.bindTooltip?.(nextLabel, { direction: 'top', offset: [0, -24] });
     layers.push(nextMarker);
 
-    const destinationMarker = L.marker(
-      destinationPosition,
-      {
-        icon: createMarkerIcon(
-          'live-nav-platform-marker',
-          getMarkerShortLabel(destinationLabel),
-          32,
-          16
-        ),
-      }
-    ).addTo(map);
+    const destinationMarker = L.marker(destinationPosition, {
+      icon: createMarkerIcon(
+        'live-nav-platform-marker',
+        getMarkerShortLabel(destinationLabel),
+        32,
+        16
+      ),
+    }).addTo(map);
     destinationMarker.bindTooltip?.(destinationLabel, { direction: 'top', offset: [0, -20] });
     layers.push(destinationMarker);
 

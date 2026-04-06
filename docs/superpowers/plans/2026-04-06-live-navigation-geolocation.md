@@ -36,6 +36,7 @@
 ### Task 1: Build Mock Route Data and Pure Routing Utilities
 
 **Files:**
+
 - Create: `src/pages/LiveNavigation/liveNavigationData.ts`
 - Create: `src/pages/LiveNavigation/liveNavigationUtils.ts`
 - Test: `src/pages/LiveNavigation/liveNavigationUtils.test.ts`
@@ -58,9 +59,7 @@ import {
 
 describe('liveNavigationUtils', () => {
   it('finds the nearest route point for a live browser position', () => {
-    expect(
-      findNearestRoutePointIndex([50.10712, 8.66376], LIVE_NAVIGATION_ROUTE_POINTS)
-    ).toBe(0);
+    expect(findNearestRoutePointIndex([50.10712, 8.66376], LIVE_NAVIGATION_ROUTE_POINTS)).toBe(0);
   });
 
   it('calculates a non-zero remaining distance from the active route point to the destination', () => {
@@ -86,7 +85,11 @@ describe('liveNavigationUtils', () => {
 
   it('derives a fallback route segment from the selected manual start point', () => {
     expect(
-      getRoutePointsFromManualStart('info-point', LIVE_NAVIGATION_MANUAL_STARTS, LIVE_NAVIGATION_ROUTE_POINTS)
+      getRoutePointsFromManualStart(
+        'info-point',
+        LIVE_NAVIGATION_MANUAL_STARTS,
+        LIVE_NAVIGATION_ROUTE_POINTS
+      )
     ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: 'info-point' }),
@@ -324,6 +327,7 @@ rtk git commit -m "feat: add live navigation route utilities"
 ### Task 2: Implement Page Geolocation Flow, Fallback UI, and Map Props
 
 **Files:**
+
 - Create: `src/pages/LiveNavigation/LiveNavigation.test.tsx`
 - Create: `src/pages/LiveNavigation/components/NavigationInstructions.tsx`
 - Create: `src/pages/LiveNavigation/components/ManualStartSelector.tsx`
@@ -395,12 +399,14 @@ describe('LiveNavigation', () => {
       value: {
         clearWatch: clearWatchMock,
         getCurrentPosition: vi.fn(),
-        watchPosition: watchPositionMock.mockImplementation((success: WatchSuccess, error: WatchError) => {
-          watchSuccessCallback = success;
-          watchErrorCallback = error;
+        watchPosition: watchPositionMock.mockImplementation(
+          (success: WatchSuccess, error: WatchError) => {
+            watchSuccessCallback = success;
+            watchErrorCallback = error;
 
-          return 17;
-        }),
+            return 17;
+          }
+        ),
       },
     });
   });
@@ -454,7 +460,9 @@ describe('LiveNavigation', () => {
     } as GeolocationPositionError);
 
     expect(screen.getByRole('status')).toHaveTextContent(/standortfreigabe wurde abgelehnt/i);
-    expect(screen.getByRole('radiogroup', { name: /manuellen startpunkt wählen/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('radiogroup', { name: /manuellen startpunkt wählen/i })
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole('radio', { name: /info point/i }));
 
@@ -470,8 +478,12 @@ describe('LiveNavigation', () => {
 
     render(<LiveNavigation />);
 
-    expect(screen.getByRole('status')).toHaveTextContent(/geolokalisierung ist in diesem browser nicht verfügbar/i);
-    expect(screen.getByRole('radiogroup', { name: /manuellen startpunkt wählen/i })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      /geolokalisierung ist in diesem browser nicht verfügbar/i
+    );
+    expect(
+      screen.getByRole('radiogroup', { name: /manuellen startpunkt wählen/i })
+    ).toBeInTheDocument();
   });
 
   it('clears the geolocation watcher on unmount', () => {
@@ -699,10 +711,7 @@ import {
 import { NavigationInstructions } from './components/NavigationInstructions';
 import { ManualStartSelector } from './components/ManualStartSelector';
 import { LiveNavigationMap } from './components/LiveNavigationMap';
-import {
-  buildInstructionState,
-  getRoutePointsFromManualStart,
-} from './liveNavigationUtils';
+import { buildInstructionState, getRoutePointsFromManualStart } from './liveNavigationUtils';
 import styles from './LiveNavigation.module.css';
 
 type GeolocationState =
@@ -800,13 +809,18 @@ export default function LiveNavigation() {
     geolocationState === 'tracking-error' ||
     geolocationState === 'manual-start-selected';
   const selectedManualStartLabel =
-    LIVE_NAVIGATION_MANUAL_STARTS.find((start) => start.id === (manualStartId ?? DEFAULT_MANUAL_START_ID))
-      ?.label ?? 'Haupteingang';
+    LIVE_NAVIGATION_MANUAL_STARTS.find(
+      (start) => start.id === (manualStartId ?? DEFAULT_MANUAL_START_ID)
+    )?.label ?? 'Haupteingang';
 
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <Link aria-label="Zurück zur Routenübersicht" className={styles['header-back']} to="/route-overview">
+        <Link
+          aria-label="Zurück zur Routenübersicht"
+          className={styles['header-back']}
+          to="/route-overview"
+        >
           Zurück
         </Link>
       </header>
@@ -836,7 +850,10 @@ export default function LiveNavigation() {
         </div>
 
         <aside className={styles['panel-col']}>
-          <section aria-labelledby="live-navigation-map-heading" className={styles['schematic-card']}>
+          <section
+            aria-labelledby="live-navigation-map-heading"
+            className={styles['schematic-card']}
+          >
             <h2 id="live-navigation-map-heading" className={styles['schematic-subtitle']}>
               Live-Karte
             </h2>
@@ -907,6 +924,7 @@ rtk git commit -m "feat: add live navigation geolocation fallback"
 ### Task 3: Run Verification and Accessibility Regression Checks
 
 **Files:**
+
 - Verify: `src/pages/LiveNavigation/liveNavigationUtils.test.ts`
 - Verify: `src/pages/LiveNavigation/LiveNavigation.test.tsx`
 - Verify: `src/pages/LiveNavigation/**/*`
