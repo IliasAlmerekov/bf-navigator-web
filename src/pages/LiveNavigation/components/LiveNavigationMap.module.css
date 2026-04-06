@@ -1,9 +1,9 @@
 /* ── Map wrapper ── */
 .wrapper {
   position: relative;
-  border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--color-surface-container-high);
+  border-radius: 16px;
   box-shadow: var(--shadow-ambient);
 }
 
@@ -108,5 +108,11 @@
 @media (width >= 1024px) {
   .map {
     height: 420px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zoom-btn {
+    transition: none;
   }
 }

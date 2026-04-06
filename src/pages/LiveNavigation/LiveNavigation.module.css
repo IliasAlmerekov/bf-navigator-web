@@ -3,7 +3,6 @@
    Design ref: Stitch "Live Navigation" + "Live Navigation Desktop"
 ───────────────────────────────────────────────────────── */
 
-/* ── Page shell ── */
 .page {
   display: grid;
   gap: 0;
@@ -11,7 +10,6 @@
   padding-bottom: calc(120px + env(safe-area-inset-bottom));
 }
 
-/* ── Sticky header ── */
 .header {
   position: sticky;
   top: 0;
@@ -20,10 +18,10 @@
   align-items: center;
   gap: 12px;
   padding: 14px 0;
+  margin-bottom: 16px;
   background: rgb(248, 249, 250, 0.92);
   backdrop-filter: blur(var(--backdrop-blur));
   border-bottom: 1px solid var(--color-surface-container-high);
-  margin-bottom: 16px;
 }
 
 .header-back {
@@ -79,13 +77,13 @@
 
 .header-route {
   margin: 0;
+  overflow: hidden;
   font-size: 0.9rem;
   font-weight: 700;
   line-height: 1.2;
   color: var(--color-text-strong);
-  white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .header-help {
@@ -122,19 +120,16 @@
   height: 18px;
 }
 
-/* ── Layout: single column mobile, two columns desktop ── */
 .layout {
   display: grid;
   gap: 16px;
 }
 
-/* ── Main column ── */
 .main-col {
   display: grid;
   gap: 12px;
 }
 
-/* ── Status banner ── */
 .status-banner {
   display: flex;
   align-items: center;
@@ -145,11 +140,29 @@
   border: 1px solid rgb(22, 163, 74, 0.28);
 }
 
+.status-banner[data-tone='warning'] {
+  background: rgb(217, 119, 6, 0.12);
+  border-color: rgb(217, 119, 6, 0.28);
+}
+
+.status-banner[data-tone='neutral'] {
+  background: var(--color-surface-container-lowest);
+  border-color: var(--color-surface-container-high);
+}
+
 .status-banner-icon {
   width: 18px;
   height: 18px;
   color: #16a34a;
   flex-shrink: 0;
+}
+
+.status-banner[data-tone='warning'] .status-banner-icon {
+  color: #d97706;
+}
+
+.status-banner[data-tone='neutral'] .status-banner-icon {
+  color: var(--color-primary-container);
 }
 
 .status-banner-text {
@@ -158,7 +171,11 @@
   color: #15803d;
 }
 
-/* ── Live instruction card ── */
+.status-banner[data-tone='warning'] .status-banner-text,
+.status-banner[data-tone='neutral'] .status-banner-text {
+  color: var(--color-text-strong);
+}
+
 .instruction-card {
   position: relative;
   overflow: hidden;
@@ -181,8 +198,8 @@
   right: -24px;
   width: 120px;
   height: 120px;
-  border-radius: 50%;
   border: 2px solid rgb(191, 219, 254, 0.22);
+  border-radius: 50%;
   animation: pulse-ring 2.4s ease-out infinite;
 }
 
@@ -234,7 +251,13 @@
   flex-shrink: 0;
 }
 
-/* ── Station schematic card ── */
+.instruction-meta {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: rgb(219, 234, 254, 0.92);
+}
+
 .schematic-card {
   display: grid;
   gap: 12px;
@@ -267,6 +290,13 @@
   color: var(--color-text-strong);
 }
 
+.schematic-empty-state {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--color-secondary);
+}
+
 .schematic-legend {
   margin: 0;
   font-size: 0.72rem;
@@ -274,11 +304,10 @@
   color: #7a8298;
 }
 
-/* ── Alternative route ── */
 .alt-section {
-  border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--color-surface-container-high);
+  border-radius: 14px;
   background: var(--color-surface-container-lowest);
 }
 
@@ -320,12 +349,12 @@
 }
 
 .alt-toggle-duration {
+  padding: 3px 8px;
+  border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 700;
   color: #92400e;
   background: #fef3c7;
-  padding: 3px 8px;
-  border-radius: 999px;
   flex-shrink: 0;
 }
 
@@ -353,13 +382,84 @@
   color: var(--color-secondary);
 }
 
-/* ── Panel column ── */
+.manual-start-section {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-surface-container-high);
+  box-shadow: var(--shadow-ambient);
+}
+
+.manual-start-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-text-strong);
+}
+
+.manual-start-description {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--color-secondary);
+}
+
+.manual-start-options {
+  display: grid;
+  gap: 10px;
+}
+
+.manual-start-option {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 4px 12px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid var(--color-surface-container-high);
+  border-radius: 16px;
+  background: var(--color-surface-container-lowest);
+  cursor: pointer;
+}
+
+.manual-start-option:has(input:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.manual-start-option:has(input:checked) {
+  border-color: rgb(0, 51, 153, 0.25);
+  box-shadow: inset 0 0 0 1px rgb(0, 51, 153, 0.16);
+  background: var(--color-accent-soft);
+}
+
+.manual-start-radio {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+}
+
+.manual-start-label {
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--color-text-strong);
+}
+
+.manual-start-copy {
+  grid-column: 2;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--color-secondary);
+}
+
 .panel-col {
   display: grid;
   gap: 12px;
 }
 
-/* ── Countdown card ── */
 .countdown-card {
   display: grid;
   gap: 6px;
@@ -414,8 +514,8 @@
   align-items: center;
   gap: 6px;
   font-size: 0.78rem;
-  color: #15803d;
   font-weight: 600;
+  color: #15803d;
 }
 
 .countdown-meta-icon {
@@ -424,7 +524,6 @@
   flex-shrink: 0;
 }
 
-/* ── Journey card ── */
 .journey-card {
   display: grid;
   gap: 0;
@@ -458,13 +557,12 @@
   color: var(--color-text-strong);
 }
 
-/* ── Timeline ── */
 .timeline {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: grid;
   gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .timeline-item {
@@ -484,9 +582,9 @@
   flex-shrink: 0;
   width: 10px;
   height: 10px;
+  border: 2px solid transparent;
   border-radius: 50%;
   background: #d1d5db;
-  border: 2px solid transparent;
   background-clip: padding-box;
 }
 
@@ -500,10 +598,10 @@
 }
 
 .timeline-item[data-current='true'] .timeline-dot {
-  background: var(--color-primary-container);
-  box-shadow: 0 0 0 4px rgb(0, 51, 153, 0.15);
   width: 14px;
   height: 14px;
+  background: var(--color-primary-container);
+  box-shadow: 0 0 0 4px rgb(0, 51, 153, 0.15);
 }
 
 .timeline-line {
@@ -529,9 +627,9 @@
 }
 
 .timeline-content {
-  padding-bottom: 20px;
   display: grid;
   gap: 6px;
+  padding-bottom: 20px;
 }
 
 .timeline-item:last-child .timeline-content {
@@ -555,8 +653,8 @@
   margin: 0;
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--color-text-strong);
   line-height: 1.3;
+  color: var(--color-text-strong);
 }
 
 .timeline-item[data-current='true'] .timeline-station {
@@ -566,8 +664,8 @@
 .timeline-platform {
   margin: 0;
   font-size: 0.74rem;
-  color: var(--color-secondary);
   line-height: 1.3;
+  color: var(--color-secondary);
 }
 
 .timeline-time {
@@ -575,8 +673,8 @@
   font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 700;
-  color: var(--color-text-strong);
   line-height: 1.2;
+  color: var(--color-text-strong);
   flex-shrink: 0;
 }
 
@@ -588,6 +686,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  width: fit-content;
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 0.66rem;
@@ -596,7 +695,6 @@
   text-transform: uppercase;
   color: var(--color-primary-container);
   background: var(--color-accent-soft);
-  width: fit-content;
 }
 
 .timeline-current-icon {
@@ -604,7 +702,6 @@
   height: 12px;
 }
 
-/* ── Action buttons ── */
 .actions {
   display: grid;
   gap: 8px;
@@ -617,11 +714,11 @@
   gap: 8px;
   min-height: 52px;
   padding: 14px 20px;
+  border: 0;
   border-radius: 14px;
   font-size: 0.88rem;
   font-weight: 700;
   line-height: 1;
-  border: 0;
   cursor: pointer;
   text-decoration: none;
   transition:
@@ -665,9 +762,6 @@
   flex-shrink: 0;
 }
 
-/* ─────────────────────────────────────────────────────────
-   Desktop breakpoint (≥ 1024 px)
-───────────────────────────────────────────────────────── */
 @media (width >= 1024px) {
   .page {
     padding-bottom: calc(40px + env(safe-area-inset-bottom));
@@ -697,7 +791,6 @@
   }
 }
 
-/* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   .header-back,
   .header-help,

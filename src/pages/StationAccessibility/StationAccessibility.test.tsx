@@ -227,8 +227,10 @@ describe('StationAccessibility', () => {
 
     render(<StationAccessibility />);
 
-    const emptyState = await screen.findByRole('status');
-    expect(emptyState).toHaveTextContent(/keine bahnhofsdetails für diese verbindung verfügbar/i);
+    const emptyState = screen.getByRole('status');
+    await waitFor(() => {
+      expect(emptyState).toHaveTextContent(/keine bahnhofsdetails für diese verbindung verfügbar/i);
+    });
   });
 
   it('keeps loading and empty announcements polite while reserving alerts for hard failures', async () => {

@@ -12,7 +12,9 @@ type MapNavigationCardProps = {
 
 export function MapNavigationCard({ mapData = ROUTE_OVERVIEW_MAP_DATA }: MapNavigationCardProps) {
   const [zoom, setZoom] = useState(mapData.zoom);
-  const facilityMarkers = mapData.markers.filter((marker) => marker.kind === 'facility');
+  const facilityMarkers = mapData.markers.filter(
+    (marker) => marker.kind === 'facility' && marker.status !== 'available'
+  );
 
   function handleZoomChange(delta: number) {
     setZoom((currentZoom) =>

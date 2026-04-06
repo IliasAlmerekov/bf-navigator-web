@@ -2,27 +2,22 @@ import { useEffect, useState } from 'react';
 import L, { type LeafletLayer } from 'leaflet';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import { ZoomIn, ZoomOut } from 'lucide-react';
+import type { LiveNavigationLatLng } from '../liveNavigationData';
 import 'leaflet/dist/leaflet.css';
 import './live-navigation-markers.css';
 import styles from './LiveNavigationMap.module.css';
 
-// Frankfurt (Main) Hbf — real coordinates
-const CURRENT_POSITION: [number, number] = [50.1069, 8.6634];
-const ELEVATOR_E4: [number, number] = [50.1073, 8.6631];
-const PLATFORM_7: [number, number] = [50.1077, 8.6629];
+type LiveNavigationMapProps = {
+  currentPosition: LiveNavigationLatLng;
+  destinationLabel: string;
+  destinationPosition: LiveNavigationLatLng;
+  nextLabel: string;
+  routePath: LiveNavigationLatLng[];
+};
 
 const INITIAL_ZOOM = 17;
 const MIN_ZOOM = 14;
 const MAX_ZOOM = 19;
-
-const WALKING_PATH: [number, number][] = [
-  CURRENT_POSITION,
-  [50.107, 8.6633],
-  [50.1071, 8.6632],
-  ELEVATOR_E4,
-  [50.1075, 8.663],
-  PLATFORM_7,
-];
 
 const PULSING_ICON_HTML = `
   <div class="live-nav-pulse-outer">
@@ -30,19 +25,25 @@ const PULSING_ICON_HTML = `
   </div>
 `;
 
-const DESTINATION_ICON_HTML = `
-  <div class="live-nav-dest-marker">
-    <span>E4</span>
-  </div>
-`;
+function getMarkerShortLabel(label: string) {
+  const match = label.match(/([A-Z]\d+|\d+)/);
 
-const PLATFORM_ICON_HTML = `
-  <div class="live-nav-platform-marker">
-    <span>7</span>
-  </div>
-`;
+  return match?.[1] ?? label.slice(0, 2).toUpperCase();
+}
 
-// Syncs external zoom state to the map while preserving the current pan position
+function createMarkerIcon(className: string, label: string, size: number, anchor: number) {
+  return L.divIcon({
+    className: '',
+    html: `
+      <div class="${className}">
+        <span>${label}</span>
+      </div>
+    `,
+    iconAnchor: [anchor, anchor],
+    iconSize: [size, size],
+  });
+}
+
 function MapZoomController({ zoom }: { zoom: number }) {
   const map = useMap();
 
@@ -54,14 +55,19 @@ function MapZoomController({ zoom }: { zoom: number }) {
   return null;
 }
 
-function LiveNavigationMapLayers() {
+function LiveNavigationMapLayers({
+  currentPosition,
+  destinationLabel,
+  destinationPosition,
+  nextLabel,
+  routePath,
+}: LiveNavigationMapProps) {
   const map = useMap();
 
   useEffect(() => {
     const layers: LeafletLayer[] = [];
 
-    // Solid blue route underlay
-    const routeUnderlay = L.polyline(WALKING_PATH, {
+    const routeUnderlay = L.polyline(routePath, {
       color: '#039',
       lineCap: 'round',
       lineJoin: 'round',
@@ -70,8 +76,7 @@ function LiveNavigationMapLayers() {
     }).addTo(map);
     layers.push(routeUnderlay);
 
-    // Tactile walking path (yellow dashed)
-    const walkingPath = L.polyline(WALKING_PATH, {
+    const walkingPath = L.polyline(routePath, {
       color: '#f59e0b',
       dashArray: '10 8',
       lineCap: 'round',
@@ -81,59 +86,54 @@ function LiveNavigationMapLayers() {
     }).addTo(map);
     layers.push(walkingPath);
 
-    // Pulsing current position marker
     const pulsingIcon = L.divIcon({
       className: '',
       html: PULSING_ICON_HTML,
       iconAnchor: [18, 18],
       iconSize: [36, 36],
     });
-    const currentMarker = L.marker(CURRENT_POSITION, { icon: pulsingIcon }).addTo(map);
+    const currentMarker = L.marker(currentPosition, { icon: pulsingIcon }).addTo(map);
     currentMarker.bindTooltip?.('Aktueller Standort', { direction: 'top', offset: [0, -20] });
     layers.push(currentMarker);
 
-    // Elevator E4 marker
-    const elevatorIcon = L.divIcon({
-      className: '',
-      html: DESTINATION_ICON_HTML,
-      iconAnchor: [20, 20],
-      iconSize: [40, 40],
-    });
-    const elevatorMarker = L.marker(ELEVATOR_E4, { icon: elevatorIcon }).addTo(map);
-    elevatorMarker.bindTooltip?.('Aufzug E4', { direction: 'top', offset: [0, -24] });
-    layers.push(elevatorMarker);
+    const nextPosition = routePath[1] ?? destinationPosition;
+    const nextMarker = L.marker(nextPosition, {
+      icon: createMarkerIcon('live-nav-dest-marker', getMarkerShortLabel(nextLabel), 40, 20),
+    }).addTo(map);
+    nextMarker.bindTooltip?.(nextLabel, { direction: 'top', offset: [0, -24] });
+    layers.push(nextMarker);
 
-    // Platform 7 marker
-    const platformIcon = L.divIcon({
-      className: '',
-      html: PLATFORM_ICON_HTML,
-      iconAnchor: [16, 16],
-      iconSize: [32, 32],
-    });
-    const platformMarker = L.marker(PLATFORM_7, { icon: platformIcon }).addTo(map);
-    platformMarker.bindTooltip?.('Gleis 7', { direction: 'top', offset: [0, -20] });
-    layers.push(platformMarker);
+    const destinationMarker = L.marker(destinationPosition, {
+      icon: createMarkerIcon(
+        'live-nav-platform-marker',
+        getMarkerShortLabel(destinationLabel),
+        32,
+        16
+      ),
+    }).addTo(map);
+    destinationMarker.bindTooltip?.(destinationLabel, { direction: 'top', offset: [0, -20] });
+    layers.push(destinationMarker);
 
     return () => {
       layers.forEach((layer) => map.removeLayer(layer));
     };
-  }, [map]);
+  }, [currentPosition, destinationLabel, destinationPosition, map, nextLabel, routePath]);
 
   return null;
 }
 
-export function LiveNavigationMap() {
+export function LiveNavigationMap(props: LiveNavigationMapProps) {
   const [zoom, setZoom] = useState(INITIAL_ZOOM);
 
   function handleZoom(delta: number) {
-    setZoom((z) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z + delta)));
+    setZoom((currentZoom) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, currentZoom + delta)));
   }
 
   return (
     <div className={styles.wrapper}>
       <MapContainer
         aria-hidden="true"
-        center={CURRENT_POSITION}
+        center={props.currentPosition}
         className={styles.map}
         scrollWheelZoom
         zoom={zoom}
@@ -144,10 +144,9 @@ export function LiveNavigationMap() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <MapZoomController zoom={zoom} />
-        <LiveNavigationMapLayers />
+        <LiveNavigationMapLayers {...props} />
       </MapContainer>
 
-      {/* Zoom controls */}
       <div className={styles.controls} aria-hidden="true">
         <button
           aria-label="Karte vergrößern"
@@ -169,7 +168,6 @@ export function LiveNavigationMap() {
         </button>
       </div>
 
-      {/* Legend overlay */}
       <div aria-hidden="true" className={styles.legend}>
         <span className={styles['legend-item']} data-kind="current">
           <span className={styles['legend-dot']} />
@@ -177,11 +175,11 @@ export function LiveNavigationMap() {
         </span>
         <span className={styles['legend-item']} data-kind="elevator">
           <span className={styles['legend-dot']} />
-          Aufzug E4
+          {props.nextLabel}
         </span>
         <span className={styles['legend-item']} data-kind="platform">
           <span className={styles['legend-dot']} />
-          Gleis 7
+          {props.destinationLabel}
         </span>
       </div>
     </div>

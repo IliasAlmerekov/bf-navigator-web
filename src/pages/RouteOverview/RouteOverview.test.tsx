@@ -340,6 +340,8 @@ describe('RouteOverview', () => {
   it('renders the route map card entirely in german', () => {
     render(<RouteOverview />);
 
+    const facilitiesList = screen.getByRole('list', { name: /vorgemerkte anlagen/i });
+
     expect(screen.getByRole('heading', { level: 2, name: /live-karte/i })).toBeInTheDocument();
     expect(screen.queryByText(/backend-koordinaten/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/ohne die ui-schicht zu ändern/i)).not.toBeInTheDocument();
@@ -351,9 +353,12 @@ describe('RouteOverview', () => {
     expect(screen.getByRole('button', { name: /routenvorschau vergrößern/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /routenvorschau verkleinern/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /live-navigation/i })).toBeInTheDocument();
-    expect(screen.getByText('Lift to platform 12')).toBeInTheDocument();
-    expect(screen.getByText('Escalator to the concourse')).toBeInTheDocument();
-    expect(screen.getAllByText(/in betrieb/i).length).toBeGreaterThan(0);
+    expect(within(facilitiesList).getByText('Lift to platform 12')).toBeInTheDocument();
+    expect(
+      within(facilitiesList).queryByText('Escalator to the concourse')
+    ).not.toBeInTheDocument();
+    expect(within(facilitiesList).getByText(/außer betrieb/i)).toBeInTheDocument();
+    expect(within(facilitiesList).queryByText(/in betrieb/i)).not.toBeInTheDocument();
   });
 
   it('passes backend facility geocoordinates into the route map data', () => {
