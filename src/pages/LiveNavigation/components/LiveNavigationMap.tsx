@@ -11,21 +11,46 @@ type LiveNavigationMapProps = {
   currentPosition: LiveNavigationLatLng;
   destinationLabel: string;
   destinationPosition: LiveNavigationLatLng;
+  nextLabel: string;
   routePath: LiveNavigationLatLng[];
 };
 
-function LiveNavigationMapViewport({
-  currentPosition,
-  zoom,
-}: {
-  currentPosition: LiveNavigationLatLng;
-  zoom: number;
-}) {
+const INITIAL_ZOOM = 17;
+const MIN_ZOOM = 14;
+const MAX_ZOOM = 19;
+
+const PULSING_ICON_HTML = `
+  <div class="live-nav-pulse-outer">
+    <div class="live-nav-pulse-inner"></div>
+  </div>
+`;
+
+function getMarkerShortLabel(label: string) {
+  const match = label.match(/([A-Z]\d+|\d+)/);
+
+  return match?.[1] ?? label.slice(0, 2).toUpperCase();
+}
+
+function createMarkerIcon(className: string, label: string, size: number, anchor: number) {
+  return L.divIcon({
+    className: '',
+    html: `
+      <div class="${className}">
+        <span>${label}</span>
+      </div>
+    `,
+    iconAnchor: [anchor, anchor],
+    iconSize: [size, size],
+  });
+}
+
+function MapZoomController({ zoom }: { zoom: number }) {
   const map = useMap();
 
   useEffect(() => {
-    map.setView(currentPosition, zoom, { animate: false });
-  }, [currentPosition, map, zoom]);
+    const center = map.getCenter();
+    map.setView(center, zoom, { animate: false });
+  }, [map, zoom]);
 
   return null;
 }
@@ -34,6 +59,7 @@ function LiveNavigationMapLayers({
   currentPosition,
   destinationLabel,
   destinationPosition,
+  nextLabel,
   routePath,
 }: LiveNavigationMapProps) {
   const map = useMap();
@@ -42,7 +68,7 @@ function LiveNavigationMapLayers({
     const layers: LeafletLayer[] = [];
 
     const routeUnderlay = L.polyline(routePath, {
-      color: '#003399',
+      color: '#039',
       lineCap: 'round',
       lineJoin: 'round',
       opacity: 0.2,
@@ -60,24 +86,59 @@ function LiveNavigationMapLayers({
     }).addTo(map);
     layers.push(walkingPath);
 
-    const currentMarker = L.marker(currentPosition).addTo(map);
+    const pulsingIcon = L.divIcon({
+      className: '',
+      html: PULSING_ICON_HTML,
+      iconAnchor: [18, 18],
+      iconSize: [36, 36],
+    });
+    const currentMarker = L.marker(currentPosition, { icon: pulsingIcon }).addTo(map);
     currentMarker.bindTooltip?.('Aktueller Standort', { direction: 'top', offset: [0, -20] });
     layers.push(currentMarker);
 
-    const destinationMarker = L.marker(destinationPosition).addTo(map);
+    const nextPosition = routePath[1] ?? destinationPosition;
+    const nextMarker = L.marker(
+      nextPosition,
+      {
+        icon: createMarkerIcon(
+          'live-nav-dest-marker',
+          getMarkerShortLabel(nextLabel),
+          40,
+          20
+        ),
+      }
+    ).addTo(map);
+    nextMarker.bindTooltip?.(nextLabel, { direction: 'top', offset: [0, -24] });
+    layers.push(nextMarker);
+
+    const destinationMarker = L.marker(
+      destinationPosition,
+      {
+        icon: createMarkerIcon(
+          'live-nav-platform-marker',
+          getMarkerShortLabel(destinationLabel),
+          32,
+          16
+        ),
+      }
+    ).addTo(map);
     destinationMarker.bindTooltip?.(destinationLabel, { direction: 'top', offset: [0, -20] });
     layers.push(destinationMarker);
 
     return () => {
       layers.forEach((layer) => map.removeLayer(layer));
     };
-  }, [currentPosition, destinationLabel, destinationPosition, map, routePath]);
+  }, [currentPosition, destinationLabel, destinationPosition, map, nextLabel, routePath]);
 
   return null;
 }
 
 export function LiveNavigationMap(props: LiveNavigationMapProps) {
-  const [zoom, setZoom] = useState(17);
+  const [zoom, setZoom] = useState(INITIAL_ZOOM);
+
+  function handleZoom(delta: number) {
+    setZoom((currentZoom) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, currentZoom + delta)));
+  }
 
   return (
     <div className={styles.wrapper}>
@@ -93,27 +154,44 @@ export function LiveNavigationMap(props: LiveNavigationMapProps) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <LiveNavigationMapViewport currentPosition={props.currentPosition} zoom={zoom} />
+        <MapZoomController zoom={zoom} />
         <LiveNavigationMapLayers {...props} />
       </MapContainer>
 
-      <div className={styles.controls}>
+      <div className={styles.controls} aria-hidden="true">
         <button
           aria-label="Karte vergrößern"
           className={styles['zoom-btn']}
+          disabled={zoom >= MAX_ZOOM}
           type="button"
-          onClick={() => setZoom((currentZoom) => Math.min(19, currentZoom + 1))}
+          onClick={() => handleZoom(1)}
         >
           <ZoomIn className={styles['zoom-icon']} />
         </button>
         <button
           aria-label="Karte verkleinern"
           className={styles['zoom-btn']}
+          disabled={zoom <= MIN_ZOOM}
           type="button"
-          onClick={() => setZoom((currentZoom) => Math.max(14, currentZoom - 1))}
+          onClick={() => handleZoom(-1)}
         >
           <ZoomOut className={styles['zoom-icon']} />
         </button>
+      </div>
+
+      <div aria-hidden="true" className={styles.legend}>
+        <span className={styles['legend-item']} data-kind="current">
+          <span className={styles['legend-dot']} />
+          Standort
+        </span>
+        <span className={styles['legend-item']} data-kind="elevator">
+          <span className={styles['legend-dot']} />
+          {props.nextLabel}
+        </span>
+        <span className={styles['legend-item']} data-kind="platform">
+          <span className={styles['legend-dot']} />
+          {props.destinationLabel}
+        </span>
       </div>
     </div>
   );

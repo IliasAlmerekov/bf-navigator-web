@@ -14,7 +14,13 @@ export function ManualStartSelector({
 }: ManualStartSelectorProps) {
   return (
     <section aria-labelledby="manual-start-heading" className={styles['manual-start-section']}>
-      <h2 id="manual-start-heading">Manuellen Startpunkt wählen</h2>
+      <h2 className={styles['manual-start-title']} id="manual-start-heading">
+        Manuellen Startpunkt wählen
+      </h2>
+      <p className={styles['manual-start-description']}>
+        Wählen Sie einen barrierefreien Orientierungspunkt, wenn der Live-Standort nicht
+        verfügbar ist.
+      </p>
       <div
         aria-label="Manuellen Startpunkt wählen"
         className={styles['manual-start-options']}
@@ -27,12 +33,13 @@ export function ManualStartSelector({
             <label className={styles['manual-start-option']} key={option.id}>
               <input
                 checked={checked}
+                className={styles['manual-start-radio']}
                 name="manual-start"
                 type="radio"
                 onChange={() => onChange(option.id)}
               />
-              <span>{option.label}</span>
-              <span>{option.description}</span>
+              <span className={styles['manual-start-label']}>{option.label}</span>
+              <span className={styles['manual-start-copy']}>{option.description}</span>
             </label>
           );
         })}
