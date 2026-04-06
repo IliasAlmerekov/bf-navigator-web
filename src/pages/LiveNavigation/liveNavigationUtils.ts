@@ -39,6 +39,10 @@ export function findNearestRoutePointIndex(
   position: LiveNavigationLatLng,
   routePoints: LiveNavigationRoutePoint[]
 ) {
+  if (routePoints.length === 0) {
+    return 0;
+  }
+
   return routePoints.reduce((bestIndex, point, index) => {
     const bestDistance = getDistanceMeters(position, routePoints[bestIndex].position);
     const currentDistance = getDistanceMeters(position, point.position);
@@ -89,17 +93,27 @@ export function buildInstructionState({
   position: LiveNavigationLatLng;
   routePoints: LiveNavigationRoutePoint[];
 }): InstructionState {
+  if (routePoints.length === 0) {
+    return {
+      currentLabel: '',
+      currentStepDescription: '',
+      destinationLabel: destination.label,
+      nextLabel: destination.label,
+      remainingDistanceMeters: 0,
+      routePoints: [],
+    };
+  }
+
   const activeIndex = findNearestRoutePointIndex(position, routePoints);
   const activePoint = routePoints[activeIndex];
+  const nextPoint = routePoints[Math.min(activeIndex + 1, routePoints.length - 1)];
   const remainingRoutePoints = routePoints.slice(activeIndex);
-  const nextTargetPoint =
-    remainingRoutePoints[remainingRoutePoints.length - 1] ?? activePoint ?? routePoints[0];
 
   return {
     currentLabel: activePoint.label,
     currentStepDescription: activePoint.instruction,
     destinationLabel: destination.label,
-    nextLabel: nextTargetPoint.label,
+    nextLabel: nextPoint.label,
     remainingDistanceMeters: calculateRemainingDistanceMeters(activeIndex, routePoints),
     routePoints: remainingRoutePoints,
   };

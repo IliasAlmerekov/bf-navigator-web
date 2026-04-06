@@ -35,7 +35,24 @@ describe('liveNavigationUtils', () => {
     ).toMatchObject({
       currentLabel: 'Aufzug E4',
       destinationLabel: 'Gleis 1',
+      nextLabel: 'Info Point',
+    });
+  });
+
+  it('returns a safe empty instruction state when no route points are available', () => {
+    expect(
+      buildInstructionState({
+        destination: LIVE_NAVIGATION_DESTINATION,
+        position: [50.10736, 8.66312],
+        routePoints: [],
+      })
+    ).toEqual({
+      currentLabel: '',
+      currentStepDescription: '',
+      destinationLabel: 'Gleis 1',
       nextLabel: 'Gleis 1',
+      remainingDistanceMeters: 0,
+      routePoints: [],
     });
   });
 
@@ -46,11 +63,6 @@ describe('liveNavigationUtils', () => {
         LIVE_NAVIGATION_MANUAL_STARTS,
         LIVE_NAVIGATION_ROUTE_POINTS
       )
-    ).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ id: 'info-point' }),
-        expect.objectContaining({ id: 'platform-1' }),
-      ])
-    );
+    ).toEqual(LIVE_NAVIGATION_ROUTE_POINTS.slice(2));
   });
 });
