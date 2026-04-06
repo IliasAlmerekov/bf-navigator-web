@@ -5,7 +5,7 @@ vi.stubGlobal(
   'fetch',
   vi.fn(
     async () =>
-      new Response(JSON.stringify([]), {
+      new Response(JSON.stringify({ trips: [] }), {
         headers: {
           'Content-Type': 'application/json',
         },

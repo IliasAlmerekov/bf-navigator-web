@@ -6,9 +6,18 @@ import { SearchSummaryBar } from './components/SearchSummaryBar';
 import { TrainResultCard } from './components/TrainResultCard';
 import { Pagination } from './components/Pagination';
 import { buildTrainRouteSearchRequest } from './request';
+import { saveSelectedTrainRoute } from '../../utils/selectedTrainRouteStorage';
 import styles from './TrainSearchResults.module.css';
 
 const RESULTS_PER_PAGE = 5;
+
+function shouldReduceMotion() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return false;
+  }
+
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 
 export default function TrainSearchResults() {
   const navigate = useNavigate();
@@ -40,10 +49,8 @@ export default function TrainSearchResults() {
           originName: search.originName,
           time: search.time,
         });
-        const route = await searchTrainRoute(request, controller.signal);
-        const routes: TrainRouteResponse[] = route.transits.length > 0 ? [route] : [];
-
-        setResults(routes);
+        const response = await searchTrainRoute(request, controller.signal);
+        setResults(response.trips);
         setHasLoaded(true);
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return;
@@ -58,8 +65,20 @@ export default function TrainSearchResults() {
     return () => controller.abort();
   }, [search.date, search.destinationName, search.originName, search.time]);
 
-  function handleSelectRoute() {
-    navigate({ to: '/route-overview' });
+  function handleSelectRoute(route: TrainRouteResponse) {
+    saveSelectedTrainRoute(route);
+    navigate({
+      to: '/route-overview',
+      search: {
+        accessibilityPreference: search.accessibilityPreference,
+        date: search.date,
+        destinationEva: search.destinationEva,
+        destinationName: search.destinationName,
+        originEva: search.originEva,
+        originName: search.originName,
+        time: search.time,
+      },
+    });
   }
 
   function handleBack() {
@@ -68,7 +87,7 @@ export default function TrainSearchResults() {
 
   function handlePageChange(page: number) {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: shouldReduceMotion() ? 'auto' : 'smooth' });
   }
 
   const totalPages = Math.ceil(results.length / RESULTS_PER_PAGE);
@@ -113,7 +132,7 @@ export default function TrainSearchResults() {
                 <li key={`route-${(currentPage - 1) * RESULTS_PER_PAGE + index}`}>
                   <TrainResultCard
                     route={route}
-                    onSelect={handleSelectRoute}
+                    onSelect={() => handleSelectRoute(route)}
                     isRecommended={currentPage === 1 && index === 0}
                   />
                 </li>
