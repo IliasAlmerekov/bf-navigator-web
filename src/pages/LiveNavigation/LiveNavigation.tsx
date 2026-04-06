@@ -128,10 +128,14 @@ export default function LiveNavigation() {
               />
             </button>
             {alternativeVisible && (
-              <div className={styles['alt-detail']} role="region" aria-label="Alternativweg Details">
+              <div
+                className={styles['alt-detail']}
+                role="region"
+                aria-label="Alternativweg Details"
+              >
                 <p className={styles['alt-detail-text']}>
-                  Über Südrampe (Ebene 0 → Ebene 1) und Gang B zur Plattform 7.
-                  Gesamtdistanz ca. 220 m.
+                  Über Südrampe (Ebene 0 → Ebene 1) und Gang B zur Plattform 7. Gesamtdistanz ca.
+                  220 m.
                 </p>
               </div>
             )}
@@ -176,9 +180,7 @@ export default function LiveNavigation() {
                 >
                   <div className={styles['timeline-rail']}>
                     <div className={styles['timeline-dot']} />
-                    {index < ROUTE_STOPS.length - 1 && (
-                      <div className={styles['timeline-line']} />
-                    )}
+                    {index < ROUTE_STOPS.length - 1 && <div className={styles['timeline-line']} />}
                   </div>
                   <div className={styles['timeline-content']}>
                     <div className={styles['timeline-row']}>
@@ -190,7 +192,10 @@ export default function LiveNavigation() {
                     </div>
                     {stop.isCurrent && (
                       <span className={styles['timeline-current-badge']}>
-                        <Navigation aria-hidden="true" className={styles['timeline-current-icon']} />
+                        <Navigation
+                          aria-hidden="true"
+                          className={styles['timeline-current-icon']}
+                        />
                         Aktueller Standort
                       </span>
                     )}
@@ -221,4 +226,3 @@ export default function LiveNavigation() {
     </main>
   );
 }
-
