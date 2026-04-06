@@ -138,6 +138,48 @@ describe('LiveNavigation', () => {
     expect(screen.getByText(/biegen sie links ab/i)).toBeInTheDocument();
   });
 
+  it.each([2, 3])(
+    'falls back to manual guidance after tracking error code %s and ignores stale live position',
+    async (errorCode) => {
+      const user = userEvent.setup();
+      render(<LiveNavigation />);
+
+      watchSuccessCallback?.({
+        coords: {
+          accuracy: 5,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          latitude: 50.10736,
+          longitude: 8.66312,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      } as GeolocationPosition);
+
+      watchErrorCallback?.({
+        code: errorCode,
+        message: 'Live tracking failed',
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+      } as GeolocationPositionError);
+
+      expect(screen.getByRole('status')).toHaveTextContent(
+        /live-standort konnte nicht aktualisiert werden/i
+      );
+      expect(
+        screen.getByRole('radiogroup', { name: /manuellen startpunkt wählen/i })
+      ).toBeInTheDocument();
+
+      await user.click(screen.getByRole('radio', { name: /info point/i }));
+
+      expect(screen.getByRole('status')).toHaveTextContent(/manueller startpunkt aktiv/i);
+      expect(screen.getByText(/startpunkt: info point/i)).toBeInTheDocument();
+      expect(screen.getByText(/biegen sie links ab/i)).toBeInTheDocument();
+    }
+  );
+
   it('keeps keyboard tab order from back link to manual fallback radios and map zoom controls', async () => {
     const user = userEvent.setup();
     render(<LiveNavigation />);

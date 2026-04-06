@@ -64,6 +64,7 @@ export default function LiveNavigation() {
       (error) => {
         flushSync(() => {
           setGeolocationState(error.code === 1 ? 'location-denied' : 'tracking-error');
+          setLivePosition(null);
           setManualStartId(DEFAULT_MANUAL_START_ID);
         });
       },
@@ -86,8 +87,12 @@ export default function LiveNavigation() {
   );
   const isAwaitingLiveLocation =
     geolocationState === 'requesting-location' && manualStartId === null;
-  const activeRoute = livePosition ? LIVE_NAVIGATION_ROUTE_POINTS : fallbackRoute;
-  const activePosition = livePosition ?? activeRoute[0].position;
+  const shouldUseLivePosition = geolocationState === 'live-tracking' && livePosition !== null;
+  const activeRoute = shouldUseLivePosition ? LIVE_NAVIGATION_ROUTE_POINTS : fallbackRoute;
+  const activePosition = shouldUseLivePosition
+    ? livePosition
+    : activeRoute[0]?.position ?? LIVE_NAVIGATION_DESTINATION.position;
+  const hasActiveRoute = activeRoute.length > 0;
   const routeInstruction = buildInstructionState({
     destination: LIVE_NAVIGATION_DESTINATION,
     position: activePosition,
@@ -96,6 +101,7 @@ export default function LiveNavigation() {
 
   function handleManualStartChange(startId: string) {
     setManualStartId(startId);
+    setLivePosition(null);
     setGeolocationState('manual-start-selected');
   }
 
@@ -132,8 +138,10 @@ export default function LiveNavigation() {
     LIVE_NAVIGATION_MANUAL_STARTS.find(
       (start) => start.id === (manualStartId ?? DEFAULT_MANUAL_START_ID)
     )?.label ?? 'Haupteingang';
-  const shouldRenderMap = !isAwaitingLiveLocation;
-  const instructionStartLabel = livePosition ? 'Aktueller Standort' : selectedManualStartLabel;
+  const shouldRenderMap = !isAwaitingLiveLocation && hasActiveRoute;
+  const instructionStartLabel = shouldUseLivePosition
+    ? 'Aktueller Standort'
+    : selectedManualStartLabel;
   const instructionCurrentLabel = routeInstruction.currentLabel;
 
   function renderDynamicGuidance() {
@@ -148,6 +156,20 @@ export default function LiveNavigation() {
           <p>Aktueller Orientierungspunkt: Standort wird ermittelt</p>
           <p>Bitte warten Sie, bis Ihr Standort bestimmt wurde.</p>
           <p>Die nächsten Hinweise werden automatisch eingeblendet.</p>
+        </section>
+      );
+    }
+
+    if (!hasActiveRoute) {
+      return (
+        <section aria-labelledby="live-navigation-heading">
+          <p>Live Navigation</p>
+          <h1 id="live-navigation-heading">
+            Live Navigation zu {LIVE_NAVIGATION_DESTINATION.label}
+          </h1>
+          <p>Startpunkt: {instructionStartLabel}</p>
+          <p>Für diesen Startpunkt sind derzeit keine Navigationsschritte verfügbar.</p>
+          <p>Bitte wählen Sie einen anderen Startpunkt.</p>
         </section>
       );
     }
@@ -211,7 +233,11 @@ export default function LiveNavigation() {
                 routePath={routeInstruction.routePoints.map((point) => point.position)}
               />
             ) : (
-              <p>Die Karte wird angezeigt, sobald Ihr Standort verfügbar ist.</p>
+              <p>
+                {isAwaitingLiveLocation
+                  ? 'Die Karte wird angezeigt, sobald Ihr Standort verfügbar ist.'
+                  : 'Die Karte kann ohne verfügbare Routendaten nicht angezeigt werden.'}
+              </p>
             )}
           </section>
         </aside>
