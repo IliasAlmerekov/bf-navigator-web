@@ -114,7 +114,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <Link className={styles.brand} to="/">
           BF-NAVIGATOR
         </Link>
-        <nav aria-label="Primärnavigation" className={styles['top-nav-links']}>
+        <nav aria-label="Primaernavigation" className={styles['top-nav-links']}>
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.key}
@@ -131,7 +131,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <ExpandingSearchDock />
           <div className={styles['profile-menu-wrapper']}>
             {isAuthenticated ? (
-              <Link aria-label="Profile" className={styles['top-nav-button']} to="/profile">
+              <Link aria-label="Profil" className={styles['top-nav-button']} to="/profile">
                 <CircleUserRound aria-hidden="true" className={styles['top-nav-button-icon']} />
               </Link>
             ) : (
@@ -141,7 +141,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   aria-controls={profileMenuId}
                   aria-expanded={isProfileMenuOpen}
                   aria-haspopup="menu"
-                  aria-label="Profilmenü öffnen"
+                  aria-label="Profilmenue oeffnen"
                   className={styles['top-nav-button']}
                   data-open={isProfileMenuOpen}
                   type="button"
@@ -156,7 +156,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   }}
                 >
                   <CircleUserRound aria-hidden="true" className={styles['top-nav-button-icon']} />
-                  <span className={styles['top-nav-button-label']}>Profile</span>
+                  <span className={styles['top-nav-button-label']}>Profil</span>
                   <ChevronDown aria-hidden="true" className={styles['top-nav-button-chevron']} />
                 </button>
 
@@ -164,7 +164,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   <div
                     id={profileMenuId}
                     ref={profileMenuRef}
-                    aria-label="Profile actions"
+                    aria-label="Profilaktionen"
                     className={styles['profile-menu']}
                     role="menu"
                     onKeyDown={(event) => {
@@ -226,7 +226,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       <div className={styles.content}>{children}</div>
 
-      <nav aria-label="Fußnavigation" className={styles['footer-nav']}>
+      <nav aria-label="Fussnavigation" className={styles['footer-nav']}>
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
 
