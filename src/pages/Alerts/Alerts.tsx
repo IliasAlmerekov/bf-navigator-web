@@ -1,12 +1,5 @@
 import { useState } from 'react';
-import {
-  ArrowRight,
-  Headset,
-  Info,
-  SlidersHorizontal,
-  TriangleAlert,
-  Wrench,
-} from 'lucide-react';
+import { ArrowRight, Headset, Info, SlidersHorizontal, TriangleAlert, Wrench } from 'lucide-react';
 import wheelChairIcon from '../../assets/Onboarding/icons8-rollstuhl-26.png';
 import styles from './Alerts.module.css';
 
@@ -21,7 +14,11 @@ export default function Alerts() {
     <main className={styles.page}>
       <header className={styles.header}>
         <h1 className={styles.title}>Meldungen &amp; Stoerungen</h1>
-        <button aria-label="Filter fuer Meldungen oeffnen" className={styles.filterButton} type="button">
+        <button
+          aria-label="Filter fuer Meldungen oeffnen"
+          className={styles.filterButton}
+          type="button"
+        >
           <SlidersHorizontal aria-hidden="true" />
         </button>
       </header>
