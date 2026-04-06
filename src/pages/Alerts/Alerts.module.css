@@ -1,2 +1,478 @@
 .page {
+  display: grid;
+  gap: 16px;
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 10px 0 calc(140px + env(safe-area-inset-bottom));
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.12rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #1f2435;
+}
+
+.filterButton {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  color: #4f5d83;
+  background: #eef1f8;
+  box-shadow: inset 0 0 0 1px rgb(38, 53, 94, 0.08);
+  cursor: pointer;
+}
+
+.filterButton svg {
+  width: 19px;
+  height: 19px;
+}
+
+.filterButton:focus-visible,
+.scopeTab:focus-visible,
+.primaryAction:focus-visible,
+.resolvedRow:focus-visible,
+.liveSupportButton:focus-visible {
+  outline: 2px solid var(--color-primary-container);
+  outline-offset: 2px;
+}
+
+.segmentedControl {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #eceef3;
+}
+
+.scopeTab {
+  min-height: 36px;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  font: 700 0.69rem/1 var(--font-body);
+  letter-spacing: 0.01em;
+  color: #6f7a97;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.scopeTab[data-active='true'] {
+  color: #1f3d9a;
+  background: #fff;
+  box-shadow: 0 3px 9px rgb(25, 28, 29, 0.09);
+}
+
+.section {
+  display: grid;
+  gap: 10px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sectionHeader h2 {
+  margin: 0;
+  font-size: 1.38rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: #252b3f;
+}
+
+.alertCount {
+  min-height: 24px;
+  margin: 0;
+  padding: 0 9px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #86331b;
+}
+
+.tabPanel[hidden] {
+  display: none;
+}
+
+.tabPanel {
+  display: block;
+}
+
+.alertList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.alertCard {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow:
+    0 14px 25px rgb(25, 28, 29, 0.05),
+    inset 0 0 0 1px rgb(33, 42, 66, 0.05);
+}
+
+.highAlert {
+  background: linear-gradient(180deg, #fff 0%, #fcfcff 100%);
+}
+
+.infoAlert {
+  background: #f5f6fb;
+}
+
+.delayAlert {
+  gap: 8px;
+  background: #f8f9fb;
+}
+
+.cardHeader {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.iconBubble,
+.emptyIconBubble {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #3754a3;
+  background: #edf0f8;
+}
+
+.cardIcon {
+  width: 15px;
+  height: 15px;
+}
+
+.cardIconImage {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.cardTitleGroup {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.cardTitleGroup h3 {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #1f2538;
+}
+
+.cardTitleGroup p {
+  margin: 0;
+  font-size: 0.69rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #7f89a4;
+}
+
+.cardTime {
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #8d96af;
+}
+
+.severityBadge {
+  min-height: 22px;
+  width: fit-content;
+  margin: 0;
+  padding: 0 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #944224;
+  background: #f9e8df;
+}
+
+.cardBodyText {
+  margin: 0;
+  max-width: none;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #65708d;
+}
+
+.primaryAction {
+  min-height: 44px;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font: 700 0.72rem/1 var(--font-body);
+  color: #fff;
+  background: linear-gradient(180deg, #1656cd 0%, #103e9f 100%);
+  box-shadow: 0 12px 22px rgb(3, 38, 113, 0.24);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.primaryAction svg {
+  width: 14px;
+  height: 14px;
+}
+
+.primaryAction:hover {
+  transform: translateY(-1px);
+}
+
+.infoChip {
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.56rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6f7693;
+  background: #e7eaf3;
+}
+
+.platformMetrics {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 2px 0;
+}
+
+.metricBlock {
+  display: grid;
+  gap: 2px;
+}
+
+.metricLabel {
+  margin: 0;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8e96ad;
+}
+
+.metricValueMuted,
+.metricValueStrong {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.62rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.metricValueMuted {
+  color: #919ab1;
+  text-decoration: line-through;
+}
+
+.metricValueStrong {
+  color: #0e42a3;
+}
+
+.metricDivider {
+  width: 1px;
+  height: 36px;
+  background: rgb(69, 80, 110, 0.2);
+}
+
+.assistanceBadge {
+  min-height: 32px;
+  margin: 0;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #5d6888;
+  background: #eceff5;
+}
+
+.delayText {
+  margin: 0;
+  font-size: 0.79rem;
+  font-weight: 500;
+  line-height: 1.3;
+  color: #59627e;
+}
+
+.delayText strong {
+  margin-right: 4px;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #111727;
+}
+
+.resolvedRow {
+  min-height: 56px;
+  border: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  text-align: left;
+  background: #f3f5f9;
+  box-shadow: inset 0 0 0 1px rgb(31, 41, 65, 0.06);
+  cursor: pointer;
+}
+
+.resolvedBullet {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: radial-gradient(circle at center, #2253c0 30%, #d7e1f7 31%);
+}
+
+.resolvedTextGroup {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.resolvedTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #2b334a;
+}
+
+.resolvedSubtitle {
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #78819c;
+}
+
+.resolvedArrow {
+  width: 14px;
+  height: 14px;
+  color: #8c95ad;
+}
+
+.otherRoutesCard,
+.emptyStateCard {
+  justify-items: center;
+  text-align: center;
+  background: #f1f3f7;
+}
+
+.otherRoutesCard h2,
+.emptyStateCard h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.1;
+  color: #4b5679;
+}
+
+.otherRoutesCard p,
+.emptyStateCard p {
+  margin: 0;
+  max-width: 30ch;
+  font-size: 0.69rem;
+  line-height: 1.4;
+  color: #8c94ab;
+}
+
+.liveSupportButton {
+  position: fixed;
+  right: 24px;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  z-index: 18;
+  min-height: 44px;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font: 700 0.69rem/1 var(--font-body);
+  color: #21429f;
+  background: #fff;
+  box-shadow:
+    0 14px 24px rgb(25, 28, 29, 0.1),
+    inset 0 0 0 1px rgb(33, 53, 102, 0.08);
+  cursor: pointer;
+}
+
+.supportIcon {
+  width: 13px;
+  height: 13px;
+}
+
+@media (width >= 1024px) {
+  .page {
+    max-width: 470px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scopeTab,
+  .primaryAction {
+    transition: none;
+  }
+
+  .primaryAction:hover {
+    transform: none;
+  }
 }

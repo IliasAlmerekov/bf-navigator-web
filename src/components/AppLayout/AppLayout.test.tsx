@@ -52,7 +52,7 @@ describe('AppLayout', () => {
       </AppLayout>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Profilmenü öffnen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Profilmenue oeffnen' }));
 
     expect(screen.getByRole('menuitem', { name: 'Login' })).toHaveAttribute('href', '/login');
     expect(screen.getByRole('menuitem', { name: 'Registration' })).toHaveAttribute(
@@ -70,11 +70,11 @@ describe('AppLayout', () => {
       </AppLayout>
     );
 
-    const profileLink = screen.getByRole('link', { name: 'Profile' });
+    const profileLink = screen.getByLabelText('Profil');
 
     expect(profileLink).toHaveAttribute('href', '/profile');
     expect(profileLink).toHaveTextContent('');
-    expect(screen.queryByRole('button', { name: 'Profilmenü öffnen' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Profilmenue oeffnen' })).not.toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: 'Login' })).not.toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: 'Registration' })).not.toBeInTheDocument();
   });
