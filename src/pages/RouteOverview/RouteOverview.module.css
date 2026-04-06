@@ -139,6 +139,13 @@
   gap: 10px;
 }
 
+.hero-back-link {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1;
+}
+
 .hero-title-overlay {
   position: absolute;
   top: 16px;
@@ -173,7 +180,6 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
   width: min(320px, calc(100% - 32px));
   padding: 10px 12px;
   border-radius: 14px;
@@ -774,6 +780,13 @@
   font-size: 0.74rem;
   line-height: 1.45;
   color: rgb(224, 231, 255, 0.82);
+}
+
+.map-nav-facility-state {
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #fff;
 }
 
 .map-nav-attribution {

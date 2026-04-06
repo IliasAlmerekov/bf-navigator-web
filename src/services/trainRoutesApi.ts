@@ -1,6 +1,7 @@
-import type { TrainRouteResponse } from '../pages/TrainSearchResults/types';
+import type { TrainRouteSearchResponse } from '../pages/TrainSearchResults/types';
 
 export const BASE_URL = import.meta.env.VITE_TRAIN_ROUTES_API_URL ?? '/train-api';
+export const TRAIN_ROUTES_PATH = '/routes/trains/debug';
 
 export interface TrainRouteSearchRequest {
   origin: string;
@@ -18,9 +19,9 @@ export class TrainRoutesApiError extends Error {
   }
 }
 
-async function handleResponse(response: Response): Promise<TrainRouteResponse> {
+async function handleResponse(response: Response): Promise<TrainRouteSearchResponse> {
   if (response.ok) {
-    return (await response.json()) as TrainRouteResponse;
+    return (await response.json()) as TrainRouteSearchResponse;
   }
 
   throw new TrainRoutesApiError(response.status);
@@ -29,8 +30,8 @@ async function handleResponse(response: Response): Promise<TrainRouteResponse> {
 export async function searchTrainRoute(
   request: TrainRouteSearchRequest,
   signal?: AbortSignal
-): Promise<TrainRouteResponse> {
-  const response = await fetch(`${BASE_URL}/routes/trains/debug`, {
+): Promise<TrainRouteSearchResponse> {
+  const response = await fetch(`${BASE_URL}${TRAIN_ROUTES_PATH}`, {
     body: JSON.stringify(request),
     headers: {
       Accept: 'application/json',

@@ -1,19 +1,30 @@
-import { BookmarkPlus, Share2 } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { ArrowLeft, BookmarkPlus, Share2 } from 'lucide-react';
 import germanMap from '../../../assets/RouteOverview/german.png';
+import type { AccessibilityPreferenceId } from '../../../constants/accessibilityPreferences';
 import type { RouteHeroData } from '../types';
 import styles from '../RouteOverview.module.css';
 
 type RouteHeroProps = {
   isSaved?: boolean;
   onSave: () => void;
+  resultsSearch: {
+    accessibilityPreference: AccessibilityPreferenceId | '';
+    date: string;
+    destinationEva: string;
+    destinationName: string;
+    originEva: string;
+    originName: string;
+    time: string;
+  };
   route: RouteHeroData;
 };
 
-export function RouteHero({ isSaved = false, onSave, route }: RouteHeroProps) {
+export function RouteHero({ isSaved = false, onSave, resultsSearch, route }: RouteHeroProps) {
   return (
     <header className={styles.hero}>
       <h1 className={styles['sr-only']}>
-        {route.departure.station} to {route.arrival.station}
+        {route.departure.station} nach {route.arrival.station}
       </h1>
 
       {route.eyebrow ? (
@@ -24,6 +35,15 @@ export function RouteHero({ isSaved = false, onSave, route }: RouteHeroProps) {
 
       <div className={styles['hero-image-wrap']}>
         <img src={germanMap} alt="" className={styles['hero-image']} />
+
+        <Link
+          aria-label="Zurück zu den Suchergebnissen"
+          className={`${styles['icon-button']} ${styles['hero-back-link']}`}
+          search={resultsSearch}
+          to="/train-search-results"
+        >
+          <ArrowLeft aria-hidden="true" />
+        </Link>
 
         <svg
           aria-hidden="true"
@@ -136,11 +156,16 @@ export function RouteHero({ isSaved = false, onSave, route }: RouteHeroProps) {
         </svg>
 
         <div className={styles['hero-image-actions']}>
-          <button aria-label="Share route" className={styles['icon-button']} disabled type="button">
+          <button
+            aria-label="Route teilen"
+            className={styles['icon-button']}
+            disabled
+            type="button"
+          >
             <Share2 aria-hidden="true" />
           </button>
           <button
-            aria-label="Save route"
+            aria-label="Route speichern"
             aria-pressed={isSaved}
             className={styles['icon-button']}
             type="button"
