@@ -368,8 +368,10 @@ describe('TrainSearchResults', () => {
 
     render(<TrainSearchResults />);
 
-    const emptyState = await screen.findByRole('status');
-    expect(emptyState).toHaveTextContent(/keine verbindungen/i);
+    const status = screen.getByRole('status');
+    await waitFor(() => {
+      expect(status).toHaveTextContent(/keine verbindungen/i);
+    });
     expect(screen.queryAllByRole('button', { name: /route auswählen/i })).toHaveLength(0);
   });
 

@@ -354,7 +354,9 @@ describe('RouteOverview', () => {
     expect(screen.getByRole('button', { name: /routenvorschau verkleinern/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /live-navigation/i })).toBeInTheDocument();
     expect(within(facilitiesList).getByText('Lift to platform 12')).toBeInTheDocument();
-    expect(within(facilitiesList).queryByText('Escalator to the concourse')).not.toBeInTheDocument();
+    expect(
+      within(facilitiesList).queryByText('Escalator to the concourse')
+    ).not.toBeInTheDocument();
     expect(within(facilitiesList).getByText(/außer betrieb/i)).toBeInTheDocument();
     expect(within(facilitiesList).queryByText(/in betrieb/i)).not.toBeInTheDocument();
   });

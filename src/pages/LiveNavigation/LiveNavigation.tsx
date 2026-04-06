@@ -141,7 +141,9 @@ function getRoutePointsFromTouchpoints(
     .filter((point): point is LiveNavigationRoutePoint => point !== null);
 }
 
-function getManualStartsFromRoutePoints(routePoints: LiveNavigationRoutePoint[]): LiveNavigationManualStart[] {
+function getManualStartsFromRoutePoints(
+  routePoints: LiveNavigationRoutePoint[]
+): LiveNavigationManualStart[] {
   if (routePoints.length < 2) {
     return [];
   }
@@ -164,9 +166,7 @@ function formatRouteStopTime(value: string | null) {
   return match?.[1] ?? '--:--';
 }
 
-function mapTouchpointKindToRouteStopKind(
-  kind: TrainRouteTouchpoint['kind']
-): RouteStop['kind'] {
+function mapTouchpointKindToRouteStopKind(kind: TrainRouteTouchpoint['kind']): RouteStop['kind'] {
   if (kind === 'ORIGIN') {
     return 'departure';
   }
@@ -178,7 +178,9 @@ function mapTouchpointKindToRouteStopKind(
   return 'transfer';
 }
 
-function getRouteStopsFromTouchpoints(touchpoints: TrainRouteTouchpoint[] | undefined): RouteStop[] {
+function getRouteStopsFromTouchpoints(
+  touchpoints: TrainRouteTouchpoint[] | undefined
+): RouteStop[] {
   if (!touchpoints?.length) {
     return [];
   }
@@ -349,9 +351,8 @@ export default function LiveNavigation() {
     geolocationState === 'tracking-error' ||
     geolocationState === 'manual-start-selected';
   const selectedManualStartLabel =
-    manualStartOptions.find(
-      (start) => start.id === (manualStartId ?? defaultManualStartId)
-    )?.label ?? 'Haupteingang';
+    manualStartOptions.find((start) => start.id === (manualStartId ?? defaultManualStartId))
+      ?.label ?? 'Haupteingang';
   const shouldRenderMap = !isAwaitingLiveLocation && hasActiveRoute;
   const instructionDetail = hasActiveRoute
     ? `${routeInstruction.destinationLabel} · ca. ${routeInstruction.remainingDistanceMeters} m`

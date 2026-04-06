@@ -250,9 +250,8 @@ describe('LiveNavigation', () => {
       timestamp: Date.now(),
     } as GeolocationPosition);
 
-    expect(
-      screen.getByRole('heading', { level: 2, name: /düsseldorf hbf → köln hbf/i })
-    ).toBeInTheDocument();
+    const selectedRouteHeading = screen.getByRole('heading', { level: 2, name: /köln hbf/i });
+    expect(selectedRouteHeading).toHaveTextContent(/düsseldorf hbf/i);
     expect(liveNavigationMapMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
         destinationLabel: 'Köln Hbf',
