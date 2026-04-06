@@ -17,6 +17,25 @@ type WatchError = Parameters<typeof navigator.geolocation.watchPosition>[1];
 let watchSuccessCallback: WatchSuccess | undefined;
 let watchErrorCallback: WatchError | undefined;
 
+function makeFacility(
+  equipmentnumber: number,
+  geocoordX: number,
+  geocoordY: number
+): NonNullable<TrainRouteResponse['touchpoints']>[number]['facilities'][number] {
+  return {
+    description: `Facility ${equipmentnumber}`,
+    equipmentnumber,
+    geocoordX,
+    geocoordY,
+    operationalResumeDate: null,
+    operatorname: 'DB InfraGO',
+    state: 'ACTIVE',
+    stateExplanation: 'available',
+    stationnumber: 8000001,
+    type: 'ELEVATOR',
+  };
+}
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     children,
@@ -89,7 +108,7 @@ function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteR
         },
         arrivalTime: null,
         departureTime: '2026-04-02T09:10:00Z',
-        facilities: [],
+        facilities: [makeFacility(1001, 8.66312, 50.10736)],
         kind: 'ORIGIN',
         station: null,
         stationName: 'Düsseldorf Hbf',
@@ -106,9 +125,28 @@ function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteR
           stepFreeAvailable: true,
           summary: 'Step-free access available',
         },
+        arrivalTime: '2026-04-02T10:33:00Z',
+        departureTime: '2026-04-02T10:36:00Z',
+        facilities: [makeFacility(1002, 8.66301, 50.10754)],
+        kind: 'TRANSFER',
+        station: null,
+        stationName: 'Essen Hbf',
+      },
+      {
+        accessibility: {
+          activeElevators: 1,
+          activeEscalators: 1,
+          hasFacilityData: true,
+          inactiveElevators: 0,
+          inactiveEscalators: 0,
+          mobilityServiceAvailable: true,
+          status: 'ACCESSIBLE',
+          stepFreeAvailable: true,
+          summary: 'Step-free access available',
+        },
         arrivalTime: '2026-04-02T11:45:00Z',
         departureTime: null,
-        facilities: [],
+        facilities: [makeFacility(1003, 8.66292, 50.10772)],
         kind: 'DESTINATION',
         station: null,
         stationName: 'Köln Hbf',
@@ -218,8 +256,20 @@ describe('LiveNavigation', () => {
     expect(liveNavigationMapMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
         destinationLabel: 'Köln Hbf',
+        routePath: [
+          [50.10736, 8.66312],
+          [50.10754, 8.66301],
+          [50.10772, 8.66292],
+        ],
       })
     );
+    expect(screen.getByText(/düsseldorf hbf · weg zu köln hbf/i)).toBeInTheDocument();
+    expect(screen.getByText('Düsseldorf Hbf')).toBeInTheDocument();
+    expect(screen.getByText('Essen Hbf')).toBeInTheDocument();
+    expect(screen.getByText('Köln Hbf')).toBeInTheDocument();
+    expect(screen.queryByText('Frankfurt (Main) Hbf')).not.toBeInTheDocument();
+    expect(screen.queryByText('Kassel-Wilhelmshöhe')).not.toBeInTheDocument();
+    expect(screen.queryByText('Berlin Hbf')).not.toBeInTheDocument();
     expect(
       screen.queryByRole('heading', { level: 2, name: /frankfurt → berlin/i })
     ).not.toBeInTheDocument();

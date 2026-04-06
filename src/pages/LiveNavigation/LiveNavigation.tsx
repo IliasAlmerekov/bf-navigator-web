@@ -18,10 +18,14 @@ import {
   LIVE_NAVIGATION_MANUAL_STARTS,
   LIVE_NAVIGATION_ROUTE_POINTS,
   type LiveNavigationLatLng,
+  type LiveNavigationManualStart,
+  type LiveNavigationRoutePoint,
 } from './liveNavigationData';
 import { ManualStartSelector } from './components/ManualStartSelector';
 import { LiveNavigationMap } from './components/LiveNavigationMap';
 import { buildInstructionState, getRoutePointsFromManualStart } from './liveNavigationUtils';
+import type { TrainRouteFacility, TrainRouteTouchpoint } from '../TrainSearchResults/types';
+import { getSelectedTrainRoute } from '../../utils/selectedTrainRouteStorage';
 import styles from './LiveNavigation.module.css';
 
 type GeolocationState =
@@ -77,10 +81,128 @@ const ROUTE_STOPS: RouteStop[] = [
   },
 ];
 
+const FALLBACK_MAP_ORIGIN_LABEL = 'Frankfurt (Main) Hbf';
+
 const RouteOverviewBackLink = Link as unknown as (props: RouteOverviewBackLinkProps) => JSX.Element;
 
 function toLatLng(position: GeolocationPosition): LiveNavigationLatLng {
   return [position.coords.latitude, position.coords.longitude];
+}
+
+function isValidCoordinate(value: number | null): value is number {
+  return value !== null && Number.isFinite(value);
+}
+
+function hasValidCoordinates(
+  facility: TrainRouteFacility
+): facility is TrainRouteFacility & { geocoordX: number; geocoordY: number } {
+  return isValidCoordinate(facility.geocoordX) && isValidCoordinate(facility.geocoordY);
+}
+
+function getTouchpointPosition(touchpoint: TrainRouteTouchpoint): LiveNavigationLatLng | null {
+  const facilityWithCoordinates = (touchpoint.facilities ?? []).find(hasValidCoordinates);
+
+  if (!facilityWithCoordinates) {
+    return null;
+  }
+
+  return [facilityWithCoordinates.geocoordY, facilityWithCoordinates.geocoordX];
+}
+
+function getRoutePointsFromTouchpoints(
+  touchpoints: TrainRouteTouchpoint[] | undefined
+): LiveNavigationRoutePoint[] {
+  if (!touchpoints?.length) {
+    return [];
+  }
+
+  return touchpoints
+    .map((touchpoint, index) => {
+      const position = getTouchpointPosition(touchpoint);
+
+      if (!position) {
+        return null;
+      }
+
+      const id = `${touchpoint.kind.toLowerCase()}-${index}`;
+      const label = touchpoint.stationName;
+
+      return {
+        description: `Orientierungspunkt: ${label}.`,
+        id,
+        instruction:
+          touchpoint.kind === 'DESTINATION'
+            ? `Sie haben ${label} erreicht.`
+            : `Folgen Sie dem Leitweg in Richtung ${label}.`,
+        label,
+        position,
+      };
+    })
+    .filter((point): point is LiveNavigationRoutePoint => point !== null);
+}
+
+function getManualStartsFromRoutePoints(routePoints: LiveNavigationRoutePoint[]): LiveNavigationManualStart[] {
+  if (routePoints.length < 2) {
+    return [];
+  }
+
+  return routePoints.slice(0, -1).map((point) => ({
+    description: `Starten Sie bei ${point.label}.`,
+    id: point.id,
+    label: point.label,
+    routePointId: point.id,
+  }));
+}
+
+function formatRouteStopTime(value: string | null) {
+  if (!value) {
+    return '--:--';
+  }
+
+  const match = value.match(/T(\d{2}:\d{2})/);
+
+  return match?.[1] ?? '--:--';
+}
+
+function mapTouchpointKindToRouteStopKind(
+  kind: TrainRouteTouchpoint['kind']
+): RouteStop['kind'] {
+  if (kind === 'ORIGIN') {
+    return 'departure';
+  }
+
+  if (kind === 'DESTINATION') {
+    return 'arrival';
+  }
+
+  return 'transfer';
+}
+
+function getRouteStopsFromTouchpoints(touchpoints: TrainRouteTouchpoint[] | undefined): RouteStop[] {
+  if (!touchpoints?.length) {
+    return [];
+  }
+
+  return touchpoints.map((touchpoint, index) => {
+    const time =
+      touchpoint.kind === 'ORIGIN'
+        ? formatRouteStopTime(touchpoint.departureTime)
+        : formatRouteStopTime(touchpoint.arrivalTime ?? touchpoint.departureTime);
+
+    return {
+      id: `${touchpoint.kind.toLowerCase()}-stop-${index}`,
+      isCurrent: index === 0,
+      kind: mapTouchpointKindToRouteStopKind(touchpoint.kind),
+      platform:
+        touchpoint.kind === 'ORIGIN'
+          ? 'Start'
+          : touchpoint.kind === 'DESTINATION'
+            ? 'Ziel'
+            : 'Umstieg',
+      station: touchpoint.stationName,
+      time,
+    };
+  });
 }
 
 function getStatusTone(state: GeolocationState) {
@@ -124,6 +246,41 @@ function getStatusMessage(state: GeolocationState) {
 }
 
 export default function LiveNavigation() {
+  const selectedRoute = getSelectedTrainRoute();
+  const selectedTouchpoints = selectedRoute?.touchpoints;
+  const hasSelectedRouteTouchpoints = Boolean(selectedTouchpoints?.length);
+  const derivedRoutePoints = getRoutePointsFromTouchpoints(selectedTouchpoints);
+  const hasCompleteDerivedRoutePoints = derivedRoutePoints.length >= 2;
+  const routePoints = hasCompleteDerivedRoutePoints
+    ? derivedRoutePoints
+    : LIVE_NAVIGATION_ROUTE_POINTS;
+  const manualStartOptions = hasCompleteDerivedRoutePoints
+    ? getManualStartsFromRoutePoints(derivedRoutePoints)
+    : LIVE_NAVIGATION_MANUAL_STARTS;
+  const defaultManualStartId = manualStartOptions[0]?.id ?? DEFAULT_MANUAL_START_ID;
+  const routeStops = hasSelectedRouteTouchpoints
+    ? getRouteStopsFromTouchpoints(selectedTouchpoints)
+    : ROUTE_STOPS;
+  const selectedOriginLabel = hasSelectedRouteTouchpoints
+    ? (selectedTouchpoints?.find((touchpoint) => touchpoint.kind === 'ORIGIN')?.stationName ??
+      selectedRoute?.origin)
+    : FALLBACK_MAP_ORIGIN_LABEL;
+  const selectedDestinationLabel = hasSelectedRouteTouchpoints
+    ? (selectedTouchpoints?.find((touchpoint) => touchpoint.kind === 'DESTINATION')?.stationName ??
+      selectedRoute?.destination ??
+      LIVE_NAVIGATION_DESTINATION.label)
+    : LIVE_NAVIGATION_DESTINATION.label;
+  const routeHeading = hasSelectedRouteTouchpoints
+    ? `${selectedRoute?.origin} → ${selectedRoute?.destination}`
+    : 'Frankfurt → Berlin';
+  const selectedDestinationPosition = hasCompleteDerivedRoutePoints
+    ? derivedRoutePoints[derivedRoutePoints.length - 1].position
+    : LIVE_NAVIGATION_DESTINATION.position;
+  const destination = {
+    ...LIVE_NAVIGATION_DESTINATION,
+    label: selectedDestinationLabel,
+    position: selectedDestinationPosition,
+  };
   const geolocation = typeof navigator !== 'undefined' ? navigator.geolocation : undefined;
   const hasGeolocationSupport =
     typeof geolocation?.watchPosition === 'function' &&
@@ -134,7 +291,7 @@ export default function LiveNavigation() {
   );
   const [livePosition, setLivePosition] = useState<LiveNavigationLatLng | null>(null);
   const [manualStartId, setManualStartId] = useState<string | null>(
-    hasGeolocationSupport ? null : DEFAULT_MANUAL_START_ID
+    hasGeolocationSupport ? null : defaultManualStartId
   );
 
   useEffect(() => {
@@ -153,7 +310,7 @@ export default function LiveNavigation() {
         flushSync(() => {
           setGeolocationState(error.code === 1 ? 'location-denied' : 'tracking-error');
           setLivePosition(null);
-          setManualStartId(DEFAULT_MANUAL_START_ID);
+          setManualStartId(defaultManualStartId);
         });
       },
       {
@@ -166,23 +323,23 @@ export default function LiveNavigation() {
     return () => {
       geolocation.clearWatch(watchId);
     };
-  }, [geolocation, hasGeolocationSupport]);
+  }, [defaultManualStartId, geolocation, hasGeolocationSupport]);
 
   const fallbackRoute = getRoutePointsFromManualStart(
-    manualStartId ?? DEFAULT_MANUAL_START_ID,
-    LIVE_NAVIGATION_MANUAL_STARTS,
-    LIVE_NAVIGATION_ROUTE_POINTS
+    manualStartId ?? defaultManualStartId,
+    manualStartOptions,
+    routePoints
   );
   const isAwaitingLiveLocation =
     geolocationState === 'requesting-location' && manualStartId === null;
   const shouldUseLivePosition = geolocationState === 'live-tracking' && livePosition !== null;
-  const activeRoute = shouldUseLivePosition ? LIVE_NAVIGATION_ROUTE_POINTS : fallbackRoute;
+  const activeRoute = shouldUseLivePosition ? routePoints : fallbackRoute;
   const activePosition = shouldUseLivePosition
     ? livePosition
-    : (activeRoute[0]?.position ?? LIVE_NAVIGATION_DESTINATION.position);
+    : (activeRoute[0]?.position ?? destination.position);
   const hasActiveRoute = activeRoute.length > 0;
   const routeInstruction = buildInstructionState({
-    destination: LIVE_NAVIGATION_DESTINATION,
+    destination,
     position: activePosition,
     routePoints: activeRoute,
   });
@@ -192,8 +349,8 @@ export default function LiveNavigation() {
     geolocationState === 'tracking-error' ||
     geolocationState === 'manual-start-selected';
   const selectedManualStartLabel =
-    LIVE_NAVIGATION_MANUAL_STARTS.find(
-      (start) => start.id === (manualStartId ?? DEFAULT_MANUAL_START_ID)
+    manualStartOptions.find(
+      (start) => start.id === (manualStartId ?? defaultManualStartId)
     )?.label ?? 'Haupteingang';
   const shouldRenderMap = !isAwaitingLiveLocation && hasActiveRoute;
   const instructionDetail = hasActiveRoute
@@ -230,7 +387,7 @@ export default function LiveNavigation() {
 
         <div className={styles['header-title-wrap']}>
           <p className={styles['header-train']}>ICE 782</p>
-          <p className={styles['header-route']}>Frankfurt → Berlin</p>
+          <p className={styles['header-route']}>{routeHeading}</p>
         </div>
 
         <button
@@ -278,20 +435,20 @@ export default function LiveNavigation() {
           </section>
 
           <section
-            aria-label={`Karte – Weg zu ${LIVE_NAVIGATION_DESTINATION.label}`}
+            aria-label={`Karte – Weg zu ${destination.label}`}
             className={styles['schematic-card']}
           >
             <div className={styles['schematic-header']}>
               <p className={styles['schematic-kicker']}>Live-Karte</p>
               <p className={styles['schematic-subtitle']}>
-                Frankfurt (Main) Hbf · Weg zu {LIVE_NAVIGATION_DESTINATION.label}
+                {selectedOriginLabel} · Weg zu {destination.label}
               </p>
             </div>
             {shouldRenderMap ? (
               <LiveNavigationMap
                 currentPosition={activePosition}
-                destinationLabel={LIVE_NAVIGATION_DESTINATION.label}
-                destinationPosition={LIVE_NAVIGATION_DESTINATION.position}
+                destinationLabel={destination.label}
+                destinationPosition={destination.position}
                 nextLabel={routeInstruction.nextLabel}
                 routePath={routeInstruction.routePoints.map((point) => point.position)}
               />
@@ -338,7 +495,7 @@ export default function LiveNavigation() {
 
           {shouldShowManualFallback ? (
             <ManualStartSelector
-              options={LIVE_NAVIGATION_MANUAL_STARTS}
+              options={manualStartOptions}
               selectedStartId={manualStartId}
               onChange={handleManualStartChange}
             />
@@ -365,12 +522,12 @@ export default function LiveNavigation() {
             <div className={styles['journey-header']}>
               <p className={styles['journey-kicker']}>Reiseverlauf</p>
               <h2 className={styles['journey-heading']} id="journey-heading">
-                Frankfurt → Berlin
+                {routeHeading}
               </h2>
             </div>
 
             <ol aria-label="Haltestellen" className={styles.timeline} role="list">
-              {ROUTE_STOPS.map((stop, index) => (
+              {routeStops.map((stop, index) => (
                 <li
                   key={stop.id}
                   aria-current={stop.isCurrent ? 'step' : undefined}
@@ -380,7 +537,7 @@ export default function LiveNavigation() {
                 >
                   <div className={styles['timeline-rail']}>
                     <div className={styles['timeline-dot']} />
-                    {index < ROUTE_STOPS.length - 1 ? (
+                    {index < routeStops.length - 1 ? (
                       <div className={styles['timeline-line']} />
                     ) : null}
                   </div>
