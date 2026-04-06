@@ -3,6 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import type { TrainRouteResponse } from '../types';
 import { TrainResultCard } from './TrainResultCard';
 
+function formatExpectedLocalTime(value: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
+}
+
 function makeRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteResponse {
   return {
     arrivalTime: '2026-04-02T10:45:00Z',
@@ -53,13 +60,16 @@ function makeRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteResponse 
 }
 
 describe('TrainResultCard', () => {
-  it('renders the backend train route DTO without Google route mapping', () => {
+  it('renders local user-facing times and visible transit metadata from the backend DTO', () => {
     render(<TrainResultCard route={makeRoute()} onSelect={vi.fn()} />);
 
     expect(screen.getByText('ICE 579')).toBeInTheDocument();
     expect(screen.getByText('2 Stunden, 20 Minuten')).toBeInTheDocument();
     expect(screen.getByText('Hamburg Hauptbahnhof')).toBeInTheDocument();
     expect(screen.getByText('Hannover Hauptbahnhof')).toBeInTheDocument();
+    expect(screen.getByText(formatExpectedLocalTime('2026-04-02T08:29:00Z'))).toBeInTheDocument();
+    expect(screen.getByText(formatExpectedLocalTime('2026-04-02T09:48:00Z'))).toBeInTheDocument();
+    expect(screen.getByText('DB Fernverkehr AG · Hochgeschwindigkeitszug')).toBeInTheDocument();
     expect(screen.getByText('Direkt')).toBeInTheDocument();
   });
 });

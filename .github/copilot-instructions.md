@@ -5,6 +5,10 @@ Accessibility is the primary design and implementation constraint, not a checkli
 
 Always read and follow `CONVENTION.md` before planning or writing code.
 
+Before every task, read `.github/rules/architecture.md` and apply all rules it defines.
+
+Before every task, read `.github/rules/code-quality.md` and apply all rules it defines.
+
 ---
 
 ## Accessibility — First Priority

@@ -14,6 +14,10 @@ This file defines the project-local multi-agent workflow for Codex.
 
 Always align changes with `CONVENTION.md`.
 
+Before every task, read `.codex/rules/architecture.md` and apply all rules it defines.
+
+Before every task, read `.codex/rules/code-quality.md` and apply all rules it defines.
+
 ## Agent Architecture
 
 Runtime configuration:

@@ -127,20 +127,20 @@ The backend train search API does something else:
 
 ### FE-TR-04 Replace the current fetch logic in TrainSearchResults
 
-- [ ] Update `src/pages/TrainSearchResults/TrainSearchResults.tsx`
-- [ ] Remove the `/api/stations/${search.originEva}/timetable` request
-- [ ] Remove `formatTimetableDate()` and `formatTimetableTime()` for this page
-- [ ] Remove `MOCK_ROUTES` fallback
-- [ ] Call the new `searchTrainRoute()` service inside `useEffect`
+- [x] Update `src/pages/TrainSearchResults/TrainSearchResults.tsx`
+- [x] Remove the `/api/stations/${search.originEva}/timetable` request
+- [x] Remove `formatTimetableDate()` and `formatTimetableTime()` for this page
+- [x] Remove `MOCK_ROUTES` fallback
+- [x] Call the new `searchTrainRoute()` service inside `useEffect`
 - [x] Abort in-flight requests on unmount/search change
 - [x] Reset pagination/state correctly when a new search starts
 
 ### FE-TR-05 Adapt the page state to the real backend response
 
-- [ ] Decide on the page model: backend returns one route object, not a list
-- [ ] Short-term pragmatic option: wrap the single response in an array with one item to keep the list layout
-- [ ] If this option is chosen, hide or disable pagination when only one backend route exists
-- [ ] Revisit filter tabs, because most current filters assume multiple results
+- [x] Decide on the page model: backend returns one route object, not a list
+- [x] Short-term pragmatic option: wrap the single response in an array with one item to keep the list layout
+- [x] If this option is chosen, hide or disable pagination when only one backend route exists
+- [x] Revisit filter tabs, because most current filters assume multiple results
 
 ### FE-TR-06 Refactor TrainResultCard to render backend transits
 
@@ -148,29 +148,28 @@ The backend train search API does something else:
 - [x] Stop reading `legs[].steps[].transitDetails`
 - [x] Render from `route.transits`
 - [x] Use `trainName` for line badges
-- [ ] Use `agencyName` / `vehicleType` where useful in UI
+- [x] Use `agencyName` / `vehicleType` where useful in UI
 - [x] Derive:
       departure time from first transit departure
       arrival time from last transit arrival
       transfers from `transits.length - 1`
       direct trip if `transits.length === 1`
-- [ ] Format ISO timestamps into user-facing local times
+- [x] Format ISO timestamps into user-facing local times
 
 ### FE-TR-07 Clean up dead mock code
 
-- [ ] Remove `src/pages/TrainSearchResults/mockData.ts` if it is no longer needed
-- [ ] Remove comments that mention "Replace with Google Routes API endpoint"
-- [ ] Remove comments that mention "Remove mock data before production"
+- [x] Remove `src/pages/TrainSearchResults/mockData.ts` if it is no longer needed
+- [x] Remove comments that mention "Replace with Google Routes API endpoint"
+- [x] Remove comments that mention "Remove mock data before production"
 - [x] Remove unused legacy route/timetable helper types
 
 ### FE-TR-08 Fix local API configuration for development
 
-- [ ] Frontend currently proxies `/api` to `http://localhost:8080` in `vite.config.ts`
-- [ ] Backend train search is documented for `http://localhost:8081`
-- [ ] Align dev config before testing:
-      either change Vite proxy to `8081`
-      or set `VITE_API_URL=http://localhost:8081`
-- [ ] Make sure auth/station endpoints still point to the correct backend port after the change
+- [x] Frontend currently proxies `/api` to `http://localhost:8080` in `vite.config.ts`
+- [x] Backend train search is documented for `http://localhost:8081`
+- [x] Align dev config before testing:
+      add dedicated `VITE_TRAIN_ROUTES_API_URL` / `/train-api` handling for train search instead of changing shared `/api`
+- [x] Make sure auth/station endpoints still point to the correct backend port after the change
 
 ### FE-TR-09 Keep the summary bar sourced from user search
 

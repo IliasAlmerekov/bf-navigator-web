@@ -49,6 +49,27 @@ Agent prompts: `.claude/agents/` (Claude Code) and `.github/github-instruction/a
 
 ---
 
+## Code Quality
+
+Every agent must apply `code-quality.md` rules proportionally to the scale of the code being written.
+
+Read `.claude/rules/code-quality.md` (Claude Code) or `.github/rules/code-quality.md` (GitHub agents) before any planning or implementation.
+
+Key rules that apply to all roles:
+
+- **KISS** — simplest solution that works; clever code is a warning sign
+- **YAGNI** — no speculative abstractions; build when the second real use case arrives
+- **SRP** — component > 150 lines or hook with multiple concerns must be split
+- **SoC** — `fetch()` never in components; always in `src/api/`
+- **DRY** — Rule of Three: extract only after 3+ proven uses
+- **Naming** — verb phrases for functions; `is/has/can` for booleans; `useNoun` for hooks
+- **No `any`** — define an interface
+- **No commented-out code** — delete it; git history exists
+
+The full rules and red flags checklist are in `code-quality.md`.
+
+---
+
 ## Global Rules
 
 - All shell commands must go through `rtk`.

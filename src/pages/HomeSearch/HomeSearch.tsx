@@ -617,22 +617,6 @@ export default function HomeSearch() {
           ))}
         </div>
       </section>
-
-      <footer className={styles.footer}>
-        <div>
-          <p className={styles['footer-brand']}>BF-Navigator</p>
-          <p className={styles['footer-copy']}>
-            Barrierefreies Reisen mit klarer Orientierung bei jeder Verbindung.
-          </p>
-        </div>
-
-        <nav aria-label="Fußbereich" className={styles['footer-links']}>
-          <button type="button">Datenschutz</button>
-          <button type="button">Nutzungsbedingungen</button>
-          <button type="button">Bahnhofspläne</button>
-          <button type="button">Support kontaktieren</button>
-        </nav>
-      </footer>
     </main>
   );
 }

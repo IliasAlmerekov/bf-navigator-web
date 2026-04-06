@@ -15,6 +15,10 @@ This project uses a lead-agent orchestration model for feature work.
 
 Always read and follow `CONVENTION.md` before planning or implementation.
 
+Before every task, read `.claude/rules/architecture.md` and apply all rules it defines.
+
+Before every task, read `.claude/rules/code-quality.md` and apply all rules it defines.
+
 ## Agent Architecture
 
 ```text
