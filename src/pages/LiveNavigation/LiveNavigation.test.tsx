@@ -3,6 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import LiveNavigation from './LiveNavigation';
+import * as liveNavigationUtils from './liveNavigationUtils';
 
 const liveNavigationMapMock = vi.fn();
 const watchPositionMock = vi.fn();
@@ -102,11 +103,22 @@ describe('LiveNavigation', () => {
     } as GeolocationPosition);
 
     expect(
-      screen.getByRole('heading', { level: 1, name: /live navigation zu gleis 1/i })
+      screen.getByRole('button', {
+        name: /hilfe und barrierefreiheitsinformationen öffnen/i,
+      })
     ).toBeInTheDocument();
-    expect(screen.getByText(/aktueller orientierungspunkt: aufzug e4/i)).toBeInTheDocument();
-    expect(screen.getByText(/folgen sie dem leitsystem bis zum aufzug e4/i)).toBeInTheDocument();
-    expect(screen.getByText(/gleis 1/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /aufzug e4/i })).toBeInTheDocument();
+    expect(screen.getByText(/gleis 1 · ca\./i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /alternativweg: südrampe/i })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /frankfurt → berlin/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /hilfe anfordern/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /navigation beenden/i })
+    ).toBeInTheDocument();
     expect(liveNavigationMapMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
         destinationLabel: 'Gleis 1',
@@ -130,12 +142,16 @@ describe('LiveNavigation', () => {
     expect(
       screen.getByRole('radiogroup', { name: /manuellen startpunkt wählen/i })
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /alternativweg: südrampe/i })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /frankfurt → berlin/i })).toBeInTheDocument();
 
     await user.click(screen.getByRole('radio', { name: /info point/i }));
 
     expect(screen.getByRole('status')).toHaveTextContent(/manueller startpunkt aktiv/i);
-    expect(screen.getByText(/startpunkt: info point/i)).toBeInTheDocument();
-    expect(screen.getByText(/biegen sie links ab/i)).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /info point/i })).toBeChecked();
+    expect(screen.getByRole('heading', { level: 1, name: /biegen sie links ab/i })).toBeInTheDocument();
   });
 
   it.each([2, 3])(
@@ -171,6 +187,7 @@ describe('LiveNavigation', () => {
       expect(
         screen.getByRole('radiogroup', { name: /manuellen startpunkt wählen/i })
       ).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: /gehen sie geradeaus/i })).toBeInTheDocument();
 
       await user.click(screen.getByRole('radio', { name: /info point/i }));
 
@@ -179,6 +196,26 @@ describe('LiveNavigation', () => {
       expect(screen.getByText(/biegen sie links ab/i)).toBeInTheDocument();
     }
   );
+
+  it('shows a plain-language fallback when no route data can be derived', () => {
+    vi.spyOn(liveNavigationUtils, 'getRoutePointsFromManualStart').mockReturnValue([]);
+    render(<LiveNavigation />);
+
+    watchErrorCallback?.({
+      code: 1,
+      message: 'Permission denied',
+      PERMISSION_DENIED: 1,
+      POSITION_UNAVAILABLE: 2,
+      TIMEOUT: 3,
+    } as GeolocationPositionError);
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: /keine navigationsschritte verfügbar/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/die karte kann ohne verfügbare routendaten nicht angezeigt werden/i)
+    ).toBeInTheDocument();
+  });
 
   it('keeps keyboard tab order from back link to manual fallback radios and map zoom controls', async () => {
     const user = userEvent.setup();
@@ -196,13 +233,23 @@ describe('LiveNavigation', () => {
     expect(screen.getByRole('link', { name: /zurück zur routenübersicht/i })).toHaveFocus();
 
     await user.tab();
-    expect(screen.getByRole('radio', { name: /haupteingang/i })).toHaveFocus();
+    expect(
+      screen.getByRole('button', {
+        name: /hilfe und barrierefreiheitsinformationen öffnen/i,
+      })
+    ).toHaveFocus();
 
     await user.tab();
     expect(screen.getByRole('button', { name: /karte vergrößern/i })).toHaveFocus();
 
     await user.tab();
     expect(screen.getByRole('button', { name: /karte verkleinern/i })).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole('button', { name: /alternativweg: südrampe/i })).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole('radio', { name: /haupteingang/i })).toHaveFocus();
   });
 
   it('supports keyboard-only manual start selection and updates route copy', async () => {
@@ -217,6 +264,10 @@ describe('LiveNavigation', () => {
       TIMEOUT: 3,
     } as GeolocationPositionError);
 
+    await user.tab();
+    await user.tab();
+    await user.tab();
+    await user.tab();
     await user.tab();
     await user.tab();
     await user.keyboard('{ArrowDown}');
