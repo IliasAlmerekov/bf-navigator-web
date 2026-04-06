@@ -268,7 +268,9 @@ describe('StationAccessibility', () => {
     expect(
       within(destinationCard).getByText(/rolltreppen: live-anlagenstatus nicht verfügbar/i)
     ).toBeInTheDocument();
-    expect(within(destinationCard).getByText(/station accessibility data unavailable/i)).toBeInTheDocument();
+    expect(
+      within(destinationCard).getByText(/station accessibility data unavailable/i)
+    ).toBeInTheDocument();
   });
 
   it('shows an error state when selected trip accessibility cannot be loaded', async () => {

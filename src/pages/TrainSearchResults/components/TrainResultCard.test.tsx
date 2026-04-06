@@ -118,20 +118,10 @@ describe('TrainResultCard', () => {
       />
     );
 
-    expect(
-      screen.getByLabelText('Stufenfreier Zugang an 1 von 2 Stationen')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText('Mobilitätsservice an 1 von 2 Stationen')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText('Aufzüge: 1 aktiv, 1 außer Betrieb')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText('Rolltreppen: 2 außer Betrieb')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByLabelText(/Barrierefreiheit: 1\/2 stations step-free/i)
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Stufenfreier Zugang an 1 von 2 Stationen')).toBeInTheDocument();
+    expect(screen.getByLabelText('Mobilitätsservice an 1 von 2 Stationen')).toBeInTheDocument();
+    expect(screen.getByLabelText('Aufzüge: 1 aktiv, 1 außer Betrieb')).toBeInTheDocument();
+    expect(screen.getByLabelText('Rolltreppen: 2 außer Betrieb')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Barrierefreiheit: 1\/2 stations step-free/i)).toBeInTheDocument();
   });
 });

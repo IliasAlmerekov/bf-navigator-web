@@ -1,5 +1,9 @@
 import { ArrowRight, Clock, PersonStanding } from 'lucide-react';
-import type { TrainRouteAccessibilitySummary, TrainRouteResponse, TrainRouteTransit } from '../types';
+import type {
+  TrainRouteAccessibilitySummary,
+  TrainRouteResponse,
+  TrainRouteTransit,
+} from '../types';
 import styles from './TrainResultCard.module.css';
 
 interface TrainResultCardProps {

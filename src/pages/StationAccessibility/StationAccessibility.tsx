@@ -169,7 +169,9 @@ export default function StationAccessibility() {
               <article aria-labelledby={headingId} className={styles.card}>
                 <div className={styles['card-header']}>
                   <div>
-                    <p className={styles['touchpoint-kind']}>{getTouchpointLabel(touchpoint.kind)}</p>
+                    <p className={styles['touchpoint-kind']}>
+                      {getTouchpointLabel(touchpoint.kind)}
+                    </p>
                     <h2 className={styles['station-name']} id={headingId}>
                       {touchpoint.stationName}
                     </h2>
@@ -177,14 +179,18 @@ export default function StationAccessibility() {
                   {partialData ? (
                     <span className={styles['partial-badge']}>Teildaten verfügbar</span>
                   ) : (
-                    <span className={styles['status-badge']}>{touchpoint.accessibility.status}</span>
+                    <span className={styles['status-badge']}>
+                      {touchpoint.accessibility.status}
+                    </span>
                   )}
                 </div>
 
                 <p className={styles.summary}>{touchpoint.accessibility.summary}</p>
 
                 <ul className={styles['detail-list']} role="list">
-                  <li className={styles['detail-item']}>{getAccessLabel(touchpoint.accessibility)}</li>
+                  <li className={styles['detail-item']}>
+                    {getAccessLabel(touchpoint.accessibility)}
+                  </li>
                   <li className={styles['detail-item']}>
                     {getMobilityServiceLabel(touchpoint.accessibility)}
                   </li>
