@@ -1,12 +1,18 @@
 import type { ReactNode } from 'react';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TrainRouteResponse } from '../TrainSearchResults/types';
+import type { RouteMapData } from './types';
 import RouteOverview from './RouteOverview';
 
-afterEach(() => {
-  cleanup();
-});
+const getSelectedTrainRouteMock = vi.fn();
+const routeMapCanvasMock = vi.fn<(props: { mapData: RouteMapData; zoom: number }) => void>();
+const routeOverviewSearchMock = vi.fn();
+
+vi.mock('../../utils/selectedTrainRouteStorage', () => ({
+  getSelectedTrainRoute: () => getSelectedTrainRouteMock(),
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
@@ -25,177 +31,382 @@ vi.mock('@tanstack/react-router', () => ({
     </a>
   ),
   useNavigate: () => vi.fn(),
+  useSearch: () => routeOverviewSearchMock(),
 }));
 
 vi.mock('./components/RouteMapCanvas', () => ({
-  RouteMapCanvas: () => <div data-testid="route-map" />,
+  RouteMapCanvas: (props: { mapData: RouteMapData; zoom: number }) => {
+    routeMapCanvasMock(props);
+    return <div data-testid="route-map" />;
+  },
 }));
 
+function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteResponse {
+  return {
+    accessibilitySummary: {
+      activeElevators: 0,
+      activeEscalators: 1,
+      inactiveElevators: 1,
+      inactiveEscalators: 0,
+      mobilityServiceStations: 3,
+      status: 'LIMITED',
+      stepFreeStations: 2,
+      summary: '2/3 stations step-free',
+      totalStations: 3,
+    },
+    arrivalTime: '2026-04-02T10:45:00Z',
+    departureTime: '2026-04-02T08:29:00Z',
+    destination: 'Braunschweig Hauptbahnhof',
+    localizedDistanceText: '240 km',
+    localizedDurationText: '2 Stunden, 16 Minuten',
+    origin: 'Hamburg Hauptbahnhof',
+    touchpoints: [
+      {
+        accessibility: {
+          activeElevators: 0,
+          activeEscalators: 0,
+          hasFacilityData: true,
+          inactiveElevators: 0,
+          inactiveEscalators: 0,
+          mobilityServiceAvailable: true,
+          status: 'ACCESSIBLE',
+          stepFreeAvailable: true,
+          summary:
+            'Step-free access available · Mobility service available · No listed elevators or escalators',
+        },
+        arrivalTime: null,
+        departureTime: '2026-04-02T08:29:00Z',
+        facilities: [],
+        kind: 'ORIGIN',
+        station: {
+          category: 1,
+          city: 'Hamburg',
+          evaNumber: 8002549,
+          hasMobilityService: 'yes',
+          hasSteplessAccess: 'yes',
+          hasWiFi: true,
+          name: 'Hamburg Hbf',
+          number: 12345,
+        },
+        stationName: 'Hamburg Hauptbahnhof',
+      },
+      {
+        accessibility: {
+          activeElevators: 0,
+          activeEscalators: 1,
+          hasFacilityData: true,
+          inactiveElevators: 1,
+          inactiveEscalators: 0,
+          mobilityServiceAvailable: true,
+          status: 'LIMITED',
+          stepFreeAvailable: false,
+          summary:
+            'No confirmed step-free access · Mobility service available · Elevators 0 active / 1 inactive · Escalators 1 active / 0 inactive',
+        },
+        arrivalTime: '2026-04-02T09:48:00Z',
+        departureTime: '2026-04-02T10:05:00Z',
+        facilities: [
+          {
+            description: 'Lift to platform 12',
+            equipmentnumber: 2002,
+            geocoordX: 9.741,
+            geocoordY: 52.377,
+            operationalResumeDate: null,
+            operatorname: 'DB InfraGO',
+            state: 'INACTIVE',
+            stateExplanation: 'maintenance',
+            stationnumber: 23456,
+            type: 'ELEVATOR',
+          },
+          {
+            description: 'Escalator to the concourse',
+            equipmentnumber: 2003,
+            geocoordX: 9.742,
+            geocoordY: 52.378,
+            operationalResumeDate: null,
+            operatorname: 'DB InfraGO',
+            state: 'ACTIVE',
+            stateExplanation: 'available',
+            stationnumber: 23456,
+            type: 'ESCALATOR',
+          },
+        ],
+        kind: 'TRANSFER',
+        station: {
+          category: 1,
+          city: 'Hannover',
+          evaNumber: 8000152,
+          hasMobilityService: 'yes',
+          hasSteplessAccess: 'no',
+          hasWiFi: true,
+          name: 'Hannover Hbf',
+          number: 23456,
+        },
+        stationName: 'Hannover Hauptbahnhof',
+      },
+      {
+        accessibility: {
+          activeElevators: 0,
+          activeEscalators: 0,
+          hasFacilityData: false,
+          inactiveElevators: 0,
+          inactiveEscalators: 0,
+          mobilityServiceAvailable: true,
+          status: 'LIMITED',
+          stepFreeAvailable: true,
+          summary:
+            'Step-free access available · Mobility service available · No live facility data',
+        },
+        arrivalTime: '2026-04-02T10:45:00Z',
+        departureTime: null,
+        facilities: null,
+        kind: 'DESTINATION',
+        station: {
+          category: 2,
+          city: 'Braunschweig',
+          evaNumber: 8000049,
+          hasMobilityService: 'yes',
+          hasSteplessAccess: 'yes',
+          hasWiFi: true,
+          name: 'Braunschweig Hbf',
+          number: 34567,
+        },
+        stationName: 'Braunschweig Hauptbahnhof',
+      },
+    ],
+    transits: [
+      {
+        agencyName: 'DB Fernverkehr AG',
+        arrival: {
+          arrivalTime: '2026-04-02T09:48:00Z',
+          facilities: [],
+          station: {
+            category: 1,
+            city: 'Hannover',
+            evaNumber: 8000152,
+            hasMobilityService: 'yes',
+            hasSteplessAccess: 'no',
+            hasWiFi: true,
+            name: 'Hannover Hbf',
+            number: 23456,
+          },
+          stationName: 'Hannover Hauptbahnhof',
+        },
+        departure: {
+          departureTime: '2026-04-02T08:29:00Z',
+          facilities: [],
+          station: {
+            category: 1,
+            city: 'Hamburg',
+            evaNumber: 8002549,
+            hasMobilityService: 'yes',
+            hasSteplessAccess: 'yes',
+            hasWiFi: true,
+            name: 'Hamburg Hbf',
+            number: 12345,
+          },
+          stationName: 'Hamburg Hauptbahnhof',
+        },
+        trainName: 'ICE 579',
+        vehicleType: 'Hochgeschwindigkeitszug',
+      },
+      {
+        agencyName: 'DB Fernverkehr AG',
+        arrival: {
+          arrivalTime: '2026-04-02T10:45:00Z',
+          facilities: [],
+          station: {
+            category: 2,
+            city: 'Braunschweig',
+            evaNumber: 8000049,
+            hasMobilityService: 'yes',
+            hasSteplessAccess: 'yes',
+            hasWiFi: true,
+            name: 'Braunschweig Hbf',
+            number: 34567,
+          },
+          stationName: 'Braunschweig Hauptbahnhof',
+        },
+        departure: {
+          departureTime: '2026-04-02T10:05:00Z',
+          facilities: [],
+          station: {
+            category: 1,
+            city: 'Hannover',
+            evaNumber: 8000152,
+            hasMobilityService: 'yes',
+            hasSteplessAccess: 'no',
+            hasWiFi: true,
+            name: 'Hannover Hbf',
+            number: 23456,
+          },
+          stationName: 'Hannover Hauptbahnhof',
+        },
+        trainName: 'IC 2038',
+        vehicleType: 'Intercity',
+      },
+    ],
+    ...overrides,
+  };
+}
+
 describe('RouteOverview', () => {
-  it('renders the detailed timeline heading and train badges', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  beforeEach(() => {
+    getSelectedTrainRouteMock.mockReset();
+    getSelectedTrainRouteMock.mockReturnValue(makeSelectedRoute());
+    routeMapCanvasMock.mockReset();
+    routeOverviewSearchMock.mockReset();
+    routeOverviewSearchMock.mockReturnValue({
+      accessibilityPreference: 'step-free',
+      date: '2026-04-02',
+      destinationEva: '8000049',
+      destinationName: 'Braunschweig Hauptbahnhof',
+      originEva: '8002549',
+      originName: 'Hamburg Hauptbahnhof',
+      time: '08:29',
+    });
+    window.localStorage.clear();
+  });
+
+  it('renders the selected trip details instead of the static route overview mocks', () => {
     render(<RouteOverview />);
 
     expect(
       screen.getByRole('heading', {
-        level: 2,
-        name: /detailed timeline/i,
+        level: 1,
+        name: /hamburg hauptbahnhof nach braunschweig hauptbahnhof/i,
       })
     ).toBeInTheDocument();
 
-    expect(screen.getByText(/on time/i)).toBeInTheDocument();
-    expect(screen.getByText('ICE772')).toBeInTheDocument();
-  });
-
-  it('renders the journey timeline with all three stations', () => {
-    render(<RouteOverview />);
-
-    const timeline = screen.getByRole('list', { name: /journey timeline/i });
-
-    expect(timeline).toBeInTheDocument();
-    expect(within(timeline).getByText('Frankfurt (Main) Hbf')).toBeInTheDocument();
-    expect(within(timeline).getByText('Kassel-Wilhelmshöhe')).toBeInTheDocument();
-    expect(within(timeline).getByText('Berlin Hbf')).toBeInTheDocument();
-  });
-
-  it('renders station platform info and departure times', () => {
-    render(<RouteOverview />);
-    const timeline = screen.getByRole('list', { name: /journey timeline/i });
-
-    expect(screen.getByText(/platform 9 · main entrance/i)).toBeInTheDocument();
-    expect(within(timeline).getAllByText('09:30').length).toBeGreaterThan(0);
-    expect(within(timeline).getAllByText('13:45').length).toBeGreaterThan(0);
-  });
-
-  it('renders the transfer note for Kassel', () => {
-    render(<RouteOverview />);
-
-    expect(screen.getByText(/22 min transfer/i)).toBeInTheDocument();
-    expect(screen.getByText(/switching to ice884/i)).toBeInTheDocument();
-  });
-
-  it('renders amenity tags for departure and arrival stations', () => {
-    render(<RouteOverview />);
-    const timeline = screen.getByRole('list', { name: /journey timeline/i });
-
-    expect(within(timeline).getByText('Free WiFi')).toBeInTheDocument();
-    expect(within(timeline).getByText('Bistro')).toBeInTheDocument();
-    expect(within(timeline).getByText('Transit Links')).toBeInTheDocument();
-    expect(within(timeline).getByText('Step-free')).toBeInTheDocument();
-  });
-
-  it('does not render "View Full Route Map" link', () => {
-    render(<RouteOverview />);
-
-    expect(screen.queryByRole('link', { name: /view full route map/i })).not.toBeInTheDocument();
-  });
-
-  it('renders "View Alternatives" link pointing to /train-search-results', () => {
-    render(<RouteOverview />);
-
-    const link = screen.getByRole('link', { name: /return to search results/i });
-    expect(link).toHaveAttribute('href', '/train-search-results');
-  });
-
-  it('renders "Live Navigation" link', () => {
-    render(<RouteOverview />);
-
-    expect(screen.getByRole('link', { name: /live navigation/i })).toBeInTheDocument();
-  });
-
-  it('renders the map preview heading and facility list', () => {
-    render(<RouteOverview />);
-
     expect(
-      screen.getByRole('heading', { level: 2, name: /live map ready for backend coordinates/i })
+      screen.getByRole('heading', { level: 2, name: /detaillierter reiseverlauf/i })
     ).toBeInTheDocument();
+    expect(screen.getByText(/pünktlich/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /zurück zu den suchergebnissen/i })).toHaveAttribute(
+      'href',
+      '/train-search-results'
+    );
+    expect(screen.getByRole('link', { name: /alternativen anzeigen/i })).toHaveAttribute(
+      'href',
+      '/train-search-results'
+    );
 
-    const facilitiesList = screen.getByRole('list', { name: /mapped facilities preview/i });
-    expect(within(facilitiesList).getByText('Escalator')).toBeInTheDocument();
-    expect(within(facilitiesList).getByText(/north concourse lift/i)).toBeInTheDocument();
+    const timeline = screen.getByRole('list', { name: /reiseverlauf/i });
+
+    expect(within(timeline).getByText('Hamburg Hauptbahnhof')).toBeInTheDocument();
+    expect(within(timeline).getByText('Hannover Hauptbahnhof')).toBeInTheDocument();
+    expect(within(timeline).getByText('Braunschweig Hauptbahnhof')).toBeInTheDocument();
+    expect(within(timeline).queryByText('Frankfurt (Main) Hbf')).not.toBeInTheDocument();
+    expect(within(timeline).queryByText('Berlin Hbf')).not.toBeInTheDocument();
   });
 
-  it('renders the station services section heading', () => {
+  it('builds the station services panel from the selected trip accessibility payload', () => {
     render(<RouteOverview />);
 
-    expect(screen.getByRole('heading', { name: /station services/i })).toBeInTheDocument();
-  });
-
-  it('renders the elevator warning card for Berlin Hbf', () => {
-    render(<RouteOverview />);
-
-    expect(
-      screen.getByRole('heading', { level: 3, name: /station accessibility/i })
-    ).toBeInTheDocument();
-    expect(screen.getByText(/platform 11 elevator is currently unavailable/i)).toBeInTheDocument();
-  });
-
-  it('renders the rerouted path guidance for the elevator outage', () => {
-    render(<RouteOverview />);
-
-    const servicesSection = screen.getByRole('region', { name: /station services/i });
-    expect(within(servicesSection).getByText(/rerouted path/i)).toBeInTheDocument();
-    expect(within(servicesSection).getByText(/platform 9 elevator/i)).toBeInTheDocument();
-  });
-
-  it('does not announce anything on initial load', () => {
-    render(<RouteOverview />);
-
-    const liveEl = document.querySelector('[aria-live="polite"]');
-    expect(liveEl?.textContent).toBe('');
-  });
-
-  it('announces when route is saved and updates aria-pressed', async () => {
-    render(<RouteOverview />);
-
-    const saveButton = screen.getByRole('button', { name: /save route/i });
-    expect(saveButton).toHaveAttribute('aria-pressed', 'false');
-
-    await userEvent.click(saveButton);
-
-    expect(saveButton).toHaveAttribute('aria-pressed', 'true');
-    expect(
-      screen.getByText(/route wurde zu deinen gespeicherten reisen hinzugefugt/i)
-    ).toBeInTheDocument();
-  });
-
-  it('renders the live equipment status cards from station accessibility', () => {
-    render(<RouteOverview />);
-
-    const servicesSection = screen.getByRole('region', { name: /station services/i });
-    expect(
-      within(servicesSection).getByRole('heading', { name: /live equipment status/i })
-    ).toBeInTheDocument();
-    expect(within(servicesSection).getByText('Elevators')).toBeInTheDocument();
-    expect(within(servicesSection).getByText('Escalators')).toBeInTheDocument();
-    expect(within(servicesSection).getByText('Tactile Guidance')).toBeInTheDocument();
-    expect(within(servicesSection).getByText('Accessible Toilets')).toBeInTheDocument();
-  });
-
-  it('renders the station services update timestamp and equipment summaries', () => {
-    render(<RouteOverview />);
-
-    const servicesSection = screen.getByRole('region', { name: /station services/i });
+    const servicesSection = screen.getByRole('region', { name: /bahnhofsservice/i });
     const stationAccessibilityCard = within(servicesSection)
-      .getByRole('heading', { level: 3, name: /station accessibility/i })
-      .closest('article');
-    const escalatorsCard = within(servicesSection)
-      .getByRole('heading', { level: 4, name: /escalators/i })
+      .getByRole('heading', { level: 3, name: /bahnhofsbarrierefreiheit/i })
       .closest('article');
 
     expect(stationAccessibilityCard).not.toBeNull();
-    expect(escalatorsCard).not.toBeNull();
 
-    if (!stationAccessibilityCard || !escalatorsCard) {
-      throw new Error('Expected station services cards were not rendered.');
+    if (!stationAccessibilityCard) {
+      throw new Error('Station accessibility card was not rendered.');
     }
 
-    expect(within(servicesSection).getByText(/updated 1 minute ago/i)).toBeInTheDocument();
-    expect(within(stationAccessibilityCard).getByText(/12 units/i)).toBeInTheDocument();
-    expect(within(stationAccessibilityCard).getByText(/11 working/i)).toBeInTheDocument();
-    expect(within(stationAccessibilityCard).getByText(/1 out of service/i)).toBeInTheDocument();
+    expect(within(servicesSection).getByText('Hannover Hauptbahnhof')).toBeInTheDocument();
     expect(
-      within(servicesSection).getByText(/platform 11 elevator unavailable/i)
+      within(servicesSection).getByText(
+        /kein bestätigter stufenfreier zugang .* mobilitätsservice verfügbar/i
+      )
     ).toBeInTheDocument();
-    expect(within(escalatorsCard).getByText(/1 outage on gleis 4/i)).toBeInTheDocument();
+    expect(within(stationAccessibilityCard).getByText(/2 anlagen/i)).toBeInTheDocument();
+    expect(
+      within(stationAccessibilityCard).getByText(/1 in betrieb/i, { selector: 'dd' })
+    ).toBeInTheDocument();
+    expect(
+      within(stationAccessibilityCard).getByText(/1 außer betrieb/i, { selector: 'dd' })
+    ).toBeInTheDocument();
+    expect(within(servicesSection).getByText('Aufzüge')).toBeInTheDocument();
+    expect(within(servicesSection).getByText('Rolltreppen')).toBeInTheDocument();
+    expect(within(servicesSection).queryByText('Tactile Guidance')).not.toBeInTheDocument();
+    expect(within(servicesSection).queryByText('Accessible Toilets')).not.toBeInTheDocument();
+  });
+
+  it('renders the route map card entirely in german', () => {
+    render(<RouteOverview />);
+
+    expect(screen.getByRole('heading', { level: 2, name: /live-karte/i })).toBeInTheDocument();
+    expect(screen.queryByText(/backend-koordinaten/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ohne die ui-schicht zu ändern/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /mit maus oder einem finger ziehen\. zum zoomen mausrad oder pinch-geste nutzen\./i
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /routenvorschau vergrößern/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /routenvorschau verkleinern/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /live-navigation/i })).toBeInTheDocument();
+    expect(screen.getByText('Lift to platform 12')).toBeInTheDocument();
+    expect(screen.getByText('Escalator to the concourse')).toBeInTheDocument();
+    expect(screen.getAllByText(/in betrieb/i).length).toBeGreaterThan(0);
+  });
+
+  it('passes backend facility geocoordinates into the route map data', () => {
+    render(<RouteOverview />);
+
+    expect(routeMapCanvasMock).toHaveBeenCalled();
+
+    const [{ mapData }] = routeMapCanvasMock.mock.calls.at(-1) ?? [];
+
+    expect(mapData.routePath).toEqual([
+      [52.377, 9.741],
+      [52.378, 9.742],
+    ]);
+    expect(mapData.center).toEqual([52.3775, 9.7415]);
+    expect(mapData.markers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'facility-2002',
+          position: [52.377, 9.741],
+        }),
+        expect.objectContaining({
+          id: 'facility-2003',
+          position: [52.378, 9.742],
+        }),
+      ])
+    );
+  });
+
+  it('saves the currently selected trip instead of the static Frankfurt to Berlin mock', async () => {
+    render(<RouteOverview />);
+
+    await userEvent.click(screen.getByRole('button', { name: /route speichern/i }));
+
+    const savedTrips = JSON.parse(window.localStorage.getItem('bf-navigator-saved-trips') ?? '[]');
+
+    expect(savedTrips[0]).toMatchObject({
+      destination: 'Braunschweig Hauptbahnhof',
+      origin: 'Hamburg Hauptbahnhof',
+    });
+    expect(savedTrips[0]).not.toMatchObject({
+      destination: 'Berlin',
+      origin: 'Frankfurt (Main) Hbf',
+    });
+  });
+
+  it('falls back to the static route overview when no selected trip is available', () => {
+    getSelectedTrainRouteMock.mockReturnValueOnce(null);
+
+    render(<RouteOverview />);
+
+    const timeline = screen.getByRole('list', { name: /reiseverlauf/i });
+
+    expect(within(timeline).getByText('Frankfurt (Main) Hbf')).toBeInTheDocument();
+    expect(within(timeline).getByText('Berlin Hbf')).toBeInTheDocument();
   });
 });

@@ -9,7 +9,7 @@ export type RouteMapMarkerKind = 'origin' | 'transfer' | 'destination' | 'facili
 export type RouteMapMarkerStatus = ServiceAvailability | 'default';
 
 export type RouteStop = {
-  label: 'Departure' | 'Arrival';
+  label: string;
   time: string;
   station: string;
 };
@@ -97,7 +97,9 @@ export type RouteMapMarker = {
   id: string;
   kind: RouteMapMarkerKind;
   label: string;
+  locationDetail?: string;
   position: RouteMapLatLng;
+  statusLabel?: string;
   status: RouteMapMarkerStatus;
 };
 
