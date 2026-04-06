@@ -42,17 +42,12 @@
     opacity 0.15s ease;
 }
 
-.zoom-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
 .zoom-btn:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-.zoom-btn:hover:not(:disabled) {
+.zoom-btn:hover {
   transform: translateY(-1px);
 }
 
@@ -61,52 +56,14 @@
   height: 18px;
 }
 
-/* ── Legend overlay ── */
-.legend {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  z-index: 800;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #1e293b;
-  background: rgb(248, 249, 250, 0.9);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 2px 8px rgb(0, 0, 0, 0.1);
-}
-
-.legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.legend-item[data-kind='current'] .legend-dot {
-  background: #039;
-}
-
-.legend-item[data-kind='elevator'] .legend-dot {
-  background: #16a34a;
-}
-
-.legend-item[data-kind='platform'] .legend-dot {
-  background: #dc2626;
-}
-
 @media (width >= 1024px) {
   .map {
     height: 420px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zoom-btn {
+    transition: none;
   }
 }
