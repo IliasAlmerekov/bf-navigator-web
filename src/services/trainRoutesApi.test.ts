@@ -34,10 +34,10 @@ describe('trainRoutesApi', () => {
     expect(BASE_URL).toBe('/train-api');
   });
 
-  it('exposes the train routes path as the single switch point for debug and real endpoints', async () => {
+  it('exposes the train routes path as the single switch point for the real backend endpoint', async () => {
     const trainRoutesApiModule = await import('./trainRoutesApi');
 
-    expect(trainRoutesApiModule.TRAIN_ROUTES_PATH).toBe('/routes/trains/debug');
+    expect(trainRoutesApiModule.TRAIN_ROUTES_PATH).toBe('/routes/trains');
   });
 
   it('posts train route search requests and returns the backend response', async () => {
@@ -89,7 +89,7 @@ describe('trainRoutesApi', () => {
     });
   });
 
-  it('returns multi-trip debug responses with nested accessibility touchpoints unchanged', async () => {
+  it('returns multi-trip backend responses with nested accessibility touchpoints unchanged', async () => {
     const routeResponse = {
       trips: [
         {

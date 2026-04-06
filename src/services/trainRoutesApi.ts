@@ -1,7 +1,7 @@
 import type { TrainRouteSearchResponse } from '../pages/TrainSearchResults/types';
 
 export const BASE_URL = import.meta.env.VITE_TRAIN_ROUTES_API_URL ?? '/train-api';
-export const TRAIN_ROUTES_PATH = '/routes/trains/debug';
+export const TRAIN_ROUTES_PATH = '/routes/trains';
 
 export interface TrainRouteSearchRequest {
   origin: string;
