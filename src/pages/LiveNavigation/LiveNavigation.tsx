@@ -156,6 +156,64 @@ function getManualStartsFromRoutePoints(
   }));
 }
 
+function getRequiredManualStarts(): LiveNavigationManualStart[] {
+  return [
+    {
+      description: 'Starten Sie am Haupteingang und folgen Sie dem Leitweg zum Abfahrtsgleis.',
+      id: 'main-entrance',
+      label: 'Haupteingang',
+      routePointId: 'main-entrance',
+    },
+    {
+      description: 'Starten Sie an der Info-Station und folgen Sie dem Leitweg zum Abfahrtsgleis.',
+      id: 'info-point',
+      label: 'Info-Station',
+      routePointId: 'info-point',
+    },
+  ];
+}
+
+function mergeManualStartOptions(
+  derivedManualStarts: LiveNavigationManualStart[]
+): LiveNavigationManualStart[] {
+  const requiredManualStarts = getRequiredManualStarts();
+  const optionalDerivedStarts = derivedManualStarts.filter(
+    (start) => !requiredManualStarts.some((requiredStart) => requiredStart.id === start.id)
+  );
+
+  return [...requiredManualStarts, ...optionalDerivedStarts];
+}
+
+function mergeManualFallbackRoutePoints(
+  routePoints: LiveNavigationRoutePoint[]
+): LiveNavigationRoutePoint[] {
+  const requiredFallbackPoints = LIVE_NAVIGATION_ROUTE_POINTS.filter(
+    (point) => point.id === 'main-entrance' || point.id === 'info-point'
+  ).map((point) => ({
+    ...point,
+    instruction: 'Folgen Sie dem Leitweg zum Abfahrtsgleis.',
+  }));
+  const deduplicatedRoutePoints = routePoints.filter(
+    (point) => !requiredFallbackPoints.some((requiredPoint) => requiredPoint.id === point.id)
+  );
+
+  return [...requiredFallbackPoints, ...deduplicatedRoutePoints];
+}
+
+function getVisibleTrainLabel(trainNames: string[] | undefined): string {
+  if (!trainNames?.length) {
+    return 'ICE 782';
+  }
+
+  const uniqueTrainNames = trainNames
+    .map((trainName) => trainName.trim())
+    .filter(
+      (trainName, index, names) => trainName.length > 0 && names.indexOf(trainName) === index
+    );
+
+  return uniqueTrainNames.length > 0 ? uniqueTrainNames.join(' · ') : 'ICE 782';
+}
+
 function formatRouteStopTime(value: string | null) {
   if (!value) {
     return '--:--';
@@ -256,8 +314,11 @@ export default function LiveNavigation() {
   const routePoints = hasCompleteDerivedRoutePoints
     ? derivedRoutePoints
     : LIVE_NAVIGATION_ROUTE_POINTS;
+  const manualFallbackRoutePoints = hasCompleteDerivedRoutePoints
+    ? mergeManualFallbackRoutePoints(routePoints)
+    : routePoints;
   const manualStartOptions = hasCompleteDerivedRoutePoints
-    ? getManualStartsFromRoutePoints(derivedRoutePoints)
+    ? mergeManualStartOptions(getManualStartsFromRoutePoints(derivedRoutePoints))
     : LIVE_NAVIGATION_MANUAL_STARTS;
   const defaultManualStartId = manualStartOptions[0]?.id ?? DEFAULT_MANUAL_START_ID;
   const routeStops = hasSelectedRouteTouchpoints
@@ -275,6 +336,9 @@ export default function LiveNavigation() {
   const routeHeading = hasSelectedRouteTouchpoints
     ? `${selectedRoute?.origin} → ${selectedRoute?.destination}`
     : 'Frankfurt → Berlin';
+  const trainLabel = getVisibleTrainLabel(
+    selectedRoute?.transits.map((transit) => transit.trainName)
+  );
   const selectedDestinationPosition = hasCompleteDerivedRoutePoints
     ? derivedRoutePoints[derivedRoutePoints.length - 1].position
     : LIVE_NAVIGATION_DESTINATION.position;
@@ -330,7 +394,7 @@ export default function LiveNavigation() {
   const fallbackRoute = getRoutePointsFromManualStart(
     manualStartId ?? defaultManualStartId,
     manualStartOptions,
-    routePoints
+    manualFallbackRoutePoints
   );
   const isAwaitingLiveLocation =
     geolocationState === 'requesting-location' && manualStartId === null;
@@ -387,7 +451,7 @@ export default function LiveNavigation() {
         </RouteOverviewBackLink>
 
         <div className={styles['header-title-wrap']}>
-          <p className={styles['header-train']}>ICE 782</p>
+          <p className={styles['header-train']}>{trainLabel}</p>
           <p className={styles['header-route']}>{routeHeading}</p>
         </div>
 
@@ -511,7 +575,7 @@ export default function LiveNavigation() {
               <span className={styles['countdown-unit']}>Min.</span>
             </div>
             <p className={styles['countdown-train']} id="countdown-heading">
-              ICE 782 · Gleis 7
+              {trainLabel} · Gleis 7
             </p>
             <div className={styles['countdown-meta']}>
               <Clock aria-hidden="true" className={styles['countdown-meta-icon']} />
