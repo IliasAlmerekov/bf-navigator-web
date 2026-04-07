@@ -220,19 +220,94 @@ function getInactiveElevatorWarnings(
   return warnings;
 }
 
-function getManualStartsFromRoutePoints(
-  routePoints: LiveNavigationRoutePoint[]
-): LiveNavigationManualStart[] {
-  if (routePoints.length < 2) {
+function getRequiredManualStarts(): LiveNavigationManualStart[] {
+  return [
+    {
+      description: 'Starten Sie am Haupteingang und folgen Sie dem Leitweg zum Abfahrtsgleis.',
+      id: 'main-entrance',
+      label: 'Haupteingang',
+      routePointId: 'main-entrance',
+    },
+    {
+      description: 'Starten Sie an der Info-Station und folgen Sie dem Leitweg zum Abfahrtsgleis.',
+      id: 'info-point',
+      label: 'Info-Station',
+      routePointId: 'info-point',
+    },
+  ];
+}
+
+function buildManualRouteToDeparture(
+  routePoints: LiveNavigationRoutePoint[],
+  startIndex: number,
+  startId: string,
+  startLabel: string
+): LiveNavigationRoutePoint[] {
+  if (routePoints.length === 0) {
     return [];
   }
 
-  return routePoints.slice(0, -1).map((point) => ({
-    description: `Starten Sie bei ${point.label}.`,
-    id: point.id,
-    label: point.label,
-    routePointId: point.id,
-  }));
+  const boundedStartIndex = Math.min(Math.max(startIndex, 0), routePoints.length - 1);
+  const departurePoint = routePoints[0];
+  const reversedRoute = routePoints
+    .slice(0, boundedStartIndex + 1)
+    .reverse()
+    .map((point, index, points) => ({
+      ...point,
+      instruction:
+        index === points.length - 1
+          ? `Sie haben ${departurePoint.label} erreicht.`
+          : 'Folgen Sie dem Leitweg zum Abfahrtsgleis.',
+    }));
+
+  if (reversedRoute.length === 0) {
+    return [];
+  }
+
+  reversedRoute[0] = {
+    ...reversedRoute[0],
+    description: `Startpunkt ${startLabel}.`,
+    id: startId,
+    label: startLabel,
+  };
+
+  return reversedRoute;
+}
+
+function buildSelectedRouteManualFallbackRoutes(
+  routePoints: LiveNavigationRoutePoint[]
+): Record<'main-entrance' | 'info-point', LiveNavigationRoutePoint[]> {
+  const mainStartIndex = routePoints.length > 1 ? 1 : 0;
+  const infoStartIndex = routePoints.length > 2 ? 2 : mainStartIndex;
+
+  return {
+    'info-point': buildManualRouteToDeparture(
+      routePoints,
+      infoStartIndex,
+      'info-point',
+      'Info-Station'
+    ),
+    'main-entrance': buildManualRouteToDeparture(
+      routePoints,
+      mainStartIndex,
+      'main-entrance',
+      'Haupteingang'
+    ),
+  };
+}
+
+function getVisibleTrainLabel(trainNames: string[] | undefined): string {
+  if (!trainNames?.length) {
+    return 'ICE 782';
+  }
+
+  const uniqueTrainNames = trainNames
+    .map((trainName) => trainName.trim())
+    .filter(
+      (trainName, index, names) => trainName.length > 0 && names.indexOf(trainName) === index
+    );
+
+  return uniqueTrainNames.length > 0 ? uniqueTrainNames.join(' · ') : 'ICE 782';
 }
 
 function getRequiredManualStarts(
@@ -407,8 +482,11 @@ export default function LiveNavigation() {
   const selectedTouchpoints = selectedRoute?.touchpoints;
   const hasSelectedRouteTouchpoints = Boolean(selectedTouchpoints?.length);
   const derivedRoutePoints = getRoutePointsFromTouchpoints(selectedTouchpoints);
-  const hasCompleteDerivedRoutePoints = hasRouteAnchors(derivedRoutePoints);
-  const requiredManualStarts = getRequiredManualStarts(selectedTouchpoints);
+  const hasCompleteDerivedRoutePoints = derivedRoutePoints.length >= 2;
+  const requiredManualStarts = getRequiredManualStarts();
+  const selectedRouteManualFallbackRoutes = hasCompleteDerivedRoutePoints
+    ? buildSelectedRouteManualFallbackRoutes(derivedRoutePoints)
+    : null;
   const routePoints = hasCompleteDerivedRoutePoints
     ? derivedRoutePoints
     : LIVE_NAVIGATION_ROUTE_POINTS;
@@ -416,10 +494,7 @@ export default function LiveNavigation() {
     ? mergeManualFallbackRoutePoints(routePoints)
     : routePoints;
   const manualStartOptions = hasCompleteDerivedRoutePoints
-    ? mergeManualStartOptions(
-        getManualStartsFromRoutePoints(derivedRoutePoints),
-        requiredManualStarts
-      )
+    ? requiredManualStarts
     : LIVE_NAVIGATION_MANUAL_STARTS;
   const defaultManualStartId = manualStartOptions[0]?.id ?? DEFAULT_MANUAL_START_ID;
   const routeStops = hasSelectedRouteTouchpoints
@@ -431,8 +506,8 @@ export default function LiveNavigation() {
       selectedRoute?.origin)
     : FALLBACK_MAP_ORIGIN_LABEL;
   const selectedDestinationLabel = hasSelectedRouteTouchpoints
-    ? (selectedTouchpoints?.find((touchpoint) => touchpoint.kind === 'DESTINATION')?.stationName ??
-      selectedRoute?.destination ??
+    ? (selectedTouchpoints?.find((touchpoint) => touchpoint.kind === 'ORIGIN')?.stationName ??
+      selectedRoute?.origin ??
       LIVE_NAVIGATION_DESTINATION.label)
     : LIVE_NAVIGATION_DESTINATION.label;
   const routeHeading = hasSelectedRouteTouchpoints
@@ -442,7 +517,7 @@ export default function LiveNavigation() {
     selectedRoute?.transits.map((transit) => transit.trainName)
   );
   const selectedDestinationPosition = hasCompleteDerivedRoutePoints
-    ? derivedRoutePoints[derivedRoutePoints.length - 1].position
+    ? derivedRoutePoints[0].position
     : LIVE_NAVIGATION_DESTINATION.position;
   const destination = {
     ...LIVE_NAVIGATION_DESTINATION,
@@ -493,15 +568,21 @@ export default function LiveNavigation() {
     };
   }, [defaultManualStartId, geolocation, hasGeolocationSupport]);
 
-  const fallbackRoute = getRoutePointsFromManualStart(
-    manualStartId ?? defaultManualStartId,
-    manualStartOptions,
-    manualFallbackRoutePoints
-  );
+  const fallbackRoute = selectedRouteManualFallbackRoutes
+    ? (selectedRouteManualFallbackRoutes[
+        (manualStartId ?? defaultManualStartId) as keyof typeof selectedRouteManualFallbackRoutes
+      ] ?? selectedRouteManualFallbackRoutes['main-entrance'])
+    : getRoutePointsFromManualStart(
+        manualStartId ?? defaultManualStartId,
+        manualStartOptions,
+        routePoints
+      );
   const isAwaitingLiveLocation =
     geolocationState === 'requesting-location' && manualStartId === null;
   const shouldUseLivePosition = geolocationState === 'live-tracking' && livePosition !== null;
-  const activeRoute = shouldUseLivePosition ? routePoints : fallbackRoute;
+  const activeRoute = shouldUseLivePosition
+    ? (selectedRouteManualFallbackRoutes?.['main-entrance'] ?? routePoints)
+    : fallbackRoute;
   const activePosition = shouldUseLivePosition
     ? livePosition
     : (activeRoute[0]?.position ?? destination.position);
