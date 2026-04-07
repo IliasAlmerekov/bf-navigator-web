@@ -2,9 +2,10 @@ import type { ReactNode } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { TrainRouteResponse } from '../TrainSearchResults/types';
 import LiveNavigation from './LiveNavigation';
+import { LIVE_NAVIGATION_ROUTE_POINTS } from './liveNavigationData';
 import * as liveNavigationUtils from './liveNavigationUtils';
+import type { TrainRouteResponse } from '../TrainSearchResults/types';
 
 const liveNavigationMapMock = vi.fn();
 const watchPositionMock = vi.fn();
@@ -150,12 +151,15 @@ function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteR
           stepFreeAvailable: true,
           summary: 'Step-free access available',
         },
+        arrivalStop: null,
         arrivalTime: null,
+        departureStop: null,
         departureTime: '2026-04-02T09:10:00Z',
         facilities: [makeFacility(1001, 8.66312, 50.10736)],
         kind: 'ORIGIN',
         station: null,
         stationName: 'Düsseldorf Hbf',
+        walkingApproach: null,
       },
       {
         accessibility: {
@@ -169,12 +173,15 @@ function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteR
           stepFreeAvailable: true,
           summary: 'Step-free access available',
         },
+        arrivalStop: null,
         arrivalTime: '2026-04-02T10:33:00Z',
+        departureStop: null,
         departureTime: '2026-04-02T10:36:00Z',
         facilities: [makeFacility(1002, 8.66301, 50.10754)],
         kind: 'TRANSFER',
         station: null,
         stationName: 'Essen Hbf',
+        walkingApproach: null,
       },
       {
         accessibility: {
@@ -188,12 +195,15 @@ function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteR
           stepFreeAvailable: true,
           summary: 'Step-free access available',
         },
+        arrivalStop: null,
         arrivalTime: '2026-04-02T11:45:00Z',
+        departureStop: null,
         departureTime: null,
         facilities: [makeFacility(1003, 8.66292, 50.10772)],
         kind: 'DESTINATION',
         station: null,
         stationName: 'Köln Hbf',
+        walkingApproach: null,
       },
     ],
     transits: [],
@@ -538,5 +548,299 @@ describe('LiveNavigation', () => {
     view.unmount();
 
     expect(clearWatchMock).toHaveBeenCalledWith(17);
+  });
+
+  it('uses stop coordinates for origin and destination when facilities are absent', () => {
+    getSelectedTrainRouteMock.mockReturnValue({
+      origin: 'Hamburg Hbf',
+      destination: 'Braunschweig Hbf',
+      departureTime: '2026-04-02T08:29:00Z',
+      arrivalTime: '2026-04-02T10:45:00Z',
+      localizedDistanceText: '240 km',
+      localizedDurationText: '2 Stunden',
+      accessibilitySummary: {
+        activeElevators: 1,
+        activeEscalators: 0,
+        inactiveElevators: 0,
+        inactiveEscalators: 0,
+        mobilityServiceStations: 1,
+        status: 'ACCESSIBLE',
+        stepFreeStations: 1,
+        summary: '1/2 stations step-free',
+        totalStations: 2,
+      },
+      transits: [makeTransit('ICE 579')],
+      touchpoints: [
+        {
+          accessibility: {
+            activeElevators: 1,
+            activeEscalators: 0,
+            hasFacilityData: true,
+            inactiveElevators: 0,
+            inactiveEscalators: 0,
+            mobilityServiceAvailable: true,
+            status: 'ACCESSIBLE',
+            stepFreeAvailable: true,
+            summary: 'Step-free access available',
+          },
+          arrivalTime: null,
+          departureTime: '2026-04-02T08:29:00Z',
+          facilities: [
+            {
+              description: 'Facility 1001',
+              equipmentnumber: 1001,
+              geocoordX: 10.0065,
+              geocoordY: 53.5532,
+              operationalResumeDate: null,
+              operatorname: 'DB InfraGO',
+              state: 'ACTIVE',
+              stateExplanation: 'available',
+              stationnumber: 8000001,
+              type: 'ESCALATOR',
+            },
+          ],
+          kind: 'ORIGIN',
+          station: null,
+          stationName: 'Hamburg Hbf',
+          departureStop: { latitude: 53.553637, longitude: 10.006677 },
+          arrivalStop: null,
+          walkingApproach: {
+            latitude: 53.5534,
+            longitude: 10.0063,
+            instruction: 'Hier einsteigen: E',
+          },
+        },
+        {
+          accessibility: {
+            activeElevators: 0,
+            activeEscalators: 0,
+            hasFacilityData: false,
+            inactiveElevators: 0,
+            inactiveEscalators: 0,
+            mobilityServiceAvailable: false,
+            status: 'UNKNOWN',
+            stepFreeAvailable: false,
+            summary: 'Station accessibility data unavailable',
+          },
+          arrivalTime: '2026-04-02T10:45:00Z',
+          departureTime: null,
+          facilities: null,
+          kind: 'DESTINATION',
+          station: null,
+          stationName: 'Braunschweig Hbf',
+          departureStop: null,
+          arrivalStop: { latitude: 52.2524, longitude: 10.5316 },
+          walkingApproach: null,
+        },
+      ],
+    } satisfies TrainRouteResponse);
+
+    render(<LiveNavigation />);
+
+    watchErrorCallback?.({
+      code: 1,
+      message: 'Permission denied',
+      PERMISSION_DENIED: 1,
+      POSITION_UNAVAILABLE: 2,
+      TIMEOUT: 3,
+    } as GeolocationPositionError);
+
+    const routePath = (
+      liveNavigationMapMock.mock.calls.at(-1)?.[0] as { routePath: [number, number][] } | undefined
+    )?.routePath;
+
+    // Route must include departureStop coordinates [53.553637, 10.006677], not facility [53.553200, 10.006500]
+    const hasDepStopCoord = routePath?.some(
+      ([lat, lng]) => Math.abs(lat - 53.553637) < 0.0001 && Math.abs(lng - 10.006677) < 0.0001
+    );
+    expect(hasDepStopCoord).toBe(true);
+
+    // Destination should use arrivalStop coordinates [52.2524, 10.5316] when facilities are absent.
+    const hasArrivalStopCoord = routePath?.some(
+      ([lat, lng]) => Math.abs(lat - 52.2524) < 0.0001 && Math.abs(lng - 10.5316) < 0.0001
+    );
+    expect(hasArrivalStopCoord).toBe(true);
+
+    const hasFacilityCoord = routePath?.some(
+      ([lat, lng]) => Math.abs(lat - 53.5532) < 0.0001 && Math.abs(lng - 10.0065) < 0.0001
+    );
+    // Facility coordinate should NOT be the primary stop position
+    expect(hasFacilityCoord).toBe(false);
+  });
+
+  it('falls back to the default route when derived points miss the destination anchor', () => {
+    getSelectedTrainRouteMock.mockReturnValue(
+      makeSelectedRoute({
+        touchpoints: [
+          {
+            accessibility: {
+              activeElevators: 1,
+              activeEscalators: 0,
+              hasFacilityData: true,
+              inactiveElevators: 0,
+              inactiveEscalators: 0,
+              mobilityServiceAvailable: true,
+              status: 'ACCESSIBLE',
+              stepFreeAvailable: true,
+              summary: 'Step-free access available',
+            },
+            arrivalTime: null,
+            departureTime: '2026-04-02T09:10:00Z',
+            facilities: [makeFacility(3001, 8.6633, 50.1074)],
+            kind: 'ORIGIN',
+            station: null,
+            stationName: 'Düsseldorf Hbf',
+            departureStop: { latitude: 50.1075, longitude: 8.6635 },
+            arrivalStop: null,
+            walkingApproach: {
+              latitude: 50.1072,
+              longitude: 8.6631,
+              instruction: 'Start am Haupteingang',
+            },
+          },
+          {
+            accessibility: {
+              activeElevators: 0,
+              activeEscalators: 0,
+              hasFacilityData: false,
+              inactiveElevators: 0,
+              inactiveEscalators: 0,
+              mobilityServiceAvailable: false,
+              status: 'UNKNOWN',
+              stepFreeAvailable: false,
+              summary: 'Station accessibility data unavailable',
+            },
+            arrivalTime: '2026-04-02T11:45:00Z',
+            departureTime: null,
+            facilities: null,
+            kind: 'DESTINATION',
+            station: null,
+            stationName: 'Köln Hbf',
+            departureStop: null,
+            arrivalStop: null,
+            walkingApproach: null,
+          },
+        ],
+      })
+    );
+
+    render(<LiveNavigation />);
+
+    const [fallbackLat, fallbackLng] = LIVE_NAVIGATION_ROUTE_POINTS[0].position;
+
+    watchSuccessCallback?.({
+      coords: {
+        accuracy: 5,
+        altitude: null,
+        altitudeAccuracy: null,
+        heading: null,
+        latitude: fallbackLat,
+        longitude: fallbackLng,
+        speed: null,
+      },
+      timestamp: Date.now(),
+    } as GeolocationPosition);
+
+    const routePath = (
+      liveNavigationMapMock.mock.calls.at(-1)?.[0] as { routePath: [number, number][] } | undefined
+    )?.routePath;
+
+    expect(routePath).toEqual(LIVE_NAVIGATION_ROUTE_POINTS.map((point) => point.position));
+  });
+
+  it('shows inactive elevator warning when origin touchpoint has inactive elevators', () => {
+    getSelectedTrainRouteMock.mockReturnValue({
+      origin: 'Hamburg Hbf',
+      destination: 'Braunschweig Hbf',
+      departureTime: '2026-04-02T08:29:00Z',
+      arrivalTime: '2026-04-02T10:45:00Z',
+      localizedDistanceText: '240 km',
+      localizedDurationText: '2 Stunden',
+      accessibilitySummary: {
+        activeElevators: 0,
+        activeEscalators: 0,
+        inactiveElevators: 1,
+        inactiveEscalators: 0,
+        mobilityServiceStations: 0,
+        status: 'LIMITED',
+        stepFreeStations: 0,
+        summary: '0/2 stations step-free',
+        totalStations: 2,
+      },
+      transits: [makeTransit('ICE 579')],
+      touchpoints: [
+        {
+          accessibility: {
+            activeElevators: 0,
+            activeEscalators: 0,
+            hasFacilityData: true,
+            inactiveElevators: 1,
+            inactiveEscalators: 0,
+            mobilityServiceAvailable: false,
+            status: 'LIMITED',
+            stepFreeAvailable: false,
+            summary: 'Elevators 0 active / 1 inactive',
+          },
+          arrivalTime: null,
+          departureTime: '2026-04-02T08:29:00Z',
+          facilities: [
+            {
+              description: 'Lift to platform 7',
+              equipmentnumber: 1001,
+              geocoordX: 10.0065,
+              geocoordY: 53.5532,
+              operationalResumeDate: '2026-04-15',
+              operatorname: 'DB InfraGO',
+              state: 'INACTIVE',
+              stateExplanation: 'Maintenance',
+              stationnumber: 12345,
+              type: 'ELEVATOR',
+            },
+          ],
+          kind: 'ORIGIN',
+          station: null,
+          stationName: 'Hamburg Hbf',
+          departureStop: { latitude: 53.553637, longitude: 10.006677 },
+          arrivalStop: null,
+          walkingApproach: null,
+        },
+        {
+          accessibility: {
+            activeElevators: 0,
+            activeEscalators: 0,
+            hasFacilityData: false,
+            inactiveElevators: 0,
+            inactiveEscalators: 0,
+            mobilityServiceAvailable: false,
+            status: 'UNKNOWN',
+            stepFreeAvailable: false,
+            summary: 'Station accessibility data unavailable',
+          },
+          arrivalTime: '2026-04-02T10:45:00Z',
+          departureTime: null,
+          facilities: null,
+          kind: 'DESTINATION',
+          station: null,
+          stationName: 'Braunschweig Hbf',
+          departureStop: null,
+          arrivalStop: { latitude: 52.2524, longitude: 10.5316 },
+          walkingApproach: null,
+        },
+      ],
+    } satisfies TrainRouteResponse);
+
+    render(<LiveNavigation />);
+
+    watchErrorCallback?.({
+      code: 1,
+      message: 'Permission denied',
+      PERMISSION_DENIED: 1,
+      POSITION_UNAVAILABLE: 2,
+      TIMEOUT: 3,
+    } as GeolocationPositionError);
+
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/aufzug.*nicht verfügbar/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/2026-04-15/);
   });
 });
