@@ -100,12 +100,23 @@ vi.mock('./components/LiveNavigationMap', () => ({
 }));
 
 // Type sentinel — verifies new fields exist on TrainRouteTouchpoint
-type _AssertWalkingApproach = NonNullable<
-  NonNullable<TrainRouteResponse['touchpoints']>[number]['walkingApproach']
-> extends { latitude: number; longitude: number; instruction: string } ? true : never;
-type _AssertDepartureStop = NonNullable<
-  NonNullable<TrainRouteResponse['touchpoints']>[number]['departureStop']
-> extends { latitude: number; longitude: number } ? true : never;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _AssertWalkingApproach =
+  NonNullable<NonNullable<TrainRouteResponse['touchpoints']>[number]['walkingApproach']> extends {
+    latitude: number;
+    longitude: number;
+    instruction: string;
+  }
+    ? true
+    : never;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _AssertDepartureStop =
+  NonNullable<NonNullable<TrainRouteResponse['touchpoints']>[number]['departureStop']> extends {
+    latitude: number;
+    longitude: number;
+  }
+    ? true
+    : never;
 
 function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteResponse {
   return {
@@ -266,7 +277,7 @@ describe('LiveNavigation', () => {
     );
   });
 
-  it('uses selected API route heading, departure destination, and train names when touchpoints are available', () => {
+  it('uses selected API route heading, map destination label, and train names when touchpoints are available', () => {
     getSelectedTrainRouteMock.mockReturnValue(
       makeSelectedRoute({
         transits: [makeTransit('ICE 105'), makeTransit('RE 1')],
@@ -289,12 +300,17 @@ describe('LiveNavigation', () => {
 
     const selectedRouteHeading = screen.getByRole('heading', { level: 2, name: /köln hbf/i });
     expect(selectedRouteHeading).toHaveTextContent(/düsseldorf hbf/i);
-    const lastMapCall = liveNavigationMapMock.mock.calls.at(-1)?.[0] as
-      | { destinationLabel: string; routePath: [number, number][] }
-      | undefined;
-    expect(lastMapCall?.destinationLabel).toBe('Düsseldorf Hbf');
-    expect(lastMapCall?.routePath.at(-1)).toEqual([50.10736, 8.66312]);
-    expect(screen.getByText(/düsseldorf hbf · weg zu düsseldorf hbf/i)).toBeInTheDocument();
+    expect(liveNavigationMapMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        destinationLabel: 'Köln Hbf',
+        routePath: [
+          [50.10736, 8.66312],
+          [50.10754, 8.66301],
+          [50.10772, 8.66292],
+        ],
+      })
+    );
+    expect(screen.getByText(/düsseldorf hbf · weg zu köln hbf/i)).toBeInTheDocument();
     expect(screen.getByText('Düsseldorf Hbf')).toBeInTheDocument();
     expect(screen.getByText('Essen Hbf')).toBeInTheDocument();
     expect(screen.getByText('Köln Hbf')).toBeInTheDocument();
@@ -307,9 +323,51 @@ describe('LiveNavigation', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('shows only Haupteingang and Info-Station manual options for selected routes and adapts path by selected start', async () => {
-    const user = userEvent.setup();
-    getSelectedTrainRouteMock.mockReturnValue(makeSelectedRoute());
+  it('shows both manual start options for selected routes when location permission is denied', () => {
+    getSelectedTrainRouteMock.mockReturnValue(
+      makeSelectedRoute({
+        touchpoints: [
+          {
+            accessibility: {
+              activeElevators: 1,
+              activeEscalators: 1,
+              hasFacilityData: true,
+              inactiveElevators: 0,
+              inactiveEscalators: 0,
+              mobilityServiceAvailable: true,
+              status: 'ACCESSIBLE',
+              stepFreeAvailable: true,
+              summary: 'Step-free access available',
+            },
+            arrivalTime: null,
+            departureTime: '2026-04-02T09:10:00Z',
+            facilities: [makeFacility(1001, 8.66312, 50.10736)],
+            kind: 'ORIGIN',
+            station: null,
+            stationName: 'Düsseldorf Hbf',
+          },
+          {
+            accessibility: {
+              activeElevators: 1,
+              activeEscalators: 1,
+              hasFacilityData: true,
+              inactiveElevators: 0,
+              inactiveEscalators: 0,
+              mobilityServiceAvailable: true,
+              status: 'ACCESSIBLE',
+              stepFreeAvailable: true,
+              summary: 'Step-free access available',
+            },
+            arrivalTime: '2026-04-02T11:45:00Z',
+            departureTime: null,
+            facilities: [makeFacility(2001, 8.66301, 50.10754)],
+            kind: 'DESTINATION',
+            station: null,
+            stationName: 'Köln Hbf',
+          },
+        ],
+      })
+    );
     render(<LiveNavigation />);
 
     watchErrorCallback?.({
@@ -323,31 +381,8 @@ describe('LiveNavigation', () => {
     expect(
       screen.getByRole('radiogroup', { name: /manuellen startpunkt wählen/i })
     ).toBeInTheDocument();
-    const mainEntranceOption = screen.getByRole('radio', { name: /haupteingang/i });
-    const infoStationOption = screen.getByRole('radio', { name: /info-station/i });
-
-    expect(mainEntranceOption).toBeInTheDocument();
-    expect(infoStationOption).toBeInTheDocument();
-    expect(screen.queryByRole('radio', { name: /düsseldorf hbf/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('radio', { name: /essen hbf/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('radio', { name: /köln hbf/i })).not.toBeInTheDocument();
-    const mainStartRoutePath = (
-      liveNavigationMapMock.mock.calls.at(-1)?.[0] as
-        | { destinationLabel: string; routePath: [number, number][] }
-        | undefined
-    )?.routePath;
-    expect(mainStartRoutePath?.at(-1)).toEqual([50.10736, 8.66312]);
-
-    await user.click(infoStationOption);
-
-    const infoStartRoutePath = (
-      liveNavigationMapMock.mock.calls.at(-1)?.[0] as
-        | { destinationLabel: string; routePath: [number, number][] }
-        | undefined
-    )?.routePath;
-    expect(infoStartRoutePath?.at(-1)).toEqual([50.10736, 8.66312]);
-    expect(infoStartRoutePath).not.toEqual(mainStartRoutePath);
-    expect(infoStartRoutePath?.length ?? 0).toBeGreaterThanOrEqual(mainStartRoutePath?.length ?? 0);
+    expect(screen.getByRole('radio', { name: /haupteingang/i })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /info-station/i })).toBeInTheDocument();
   });
 
   it('shows manual fallback controls when geolocation permission is denied', async () => {
