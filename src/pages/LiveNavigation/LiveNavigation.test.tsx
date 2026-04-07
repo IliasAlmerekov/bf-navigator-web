@@ -314,7 +314,7 @@ describe('LiveNavigation', () => {
       | { destinationLabel: string; routePath: [number, number][] }
       | undefined;
     expect(lastMapCall?.destinationLabel).toBe('Düsseldorf Hbf');
-    expect(lastMapCall?.routePath.at(-1)).toEqual([50.10736, 8.66312]);
+    expect(lastMapCall?.routePath.at(-1)).toEqual([50.10772, 8.66292]);
     expect(screen.getByText(/düsseldorf hbf · weg zu düsseldorf hbf/i)).toBeInTheDocument();
     expect(screen.getByText('Düsseldorf Hbf')).toBeInTheDocument();
     expect(screen.getByText('Essen Hbf')).toBeInTheDocument();
@@ -328,7 +328,7 @@ describe('LiveNavigation', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('shows only Haupteingang and Info-Station manual options for selected routes and adapts path by selected start', async () => {
+  it('falls back to default manual options for selected routes without an accessible origin-only path', async () => {
     const user = userEvent.setup();
     getSelectedTrainRouteMock.mockReturnValue(makeSelectedRoute());
     render(<LiveNavigation />);
@@ -345,9 +345,11 @@ describe('LiveNavigation', () => {
       screen.getByRole('radiogroup', { name: /manuellen startpunkt wählen/i })
     ).toBeInTheDocument();
     const mainEntranceOption = screen.getByRole('radio', { name: /haupteingang/i });
-    const infoStationOption = screen.getByRole('radio', { name: /info-station/i });
+    const infoStationOption = screen.getByRole('radio', { name: /info point/i });
+    const elevatorOption = screen.getByRole('radio', { name: /aufzug e4/i });
 
     expect(mainEntranceOption).toBeInTheDocument();
+    expect(elevatorOption).toBeInTheDocument();
     expect(infoStationOption).toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /düsseldorf hbf/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /essen hbf/i })).not.toBeInTheDocument();
@@ -357,7 +359,7 @@ describe('LiveNavigation', () => {
         | { destinationLabel: string; routePath: [number, number][] }
         | undefined
     )?.routePath;
-    expect(mainStartRoutePath?.at(-1)).toEqual([50.10736, 8.66312]);
+    expect(mainStartRoutePath?.at(-1)).toEqual([50.10772, 8.66292]);
 
     await user.click(infoStationOption);
 
@@ -366,9 +368,9 @@ describe('LiveNavigation', () => {
         | { destinationLabel: string; routePath: [number, number][] }
         | undefined
     )?.routePath;
-    expect(infoStartRoutePath?.at(-1)).toEqual([50.10736, 8.66312]);
+    expect(infoStartRoutePath?.at(-1)).toEqual([50.10772, 8.66292]);
     expect(infoStartRoutePath).not.toEqual(mainStartRoutePath);
-    expect(infoStartRoutePath?.length ?? 0).toBeGreaterThanOrEqual(mainStartRoutePath?.length ?? 0);
+    expect(infoStartRoutePath?.length ?? 0).toBeLessThanOrEqual(mainStartRoutePath?.length ?? 0);
   });
 
   it('shows manual fallback controls when geolocation permission is denied', async () => {
@@ -550,7 +552,7 @@ describe('LiveNavigation', () => {
     expect(clearWatchMock).toHaveBeenCalledWith(17);
   });
 
-  it('uses stop coordinates for origin and destination when facilities are absent', () => {
+  it('falls back to the default route when no active elevators are available on the origin touchpoint', () => {
     getSelectedTrainRouteMock.mockReturnValue({
       origin: 'Hamburg Hbf',
       destination: 'Braunschweig Hbf',
@@ -649,26 +651,10 @@ describe('LiveNavigation', () => {
       liveNavigationMapMock.mock.calls.at(-1)?.[0] as { routePath: [number, number][] } | undefined
     )?.routePath;
 
-    // Route must include departureStop coordinates [53.553637, 10.006677], not facility [53.553200, 10.006500]
-    const hasDepStopCoord = routePath?.some(
-      ([lat, lng]) => Math.abs(lat - 53.553637) < 0.0001 && Math.abs(lng - 10.006677) < 0.0001
-    );
-    expect(hasDepStopCoord).toBe(true);
-
-    // Destination should use arrivalStop coordinates [52.2524, 10.5316] when facilities are absent.
-    const hasArrivalStopCoord = routePath?.some(
-      ([lat, lng]) => Math.abs(lat - 52.2524) < 0.0001 && Math.abs(lng - 10.5316) < 0.0001
-    );
-    expect(hasArrivalStopCoord).toBe(true);
-
-    const hasFacilityCoord = routePath?.some(
-      ([lat, lng]) => Math.abs(lat - 53.5532) < 0.0001 && Math.abs(lng - 10.0065) < 0.0001
-    );
-    // Facility coordinate should NOT be the primary stop position
-    expect(hasFacilityCoord).toBe(false);
+    expect(routePath).toEqual(LIVE_NAVIGATION_ROUTE_POINTS.map((point) => point.position));
   });
 
-  it('falls back to the default route when derived points miss the destination anchor', () => {
+  it('uses the origin-only accessible route when walking approach, active elevator, and departure stop are present', () => {
     getSelectedTrainRouteMock.mockReturnValue(
       makeSelectedRoute({
         touchpoints: [
@@ -726,26 +712,26 @@ describe('LiveNavigation', () => {
 
     render(<LiveNavigation />);
 
-    const [fallbackLat, fallbackLng] = LIVE_NAVIGATION_ROUTE_POINTS[0].position;
+    watchErrorCallback?.({
+      code: 1,
+      message: 'Permission denied',
+      PERMISSION_DENIED: 1,
+      POSITION_UNAVAILABLE: 2,
+      TIMEOUT: 3,
+    } as GeolocationPositionError);
 
-    watchSuccessCallback?.({
-      coords: {
-        accuracy: 5,
-        altitude: null,
-        altitudeAccuracy: null,
-        heading: null,
-        latitude: fallbackLat,
-        longitude: fallbackLng,
-        speed: null,
-      },
-      timestamp: Date.now(),
-    } as GeolocationPosition);
+    expect(screen.getByRole('heading', { name: /orientierungspunkte/i })).toBeInTheDocument();
+    expect(screen.getByText('Facility 3001, Aufzug aktiv')).toBeInTheDocument();
 
     const routePath = (
       liveNavigationMapMock.mock.calls.at(-1)?.[0] as { routePath: [number, number][] } | undefined
     )?.routePath;
 
-    expect(routePath).toEqual(LIVE_NAVIGATION_ROUTE_POINTS.map((point) => point.position));
+    expect(routePath).toEqual([
+      [50.1072, 8.6631],
+      [50.1074, 8.6633],
+      [50.1075, 8.6635],
+    ]);
   });
 
   it('shows a blocked-route warning and a Hilfe rufen button when no active elevators exist', () => {
@@ -780,10 +766,28 @@ describe('LiveNavigation', () => {
 
     render(<LiveNavigation />);
 
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      /barrierefreier weg derzeit nicht verfügbar/i
-    );
+    watchErrorCallback?.({
+      code: 1,
+      message: 'Permission denied',
+      PERMISSION_DENIED: 1,
+      POSITION_UNAVAILABLE: 2,
+      TIMEOUT: 3,
+    } as GeolocationPositionError);
+
+    expect(
+      screen.getByRole('heading', { name: /barrierefreier weg nicht verfügbar/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/barrierefreie weg zum abfahrtspunkt ist derzeit nicht verfügbar/i)
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /hilfe rufen/i })).toBeInTheDocument();
+
+    const mapProps = liveNavigationMapMock.mock.calls.at(-1)?.[0] as
+      | { markers?: Array<{ kind: string }> }
+      | undefined;
+    expect(mapProps?.markers?.map((marker) => marker.kind)).toEqual(
+      expect.arrayContaining(['entrance', 'inactive-elevator', 'escalator', 'departure'])
+    );
   });
 
   it('shows inactive elevator warning when origin touchpoint has inactive elevators', () => {
@@ -877,8 +881,7 @@ describe('LiveNavigation', () => {
       TIMEOUT: 3,
     } as GeolocationPositionError);
 
-    expect(screen.getByRole('alert')).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent(/aufzug.*nicht verfügbar/i);
-    expect(screen.getByRole('alert')).toHaveTextContent(/2026-04-15/);
+    expect(screen.getByText(/aufzug nicht verfügbar bei hamburg hbf/i)).toBeInTheDocument();
+    expect(screen.getByText(/2026-04-15/)).toBeInTheDocument();
   });
 });

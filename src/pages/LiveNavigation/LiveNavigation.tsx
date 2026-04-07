@@ -23,8 +23,13 @@ import {
 } from './liveNavigationData';
 import { ManualStartSelector } from './components/ManualStartSelector';
 import { LiveNavigationMap } from './components/LiveNavigationMap';
-import { buildInstructionState, getRoutePointsFromManualStart } from './liveNavigationUtils';
-import type { TrainRouteFacility, TrainRouteTouchpoint } from '../TrainSearchResults/types';
+import {
+  buildInstructionState,
+  buildOriginRouteModel,
+  getRoutePointsFromManualStart,
+  type LiveNavigationMapMarker,
+} from './liveNavigationUtils';
+import type { TrainRouteTouchpoint } from '../TrainSearchResults/types';
 import { getSelectedTrainRoute } from '../../utils/selectedTrainRouteStorage';
 import styles from './LiveNavigation.module.css';
 
@@ -53,6 +58,7 @@ type RouteStop = {
 };
 
 const DEFAULT_MANUAL_START_ID = 'main-entrance';
+const MAX_INACTIVE_ELEVATOR_WARNINGS = 20;
 
 const ROUTE_STOPS: RouteStop[] = [
   {
@@ -89,107 +95,6 @@ function toLatLng(position: GeolocationPosition): LiveNavigationLatLng {
   return [position.coords.latitude, position.coords.longitude];
 }
 
-function isValidCoordinate(value: number | null): value is number {
-  return value !== null && Number.isFinite(value);
-}
-
-function hasValidCoordinates(
-  facility: TrainRouteFacility
-): facility is TrainRouteFacility & { geocoordX: number; geocoordY: number } {
-  return isValidCoordinate(facility.geocoordX) && isValidCoordinate(facility.geocoordY);
-}
-
-function getStopPosition(
-  stop: TrainRouteTouchpoint['departureStop'] | TrainRouteTouchpoint['arrivalStop']
-): LiveNavigationLatLng | null {
-  if (stop?.latitude == null || stop?.longitude == null) {
-    return null;
-  }
-
-  return [stop.latitude, stop.longitude];
-}
-
-function getTouchpointPosition(touchpoint: TrainRouteTouchpoint): LiveNavigationLatLng | null {
-  const departurePosition = getStopPosition(touchpoint.departureStop);
-  if (departurePosition) {
-    return departurePosition;
-  }
-
-  const arrivalPosition = getStopPosition(touchpoint.arrivalStop);
-  if (arrivalPosition) {
-    return arrivalPosition;
-  }
-
-  const facilityWithCoordinates = (touchpoint.facilities ?? []).find(hasValidCoordinates);
-  if (!facilityWithCoordinates) {
-    return null;
-  }
-
-  return [facilityWithCoordinates.geocoordY, facilityWithCoordinates.geocoordX];
-}
-
-function getActiveElevatorPoints(
-  touchpoint: TrainRouteTouchpoint,
-  index: number
-): LiveNavigationRoutePoint[] {
-  return (touchpoint.facilities ?? [])
-    .filter(
-      (f): f is TrainRouteFacility & { geocoordX: number; geocoordY: number } =>
-        f.type === 'ELEVATOR' && f.state === 'ACTIVE' && hasValidCoordinates(f)
-    )
-    .map((f, elevatorIndex) => ({
-      description: f.description,
-      id: `elevator-${index}-${elevatorIndex}`,
-      instruction: `Nehmen Sie ${f.description} zur Plattform.`,
-      label: f.description,
-      position: [f.geocoordY, f.geocoordX] as LiveNavigationLatLng,
-    }));
-}
-
-function getRoutePointsFromTouchpoints(
-  touchpoints: TrainRouteTouchpoint[] | undefined
-): LiveNavigationRoutePoint[] {
-  if (!touchpoints?.length) {
-    return [];
-  }
-
-  const points: LiveNavigationRoutePoint[] = [];
-
-  for (const [index, touchpoint] of touchpoints.entries()) {
-    if (touchpoint.kind !== 'DESTINATION' && touchpoint.walkingApproach != null) {
-      points.push({
-        description: `Eingang ${touchpoint.stationName}.`,
-        id: `entrance-${index}`,
-        instruction:
-          touchpoint.walkingApproach.instruction ??
-          `Betreten Sie ${touchpoint.stationName} am Eingang.`,
-        label: `Eingang ${touchpoint.stationName}`,
-        position: [touchpoint.walkingApproach.latitude, touchpoint.walkingApproach.longitude],
-      });
-    }
-
-    points.push(...getActiveElevatorPoints(touchpoint, index));
-
-    const position = getTouchpointPosition(touchpoint);
-    if (position == null) {
-      continue;
-    }
-
-    points.push({
-      description: `Orientierungspunkt: ${touchpoint.stationName}.`,
-      id: `${touchpoint.kind.toLowerCase()}-${index}`,
-      instruction:
-        touchpoint.kind === 'DESTINATION'
-          ? `Sie haben ${touchpoint.stationName} erreicht.`
-          : `Folgen Sie dem Leitweg in Richtung ${touchpoint.stationName}.`,
-      label: touchpoint.stationName,
-      position,
-    });
-  }
-
-  return points;
-}
-
 type InactiveElevatorWarning = {
   description: string;
   operationalResumeDate: string | null;
@@ -213,70 +118,15 @@ function getInactiveElevatorWarnings(
           operationalResumeDate: facility.operationalResumeDate,
           stationName: touchpoint.stationName,
         });
+
+        if (warnings.length >= MAX_INACTIVE_ELEVATOR_WARNINGS) {
+          return warnings;
+        }
       }
     }
   }
 
   return warnings;
-}
-
-function buildManualRouteToDeparture(
-  routePoints: LiveNavigationRoutePoint[],
-  startIndex: number,
-  startId: string,
-  startLabel: string
-): LiveNavigationRoutePoint[] {
-  if (routePoints.length === 0) {
-    return [];
-  }
-
-  const boundedStartIndex = Math.min(Math.max(startIndex, 0), routePoints.length - 1);
-  const departurePoint = routePoints[0];
-  const reversedRoute = routePoints
-    .slice(0, boundedStartIndex + 1)
-    .reverse()
-    .map((point, index, points) => ({
-      ...point,
-      instruction:
-        index === points.length - 1
-          ? `Sie haben ${departurePoint.label} erreicht.`
-          : 'Folgen Sie dem Leitweg zum Abfahrtsgleis.',
-    }));
-
-  if (reversedRoute.length === 0) {
-    return [];
-  }
-
-  reversedRoute[0] = {
-    ...reversedRoute[0],
-    description: `Startpunkt ${startLabel}.`,
-    id: startId,
-    label: startLabel,
-  };
-
-  return reversedRoute;
-}
-
-function buildSelectedRouteManualFallbackRoutes(
-  routePoints: LiveNavigationRoutePoint[]
-): Record<'main-entrance' | 'info-point', LiveNavigationRoutePoint[]> {
-  const mainStartIndex = routePoints.length > 1 ? 1 : 0;
-  const infoStartIndex = routePoints.length > 2 ? 2 : mainStartIndex;
-
-  return {
-    'info-point': buildManualRouteToDeparture(
-      routePoints,
-      infoStartIndex,
-      'info-point',
-      'Info-Station'
-    ),
-    'main-entrance': buildManualRouteToDeparture(
-      routePoints,
-      mainStartIndex,
-      'main-entrance',
-      'Haupteingang'
-    ),
-  };
 }
 
 function getVisibleTrainLabel(trainNames: string[] | undefined): string {
@@ -293,28 +143,20 @@ function getVisibleTrainLabel(trainNames: string[] | undefined): string {
   return uniqueTrainNames.length > 0 ? uniqueTrainNames.join(' · ') : 'ICE 782';
 }
 
-function hasRouteAnchors(routePoints: LiveNavigationRoutePoint[]) {
-  const hasOriginAnchor = routePoints.some((point) => point.id.startsWith('origin-'));
-  const hasDestinationAnchor = routePoints.some((point) => point.id.startsWith('destination-'));
-
-  return hasOriginAnchor && hasDestinationAnchor;
-}
-
 function getRequiredManualStarts(
-  touchpoints: TrainRouteTouchpoint[] | undefined
+  routePoints: LiveNavigationRoutePoint[]
 ): LiveNavigationManualStart[] {
-  const originIndex = touchpoints?.findIndex((touchpoint) => touchpoint.kind === 'ORIGIN') ?? -1;
-  const originTouchpoint = originIndex >= 0 ? touchpoints?.[originIndex] : undefined;
-  const hasOriginWalkingApproach = originTouchpoint?.walkingApproach != null && originIndex >= 0;
-  const entranceRoutePointId = hasOriginWalkingApproach
-    ? `entrance-${originIndex}`
+  const entranceRoutePointId = routePoints.some((point) => point.id === 'origin-entrance')
+    ? 'origin-entrance'
     : DEFAULT_MANUAL_START_ID;
+  const infoRoutePointId =
+    routePoints.find((point) => point.id.startsWith('active-elevator-'))?.id ??
+    routePoints[1]?.id ??
+    entranceRoutePointId;
 
   return [
     {
-      description: hasOriginWalkingApproach
-        ? 'Starten Sie am Eingang und folgen Sie dem Leitweg zum Abfahrtsgleis.'
-        : 'Starten Sie am Haupteingang und folgen Sie dem Leitweg zum Abfahrtsgleis.',
+      description: 'Starten Sie am Eingang und folgen Sie dem Leitweg zum Abfahrtsgleis.',
       id: 'main-entrance',
       label: 'Haupteingang',
       routePointId: entranceRoutePointId,
@@ -323,7 +165,7 @@ function getRequiredManualStarts(
       description: 'Starten Sie an der Info-Station und folgen Sie dem Leitweg zum Abfahrtsgleis.',
       id: 'info-point',
       label: 'Info-Station',
-      routePointId: 'info-point',
+      routePointId: infoRoutePointId,
     },
   ];
 }
@@ -423,19 +265,18 @@ export default function LiveNavigation() {
   const selectedRoute = getSelectedTrainRoute();
   const selectedTouchpoints = selectedRoute?.touchpoints;
   const hasSelectedRouteTouchpoints = Boolean(selectedTouchpoints?.length);
-  const derivedRoutePoints = getRoutePointsFromTouchpoints(selectedTouchpoints);
-  const hasCompleteDerivedRoutePoints =
-    derivedRoutePoints.length >= 2 && hasRouteAnchors(derivedRoutePoints);
-  const requiredManualStarts = getRequiredManualStarts(selectedTouchpoints);
-  const selectedRouteManualFallbackRoutes = hasCompleteDerivedRoutePoints
-    ? buildSelectedRouteManualFallbackRoutes(derivedRoutePoints)
-    : null;
-  const routePoints = hasCompleteDerivedRoutePoints
-    ? derivedRoutePoints
+  const originRouteModel = buildOriginRouteModel(selectedTouchpoints);
+  const hasSelectedAccessibleRoute = originRouteModel.hasAccessibleRoute;
+  const routePoints = hasSelectedAccessibleRoute
+    ? originRouteModel.routePoints
     : LIVE_NAVIGATION_ROUTE_POINTS;
-  const manualStartOptions = hasCompleteDerivedRoutePoints
-    ? requiredManualStarts
+  const manualStartOptions = hasSelectedAccessibleRoute
+    ? getRequiredManualStarts(routePoints)
     : LIVE_NAVIGATION_MANUAL_STARTS;
+  const mapMarkers: LiveNavigationMapMarker[] | undefined =
+    hasSelectedRouteTouchpoints && originRouteModel.markers.length > 0
+      ? originRouteModel.markers
+      : undefined;
   const defaultManualStartId = manualStartOptions[0]?.id ?? DEFAULT_MANUAL_START_ID;
   const routeStops = hasSelectedRouteTouchpoints
     ? getRouteStopsFromTouchpoints(selectedTouchpoints)
@@ -456,9 +297,10 @@ export default function LiveNavigation() {
   const trainLabel = getVisibleTrainLabel(
     selectedRoute?.transits.map((transit) => transit.trainName)
   );
-  const selectedDestinationPosition = hasCompleteDerivedRoutePoints
-    ? derivedRoutePoints[0].position
-    : LIVE_NAVIGATION_DESTINATION.position;
+  const selectedDestinationPosition =
+    hasSelectedAccessibleRoute && originRouteModel.routePoints.length > 0
+      ? originRouteModel.routePoints[originRouteModel.routePoints.length - 1].position
+      : LIVE_NAVIGATION_DESTINATION.position;
   const destination = {
     ...LIVE_NAVIGATION_DESTINATION,
     label: selectedDestinationLabel,
@@ -513,20 +355,11 @@ export default function LiveNavigation() {
     manualStartOptions,
     routePoints
   );
-  const fallbackRoute =
-    manualStartRouteSlice !== routePoints
-      ? manualStartRouteSlice
-      : (selectedRouteManualFallbackRoutes?.[
-          (manualStartId ?? defaultManualStartId) as keyof typeof selectedRouteManualFallbackRoutes
-        ] ??
-        selectedRouteManualFallbackRoutes?.['main-entrance'] ??
-        routePoints);
+  const fallbackRoute = manualStartRouteSlice;
   const isAwaitingLiveLocation =
     geolocationState === 'requesting-location' && manualStartId === null;
   const shouldUseLivePosition = geolocationState === 'live-tracking' && livePosition !== null;
-  const activeRoute = shouldUseLivePosition
-    ? (selectedRouteManualFallbackRoutes?.['main-entrance'] ?? routePoints)
-    : fallbackRoute;
+  const activeRoute = shouldUseLivePosition ? routePoints : fallbackRoute;
   const activePosition = shouldUseLivePosition
     ? livePosition
     : (activeRoute[0]?.position ?? destination.position);
@@ -553,6 +386,25 @@ export default function LiveNavigation() {
     : `Startpunkt: ${shouldUseLivePosition ? 'Aktueller Standort' : selectedManualStartLabel}`;
   const statusTone = getStatusTone(geolocationState);
   const statusMessage = getStatusMessage(geolocationState);
+  let statusBannerIcon = (
+    <CheckCircle2 aria-hidden="true" className={styles['status-banner-icon']} />
+  );
+
+  if (statusTone === 'warning') {
+    statusBannerIcon = (
+      <TriangleAlert aria-hidden="true" className={styles['status-banner-icon']} />
+    );
+  } else if (statusTone === 'neutral') {
+    statusBannerIcon = <Navigation aria-hidden="true" className={styles['status-banner-icon']} />;
+  }
+
+  let instructionHeading = 'Keine Navigationsschritte verfügbar';
+
+  if (isAwaitingLiveLocation) {
+    instructionHeading = 'Standort wird ermittelt';
+  } else if (hasActiveRoute) {
+    instructionHeading = routeInstruction.currentStepDescription;
+  }
 
   function handleManualStartChange(startId: string) {
     setManualStartId(startId);
@@ -599,13 +451,7 @@ export default function LiveNavigation() {
             data-tone={statusTone}
             role="status"
           >
-            {statusTone === 'warning' ? (
-              <TriangleAlert aria-hidden="true" className={styles['status-banner-icon']} />
-            ) : statusTone === 'neutral' ? (
-              <Navigation aria-hidden="true" className={styles['status-banner-icon']} />
-            ) : (
-              <CheckCircle2 aria-hidden="true" className={styles['status-banner-icon']} />
-            )}
+            {statusBannerIcon}
             <span className={styles['status-banner-text']}>{statusMessage}</span>
           </section>
 
@@ -613,11 +459,7 @@ export default function LiveNavigation() {
             <div className={styles['instruction-pulse-ring']} aria-hidden="true" />
             <p className={styles['instruction-kicker']}>Nächster Schritt</p>
             <h1 className={styles['instruction-heading']} id="instruction-heading">
-              {isAwaitingLiveLocation
-                ? 'Standort wird ermittelt'
-                : hasActiveRoute
-                  ? routeInstruction.currentStepDescription
-                  : 'Keine Navigationsschritte verfügbar'}
+              {instructionHeading}
             </h1>
             <p className={styles['instruction-detail']}>
               <MapPin aria-hidden="true" className={styles['instruction-detail-icon']} />
@@ -625,6 +467,35 @@ export default function LiveNavigation() {
             </p>
             <p className={styles['instruction-meta']}>{instructionHint}</p>
           </section>
+
+          {hasSelectedRouteTouchpoints && originRouteModel.warningMessage ? (
+            <section className={styles['warning-card']} role="alert" aria-live="assertive">
+              <div className={styles['warning-copy']}>
+                <TriangleAlert aria-hidden="true" />
+                <div>
+                  <h2>Barrierefreier Weg nicht verfügbar</h2>
+                  <p>{originRouteModel.warningMessage}</p>
+                </div>
+              </div>
+              <button className={styles['help-button']} type="button">
+                Hilfe rufen
+              </button>
+            </section>
+          ) : null}
+
+          {mapMarkers?.length ? (
+            <section
+              aria-labelledby="karte-orientierung-heading"
+              className={styles['marker-summary']}
+            >
+              <h2 id="karte-orientierung-heading">Orientierungspunkte</h2>
+              <ul>
+                {mapMarkers.map((marker) => (
+                  <li key={marker.id}>{marker.accessibleLabel}</li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           <section
             aria-label={`Karte – Weg zu ${destination.label}`}
@@ -641,6 +512,7 @@ export default function LiveNavigation() {
                 currentPosition={activePosition}
                 destinationLabel={destination.label}
                 destinationPosition={destination.position}
+                markers={mapMarkers}
                 nextLabel={routeInstruction.nextLabel}
                 routePath={routeInstruction.routePoints.map((point) => point.position)}
               />

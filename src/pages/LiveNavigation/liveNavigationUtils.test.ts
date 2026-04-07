@@ -11,6 +11,7 @@ import {
   calculateRemainingDistanceMeters,
   findNearestRoutePointIndex,
   getRoutePointsFromManualStart,
+  isValidLatLngTuple,
 } from './liveNavigationUtils';
 
 function makeOriginTouchpoint(): TrainRouteTouchpoint {
@@ -155,5 +156,105 @@ describe('liveNavigationUtils', () => {
     ]);
     expect(routeModel.routePoints.map((point) => point.label)).not.toContain('Rolltreppe C');
     expect(routeModel.warningMessage).toBeNull();
+  });
+
+  it('returns an empty route and warning when no active elevators are available', () => {
+    const routeModel = buildOriginRouteModel([
+      {
+        ...makeOriginTouchpoint(),
+        facilities: [
+          {
+            ...makeOriginTouchpoint().facilities![0],
+            state: 'INACTIVE',
+          },
+        ],
+      },
+    ]);
+
+    expect(routeModel.hasAccessibleRoute).toBe(false);
+    expect(routeModel.routePoints).toEqual([]);
+    expect(routeModel.warningMessage).toBe(
+      'Der barrierefreie Weg zum Abfahrtspunkt ist derzeit nicht verfügbar.'
+    );
+  });
+
+  it('caps facility-derived markers to avoid unbounded fan-out', () => {
+    const activeFacilities = Array.from({ length: 80 }, (_, index) => ({
+      ...makeOriginTouchpoint().facilities![0],
+      description: `Aufzug ${index + 1}`,
+      equipmentnumber: 4000 + index,
+      geocoordX: 8.66 + index * 0.00001,
+      geocoordY: 50.1 + index * 0.00001,
+      state: 'ACTIVE' as const,
+      type: 'ELEVATOR' as const,
+    }));
+    const orientationFacilities = Array.from({ length: 20 }, (_, index) => ({
+      ...makeOriginTouchpoint().facilities![1],
+      description: `Rolltreppe ${index + 1}`,
+      equipmentnumber: 5000 + index,
+      geocoordX: 8.67 + index * 0.00001,
+      geocoordY: 50.11 + index * 0.00001,
+      type: 'ESCALATOR' as const,
+    }));
+
+    const routeModel = buildOriginRouteModel([
+      {
+        ...makeOriginTouchpoint(),
+        facilities: [...activeFacilities, ...orientationFacilities],
+      },
+    ]);
+
+    const facilityMarkerCount = routeModel.markers.filter((marker) =>
+      ['active-elevator', 'inactive-elevator', 'escalator'].includes(marker.kind)
+    ).length;
+
+    expect(routeModel.hasAccessibleRoute).toBe(true);
+    expect(facilityMarkerCount).toBe(50);
+  });
+
+  it('filters invalid coordinates from walking approach, departure, and facilities', () => {
+    const routeModel = buildOriginRouteModel([
+      {
+        ...makeOriginTouchpoint(),
+        departureStop: { latitude: Infinity, longitude: 8.66292 },
+        facilities: [
+          {
+            ...makeOriginTouchpoint().facilities![0],
+            geocoordX: 181,
+            geocoordY: 50.10736,
+            state: 'ACTIVE',
+            type: 'ELEVATOR',
+          },
+          {
+            ...makeOriginTouchpoint().facilities![0],
+            geocoordX: 8.66312,
+            geocoordY: Number.NaN,
+            state: 'ACTIVE',
+            type: 'ELEVATOR',
+          },
+          {
+            ...makeOriginTouchpoint().facilities![1],
+            geocoordX: Number.NEGATIVE_INFINITY,
+            geocoordY: 50.10744,
+            type: 'ESCALATOR',
+          },
+        ],
+        walkingApproach: {
+          ...makeOriginTouchpoint().walkingApproach!,
+          latitude: 120,
+          longitude: 8.6638,
+        },
+      },
+    ]);
+
+    expect(routeModel.hasAccessibleRoute).toBe(false);
+    expect(routeModel.routePoints).toEqual([]);
+    expect(routeModel.markers).toEqual([]);
+    expect(routeModel.warningMessage).toBe(
+      'Der barrierefreie Weg zum Abfahrtspunkt ist derzeit nicht verfügbar.'
+    );
+
+    expect(routeModel.routePoints.every((point) => isValidLatLngTuple(point.position))).toBe(true);
+    expect(routeModel.markers.every((marker) => isValidLatLngTuple(marker.position))).toBe(true);
   });
 });

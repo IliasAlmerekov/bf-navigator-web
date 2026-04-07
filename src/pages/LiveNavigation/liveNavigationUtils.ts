@@ -4,6 +4,7 @@ import type {
   LiveNavigationManualStart,
   LiveNavigationRoutePoint,
 } from './liveNavigationData';
+import type { TrainRouteFacility, TrainRouteTouchpoint } from '../TrainSearchResults/types';
 
 type InstructionState = {
   currentLabel: string;
@@ -15,6 +16,21 @@ type InstructionState = {
 };
 
 const EARTH_RADIUS_METERS = 6371000;
+const MAX_FACILITY_DERIVED_MARKERS = 50;
+
+function isValidLatitude(value: number) {
+  return Number.isFinite(value) && value >= -90 && value <= 90;
+}
+
+function isValidLongitude(value: number) {
+  return Number.isFinite(value) && value >= -180 && value <= 180;
+}
+
+export function isValidLatLngTuple(position: LiveNavigationLatLng) {
+  const [latitude, longitude] = position;
+
+  return isValidLatitude(latitude) && isValidLongitude(longitude);
+}
 
 function toRadians(value: number) {
   return (value * Math.PI) / 180;
@@ -116,5 +132,172 @@ export function buildInstructionState({
     nextLabel: nextPoint.label,
     remainingDistanceMeters: calculateRemainingDistanceMeters(activeIndex, routePoints),
     routePoints: remainingRoutePoints,
+  };
+}
+
+export type LiveNavigationMapMarker = {
+  accessibleLabel: string;
+  id: string;
+  kind: 'entrance' | 'active-elevator' | 'inactive-elevator' | 'escalator' | 'departure';
+  label: string;
+  position: LiveNavigationLatLng;
+};
+
+export type LiveNavigationOriginRouteModel = {
+  hasAccessibleRoute: boolean;
+  markers: LiveNavigationMapMarker[];
+  routePoints: LiveNavigationRoutePoint[];
+  warningMessage: string | null;
+};
+
+export function hasValidFacilityCoordinates(
+  facility: TrainRouteFacility
+): facility is TrainRouteFacility & { geocoordX: number; geocoordY: number } {
+  if (facility.geocoordX == null || facility.geocoordY == null) {
+    return false;
+  }
+
+  return isValidLatLngTuple([facility.geocoordY, facility.geocoordX]);
+}
+
+export function buildOriginRouteModel(
+  touchpoints: TrainRouteTouchpoint[] | undefined
+): LiveNavigationOriginRouteModel {
+  const originTouchpoint = touchpoints?.find((touchpoint) => touchpoint.kind === 'ORIGIN');
+  if (!originTouchpoint) {
+    return { hasAccessibleRoute: false, markers: [], routePoints: [], warningMessage: null };
+  }
+
+  const markers: LiveNavigationMapMarker[] = [];
+  const routePoints: LiveNavigationRoutePoint[] = [];
+
+  const walkingApproachPosition: LiveNavigationLatLng | null = originTouchpoint.walkingApproach
+    ? [originTouchpoint.walkingApproach.latitude, originTouchpoint.walkingApproach.longitude]
+    : null;
+  const hasValidWalkingApproachCoordinates = Boolean(
+    walkingApproachPosition && isValidLatLngTuple(walkingApproachPosition)
+  );
+
+  if (
+    originTouchpoint.walkingApproach &&
+    walkingApproachPosition &&
+    hasValidWalkingApproachCoordinates
+  ) {
+    markers.push({
+      accessibleLabel: 'Haupteingang',
+      id: 'origin-entrance',
+      kind: 'entrance',
+      label: 'Haupteingang',
+      position: walkingApproachPosition,
+    });
+    routePoints.push({
+      description: 'Sie stehen am Haupteingang.',
+      id: 'origin-entrance',
+      instruction: originTouchpoint.walkingApproach.instruction,
+      label: 'Haupteingang',
+      position: walkingApproachPosition,
+    });
+  }
+
+  const facilities = originTouchpoint.facilities ?? [];
+  const activeElevators = facilities
+    .filter(
+      (facility): facility is TrainRouteFacility & { geocoordX: number; geocoordY: number } =>
+        facility.type === 'ELEVATOR' &&
+        facility.state === 'ACTIVE' &&
+        hasValidFacilityCoordinates(facility)
+    )
+    .slice(0, MAX_FACILITY_DERIVED_MARKERS);
+
+  activeElevators.forEach((facility, index) => {
+    const position: LiveNavigationLatLng = [facility.geocoordY, facility.geocoordX];
+    markers.push({
+      accessibleLabel: `${facility.description}, Aufzug aktiv`,
+      id: `active-elevator-${index}`,
+      kind: 'active-elevator',
+      label: facility.description,
+      position,
+    });
+    routePoints.push({
+      description: facility.description,
+      id: `active-elevator-${index}`,
+      instruction: `Nehmen Sie ${facility.description}.`,
+      label: facility.description,
+      position,
+    });
+  });
+
+  const remainingFacilityMarkerCapacity = Math.max(
+    0,
+    MAX_FACILITY_DERIVED_MARKERS - activeElevators.length
+  );
+  const orientationFacilities = facilities
+    .filter(
+      (facility): facility is TrainRouteFacility & { geocoordX: number; geocoordY: number } =>
+        hasValidFacilityCoordinates(facility) &&
+        ((facility.type === 'ELEVATOR' && facility.state === 'INACTIVE') ||
+          facility.type === 'ESCALATOR')
+    )
+    .slice(0, remainingFacilityMarkerCapacity);
+
+  orientationFacilities.forEach((facility, index) => {
+    const position: LiveNavigationLatLng = [facility.geocoordY, facility.geocoordX];
+
+    if (facility.type === 'ELEVATOR') {
+      markers.push({
+        accessibleLabel: `${facility.description}, Aufzug außer Betrieb`,
+        id: `inactive-elevator-${index}`,
+        kind: 'inactive-elevator',
+        label: facility.description,
+        position,
+      });
+      return;
+    }
+
+    markers.push({
+      accessibleLabel: `${facility.description}, Rolltreppe nur zur Orientierung`,
+      id: `escalator-${index}`,
+      kind: 'escalator',
+      label: facility.description,
+      position,
+    });
+  });
+
+  const departurePosition: LiveNavigationLatLng | null = originTouchpoint.departureStop
+    ? [originTouchpoint.departureStop.latitude, originTouchpoint.departureStop.longitude]
+    : null;
+  const hasValidDepartureCoordinates = Boolean(
+    departurePosition && isValidLatLngTuple(departurePosition)
+  );
+
+  if (originTouchpoint.departureStop && departurePosition && hasValidDepartureCoordinates) {
+    markers.push({
+      accessibleLabel: 'Abfahrtspunkt',
+      id: 'departure-stop',
+      kind: 'departure',
+      label: 'Abfahrtspunkt',
+      position: departurePosition,
+    });
+    routePoints.push({
+      description: 'Sie haben den Abfahrtspunkt erreicht.',
+      id: 'departure-stop',
+      instruction: 'Sie sind am Abfahrtspunkt angekommen.',
+      label: 'Abfahrtspunkt',
+      position: departurePosition,
+    });
+  }
+
+  const hasAccessibleRoute =
+    hasValidWalkingApproachCoordinates &&
+    activeElevators.length > 0 &&
+    hasValidDepartureCoordinates;
+
+  return {
+    hasAccessibleRoute,
+    markers,
+    routePoints: hasAccessibleRoute ? routePoints : [],
+    warningMessage: hasAccessibleRoute
+      ? null
+      : 'Der barrierefreie Weg zum Abfahrtspunkt ist derzeit nicht verfügbar.',
   };
 }
