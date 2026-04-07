@@ -124,4 +124,13 @@ describe('TrainResultCard', () => {
     expect(screen.getByLabelText('Rolltreppen: 2 außer Betrieb')).toBeInTheDocument();
     expect(screen.getByLabelText(/Barrierefreiheit: 1\/2 stations step-free/i)).toBeInTheDocument();
   });
+
+  it('renders departure and arrival stops in separate labeled blocks for compact layouts', () => {
+    render(<TrainResultCard route={makeRoute()} onSelect={vi.fn()} />);
+
+    expect(screen.getByText('Von')).toBeInTheDocument();
+    expect(screen.getByText('Nach')).toBeInTheDocument();
+    expect(screen.getByText('Hamburg Hauptbahnhof')).toBeInTheDocument();
+    expect(screen.getByText('Hannover Hauptbahnhof')).toBeInTheDocument();
+  });
 });
