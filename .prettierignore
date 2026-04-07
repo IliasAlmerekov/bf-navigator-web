@@ -1,5 +1,6 @@
 dist
 node_modules
 src/routeTree.gen.ts
+.codex
 .claude/commands
 docs/screens

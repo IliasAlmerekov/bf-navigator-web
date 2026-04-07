@@ -51,12 +51,52 @@ export interface TrainRouteTransit {
   vehicleType: string;
 }
 
+export interface TrainRouteAccessibilitySummary {
+  activeElevators: number;
+  activeEscalators: number;
+  inactiveElevators: number;
+  inactiveEscalators: number;
+  mobilityServiceStations: number;
+  status: 'ACCESSIBLE' | 'LIMITED' | 'UNKNOWN';
+  stepFreeStations: number;
+  summary: string;
+  totalStations: number;
+}
+
+export interface TrainRouteStationAccessibility {
+  activeElevators: number;
+  activeEscalators: number;
+  hasFacilityData: boolean;
+  inactiveElevators: number;
+  inactiveEscalators: number;
+  mobilityServiceAvailable: boolean;
+  status: 'ACCESSIBLE' | 'LIMITED' | 'UNKNOWN';
+  stepFreeAvailable: boolean;
+  summary: string;
+}
+
+export interface TrainRouteTouchpoint {
+  accessibility: TrainRouteStationAccessibility;
+  arrivalTime: string | null;
+  departureTime: string | null;
+  facilities: TrainRouteFacility[] | null;
+  kind: 'ORIGIN' | 'TRANSFER' | 'DESTINATION';
+  station: TrainRouteStation | null;
+  stationName: string;
+}
+
 export interface TrainRouteResponse {
+  accessibilitySummary: TrainRouteAccessibilitySummary;
   arrivalTime: string;
   departureTime: string;
   destination: string;
   localizedDistanceText: string;
   localizedDurationText: string;
   origin: string;
+  touchpoints?: TrainRouteTouchpoint[];
   transits: TrainRouteTransit[];
+}
+
+export interface TrainRouteSearchResponse {
+  trips: TrainRouteResponse[];
 }

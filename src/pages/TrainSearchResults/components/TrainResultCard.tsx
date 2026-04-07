@@ -1,5 +1,9 @@
 import { ArrowRight, Clock, PersonStanding } from 'lucide-react';
-import type { TrainRouteResponse, TrainRouteTransit } from '../types';
+import type {
+  TrainRouteAccessibilitySummary,
+  TrainRouteResponse,
+  TrainRouteTransit,
+} from '../types';
 import styles from './TrainResultCard.module.css';
 
 interface TrainResultCardProps {
@@ -51,6 +55,59 @@ function getUniqueValues(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
+interface AccessibilityBadge {
+  label: string;
+  srLabel: string;
+}
+
+function formatFacilityBadge(
+  facilityName: string,
+  activeCount: number,
+  inactiveCount: number
+): AccessibilityBadge {
+  if (activeCount === 0 && inactiveCount === 0) {
+    return {
+      label: `${facilityName} keine Daten`,
+      srLabel: `${facilityName}: keine Daten`,
+    };
+  }
+
+  const visibleParts: string[] = [];
+  const srParts: string[] = [];
+
+  if (activeCount > 0) {
+    visibleParts.push(`${activeCount} aktiv`);
+    srParts.push(`${activeCount} aktiv`);
+  }
+
+  if (inactiveCount > 0) {
+    visibleParts.push(`${inactiveCount} außer Betrieb`);
+    srParts.push(`${inactiveCount} außer Betrieb`);
+  }
+
+  return {
+    label: `${facilityName} ${visibleParts.join(' · ')}`,
+    srLabel: `${facilityName}: ${srParts.join(', ')}`,
+  };
+}
+
+function getAccessibilityBadges(summary: TrainRouteAccessibilitySummary): AccessibilityBadge[] {
+  const totalStations = summary.totalStations;
+
+  return [
+    {
+      label: `Stufenfrei ${summary.stepFreeStations}/${totalStations}`,
+      srLabel: `Stufenfreier Zugang an ${summary.stepFreeStations} von ${totalStations} Stationen`,
+    },
+    {
+      label: `Mobilitätsservice ${summary.mobilityServiceStations}/${totalStations}`,
+      srLabel: `Mobilitätsservice an ${summary.mobilityServiceStations} von ${totalStations} Stationen`,
+    },
+    formatFacilityBadge('Aufzüge', summary.activeElevators, summary.inactiveElevators),
+    formatFacilityBadge('Rolltreppen', summary.activeEscalators, summary.inactiveEscalators),
+  ];
+}
+
 export function TrainResultCard({ route, onSelect, isRecommended = false }: TrainResultCardProps) {
   if (route.transits.length === 0) return null;
 
@@ -67,6 +124,7 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
   const agencies = getUniqueValues(segments.map((segment) => segment.agencyName));
   const vehicleTypes = getUniqueValues(segments.map((segment) => segment.vehicleType));
   const transitMeta = [...agencies, ...vehicleTypes].join(' · ');
+  const accessibilityBadges = getAccessibilityBadges(route.accessibilitySummary);
 
   const ariaLabel = `${overallDepLabel} bis ${overallArrLabel}, Dauer ${duration}${transfers > 0 ? `, ${transfers} Umstieg${transfers > 1 ? 'e' : ''}` : ', Direkt'}`;
 
@@ -116,6 +174,22 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
       )}
 
       {transitMeta && <p className={styles.duration}>{transitMeta}</p>}
+
+      <div
+        aria-label={`Barrierefreiheit: ${route.accessibilitySummary.summary}`}
+        className={styles['accessibility-section']}
+      >
+        <p className={styles['accessibility-summary']}>{route.accessibilitySummary.summary}</p>
+        <ul className={styles['accessibility-list']} role="list">
+          {accessibilityBadges.map((badge) => (
+            <li key={badge.srLabel}>
+              <span aria-label={badge.srLabel} className={styles['accessibility-badge']}>
+                {badge.label}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
 
       {firstTransit && lastTransit && (
         <div aria-label="Von / Nach" className={styles.stations}>

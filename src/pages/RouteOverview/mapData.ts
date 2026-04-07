@@ -1,5 +1,7 @@
 import type { DbStationFacility, RouteMapData, RouteMapLatLng, RouteMapMarker } from './types';
 
+const DEFAULT_CENTER: RouteMapLatLng = [51.35, 10.95];
+
 const ROUTE_PATH: RouteMapLatLng[] = [
   [50.1071, 8.6638],
   [50.5558, 9.6808],
@@ -11,7 +13,7 @@ const ROUTE_PATH: RouteMapLatLng[] = [
 
 const ROUTE_OVERVIEW_FACILITIES_MOCK: DbStationFacility[] = [
   {
-    description: 'to platform 1/2',
+    description: 'zu Gleis 1/2',
     equipmentnumber: 10431463,
     geocoordX: 13.41118355,
     geocoordY: 52.52138805,
@@ -23,7 +25,7 @@ const ROUTE_OVERVIEW_FACILITIES_MOCK: DbStationFacility[] = [
     type: 'ESCALATOR',
   },
   {
-    description: 'north concourse lift',
+    description: 'Aufzug zur Nordhalle',
     equipmentnumber: 10431492,
     geocoordX: 13.3709,
     geocoordY: 52.5256,
@@ -66,7 +68,27 @@ function mapFacilityStatus(facility: DbStationFacility): RouteMapMarker['status'
   return 'unavailable';
 }
 
+function formatFacilityStatus(status: RouteMapMarker['status']) {
+  if (status === 'available') {
+    return 'In Betrieb';
+  }
+
+  if (status === 'limited') {
+    return 'Eingeschränkt verfügbar';
+  }
+
+  return 'Außer Betrieb';
+}
+
 function formatFacilityType(type: string) {
+  if (type === 'ELEVATOR') {
+    return 'Aufzug';
+  }
+
+  if (type === 'ESCALATOR') {
+    return 'Rolltreppe';
+  }
+
   return type
     .toLowerCase()
     .split('_')
@@ -81,56 +103,114 @@ export function mapDbFacilityToRouteMapMarker(facility: DbStationFacility): Rout
     return null;
   }
 
+  const status = mapFacilityStatus(facility);
+  const label = formatFacilityType(facility.type);
+
   return {
     description: facility.description,
     id: `facility-${facility.equipmentnumber}`,
     kind: 'facility',
-    label: formatFacilityType(facility.type),
+    label,
+    locationDetail: facility.description,
     position,
-    status: mapFacilityStatus(facility),
+    statusLabel: formatFacilityStatus(status),
+    status,
   };
 }
 
-export function buildRouteOverviewMapData(
-  facilities: DbStationFacility[] = ROUTE_OVERVIEW_FACILITIES_MOCK
-): RouteMapData {
+type RouteMapLabels = {
+  ariaLabel?: string;
+  destinationLabel?: string;
+  originLabel?: string;
+  transferLabel?: string;
+};
+
+type BuildRouteOverviewMapOptions = {
+  center?: RouteMapLatLng;
+  facilities?: DbStationFacility[];
+  labels?: RouteMapLabels;
+  routePath?: RouteMapLatLng[];
+  stopMarkers?: RouteMapMarker[];
+};
+
+function buildDefaultStopMarkers(labels: RouteMapLabels): RouteMapMarker[] {
+  return [
+    {
+      description: 'Startbahnhof',
+      id: 'route-origin-frankfurt',
+      kind: 'origin',
+      label: labels.originLabel ?? 'Frankfurt Hbf',
+      position: ROUTE_PATH[0],
+      status: 'default',
+    },
+    {
+      description: 'Umstiegsbahnhof',
+      id: 'route-transfer-kassel',
+      kind: 'transfer',
+      label: labels.transferLabel ?? 'Kassel-Wilhelmshoehe',
+      position: ROUTE_PATH[2],
+      status: 'default',
+    },
+    {
+      description: 'Zielbahnhof',
+      id: 'route-destination-berlin',
+      kind: 'destination',
+      label: labels.destinationLabel ?? 'Berlin Hbf',
+      position: ROUTE_PATH[ROUTE_PATH.length - 1],
+      status: 'default',
+    },
+  ];
+}
+
+function calculateMapCenter(
+  routePath: RouteMapLatLng[],
+  markers: RouteMapMarker[],
+  fallbackCenter: RouteMapLatLng
+) {
+  const sourcePositions =
+    routePath.length > 0 ? routePath : markers.map((marker) => marker.position);
+
+  if (sourcePositions.length === 0) {
+    return fallbackCenter;
+  }
+
+  const [latitudeSum, longitudeSum] = sourcePositions.reduce(
+    ([currentLatitude, currentLongitude], [latitude, longitude]) => [
+      currentLatitude + latitude,
+      currentLongitude + longitude,
+    ],
+    [0, 0]
+  );
+
+  return [
+    latitudeSum / sourcePositions.length,
+    longitudeSum / sourcePositions.length,
+  ] satisfies RouteMapLatLng;
+}
+
+export function buildRouteOverviewMapData({
+  center,
+  facilities = ROUTE_OVERVIEW_FACILITIES_MOCK,
+  labels = {},
+  routePath,
+  stopMarkers,
+}: BuildRouteOverviewMapOptions = {}): RouteMapData {
   const facilityMarkers = facilities
     .map(mapDbFacilityToRouteMapMarker)
     .filter((marker): marker is RouteMapMarker => marker !== null);
+  const routeMarkers = stopMarkers ?? buildDefaultStopMarkers(labels);
+  const resolvedRoutePath = routePath && routePath.length > 0 ? routePath : ROUTE_PATH;
+  const resolvedMarkers = [...routeMarkers, ...facilityMarkers];
+  const resolvedCenter =
+    center ?? calculateMapCenter(resolvedRoutePath, resolvedMarkers, DEFAULT_CENTER);
 
   return {
-    ariaLabel: 'Route map preview from Frankfurt Hbf to Berlin Hbf',
-    center: [51.35, 10.95],
-    markers: [
-      {
-        description: 'Departure station',
-        id: 'route-origin-frankfurt',
-        kind: 'origin',
-        label: 'Frankfurt Hbf',
-        position: ROUTE_PATH[0],
-        status: 'default',
-      },
-      {
-        description: 'Transfer station',
-        id: 'route-transfer-kassel',
-        kind: 'transfer',
-        label: 'Kassel-Wilhelmshoehe',
-        position: ROUTE_PATH[2],
-        status: 'default',
-      },
-      {
-        description: 'Arrival station',
-        id: 'route-destination-berlin',
-        kind: 'destination',
-        label: 'Berlin Hbf',
-        position: ROUTE_PATH[ROUTE_PATH.length - 1],
-        status: 'default',
-      },
-      ...facilityMarkers,
-    ],
+    ariaLabel: labels.ariaLabel ?? 'Routenvorschau von Frankfurt Hbf nach Berlin Hbf',
+    center: resolvedCenter,
+    markers: resolvedMarkers,
     maxZoom: 8,
     minZoom: 5,
-    routePath: ROUTE_PATH,
+    routePath: resolvedRoutePath,
     zoom: 6,
   };
 }

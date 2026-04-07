@@ -25,8 +25,10 @@ describe('mapData', () => {
       description: 'to platform 1/2',
       id: 'facility-10431463',
       kind: 'facility',
-      label: 'Escalator',
+      label: 'Rolltreppe',
+      locationDetail: 'to platform 1/2',
       position: [52.52138805, 13.41118355],
+      statusLabel: 'In Betrieb',
       status: 'available',
     });
   });

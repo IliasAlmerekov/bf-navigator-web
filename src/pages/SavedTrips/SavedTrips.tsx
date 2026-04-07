@@ -197,6 +197,15 @@ export default function SavedTrips() {
                           <Link
                             aria-label={`Route von ${trip.origin} nach ${trip.destination} anzeigen`}
                             className={styles['view-route-link']}
+                            search={{
+                              accessibilityPreference: '',
+                              date: '',
+                              destinationEva: '',
+                              destinationName: '',
+                              originEva: '',
+                              originName: '',
+                              time: '',
+                            }}
                             to="/route-overview"
                           >
                             Route ansehen

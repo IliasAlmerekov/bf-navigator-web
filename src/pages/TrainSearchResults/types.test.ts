@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type {
+  TrainRouteAccessibilitySummary,
   TrainRouteFacility,
   TrainRouteResponse,
+  TrainRouteSearchResponse,
   TrainRouteStation,
   TrainRouteStop,
   TrainRouteTransit,
@@ -61,7 +63,20 @@ describe('TrainSearchResults DTO types', () => {
       vehicleType: 'Hochgeschwindigkeitszug',
     };
 
+    const accessibilitySummary: TrainRouteAccessibilitySummary = {
+      activeElevators: 1,
+      activeEscalators: 0,
+      inactiveElevators: 0,
+      inactiveEscalators: 1,
+      mobilityServiceStations: 2,
+      status: 'ACCESSIBLE',
+      stepFreeStations: 1,
+      summary: '1/2 stations step-free',
+      totalStations: 2,
+    };
+
     const route: TrainRouteResponse = {
+      accessibilitySummary,
       arrivalTime: '2026-04-02T10:45:00Z',
       departureTime: '2026-04-02T08:29:00Z',
       destination: 'Braunschweig Hbf',
@@ -71,7 +86,12 @@ describe('TrainSearchResults DTO types', () => {
       transits: [transit],
     };
 
-    expect(route.transits[0]?.trainName).toBe('ICE 579');
-    expect(route.transits[0]?.departure.station.hasSteplessAccess).toBe('yes');
+    const response: TrainRouteSearchResponse = {
+      trips: [route],
+    };
+
+    expect(response.trips[0]?.transits[0]?.trainName).toBe('ICE 579');
+    expect(response.trips[0]?.transits[0]?.departure.station.hasSteplessAccess).toBe('yes');
+    expect(response.trips[0]?.accessibilitySummary.status).toBe('ACCESSIBLE');
   });
 });

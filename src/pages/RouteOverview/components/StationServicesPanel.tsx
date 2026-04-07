@@ -35,7 +35,7 @@ const liveEquipmentIconById = {
 } as const;
 
 function formatUnits(count: number) {
-  return `${count} ${count === 1 ? 'UNIT' : 'UNITS'}`;
+  return `${count} ${count === 1 ? 'ANLAGE' : 'ANLAGEN'}`;
 }
 
 export function StationServicesPanel({ panel }: StationServicesPanelProps) {
@@ -49,7 +49,7 @@ export function StationServicesPanel({ panel }: StationServicesPanelProps) {
     >
       <div className={styles['station-services-header']}>
         <div className={styles['station-services-title-wrap']}>
-          <h2 id="station-services-heading">Station services</h2>
+          <h2 id="station-services-heading">Bahnhofsservice</h2>
           <p className={styles['station-services-subtitle']}>{panel.stationName}</p>
         </div>
         <p id="station-services-updated" className={styles['station-services-updated']}>
@@ -73,19 +73,19 @@ export function StationServicesPanel({ panel }: StationServicesPanelProps) {
         </div>
 
         <div className={styles['equipment-card-copy']}>
-          <p className={styles['elevator-status-kicker']}>Station accessibility</p>
+          <p className={styles['elevator-status-kicker']}>Bahnhofsbarrierefreiheit</p>
           <h3 className={styles['elevator-status-title']}>{panel.elevatorCard.title}</h3>
           <dl className={styles['equipment-card-metrics']}>
             <div className={styles['equipment-card-metric']}>
-              <dt>Working</dt>
+              <dt>In Betrieb</dt>
               <dd className={styles['equipment-card-value-available']}>
-                {panel.elevatorCard.availableUnits} working
+                {panel.elevatorCard.availableUnits} in Betrieb
               </dd>
             </div>
             <div className={styles['equipment-card-metric']}>
-              <dt>Out of service</dt>
+              <dt>Außer Betrieb</dt>
               <dd className={styles['equipment-card-value-unavailable']}>
-                {panel.elevatorCard.outOfServiceUnits} out of service
+                {panel.elevatorCard.outOfServiceUnits} außer Betrieb
               </dd>
             </div>
           </dl>
@@ -99,7 +99,7 @@ export function StationServicesPanel({ panel }: StationServicesPanelProps) {
               <ArrowRightLeft className={styles['elevator-status-route-icon']} />
             </span>
             <div className={styles['elevator-status-route-copy']}>
-              <p className={styles['elevator-status-route-label']}>Rerouted Path</p>
+              <p className={styles['elevator-status-route-label']}>Umgeleitete Route</p>
               <p className={styles['elevator-status-route-text']}>
                 {panel.elevatorCard.alternateRoute}
               </p>
@@ -111,7 +111,7 @@ export function StationServicesPanel({ panel }: StationServicesPanelProps) {
       <div className={styles['live-equipment-heading-row']}>
         <div>
           <h3 className={styles['live-equipment-heading']} id="live-equipment-heading">
-            Live Equipment Status
+            Live-Anlagenstatus
           </h3>
         </div>
       </div>
@@ -147,15 +147,15 @@ export function StationServicesPanel({ panel }: StationServicesPanelProps) {
                   <h4 className={styles['station-status-title']}>{card.title}</h4>
                   <dl className={styles['equipment-card-metrics']}>
                     <div className={styles['equipment-card-metric']}>
-                      <dt>Working</dt>
+                      <dt>In Betrieb</dt>
                       <dd className={styles['equipment-card-value-available']}>
-                        {card.availableUnits} working
+                        {card.availableUnits} in Betrieb
                       </dd>
                     </div>
                     <div className={styles['equipment-card-metric']}>
-                      <dt>Out of service</dt>
+                      <dt>Außer Betrieb</dt>
                       <dd className={styles['equipment-card-value-unavailable']}>
-                        {card.outOfServiceUnits} out of service
+                        {card.outOfServiceUnits} außer Betrieb
                       </dd>
                     </div>
                   </dl>

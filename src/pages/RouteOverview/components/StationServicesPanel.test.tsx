@@ -6,49 +6,49 @@ import type { RouteStationServicesPanel } from '../types';
 const availablePanel: RouteStationServicesPanel = {
   elevatorCard: {
     availableUnits: 2,
-    description: 'The elevator is operating in standard mode.',
+    description: 'Der Aufzug läuft im Normalbetrieb.',
     outOfServiceUnits: 0,
     status: 'available',
-    title: 'Station Accessibility',
+    title: 'Bahnhofsbarrierefreiheit',
     totalUnits: 2,
   },
-  lastUpdated: 'Updated just now',
+  lastUpdated: 'Gerade aktualisiert',
   liveEquipmentCards: [
     {
       availableUnits: 2,
       id: 'elevators',
       outOfServiceUnits: 0,
       status: 'available',
-      summary: 'All active',
+      summary: 'Alle in Betrieb',
       totalUnits: 2,
-      title: 'Elevators',
+      title: 'Aufzüge',
     },
     {
       availableUnits: 4,
       id: 'escalators',
       outOfServiceUnits: 0,
       status: 'available',
-      summary: 'All active',
+      summary: 'Alle in Betrieb',
       totalUnits: 4,
-      title: 'Escalators',
+      title: 'Rolltreppen',
     },
     {
       availableUnits: 1,
       id: 'tactile_guidance',
       outOfServiceUnits: 0,
       status: 'available',
-      summary: 'Active throughout the station',
+      summary: 'Im gesamten Bahnhof aktiv',
       totalUnits: 1,
-      title: 'Tactile Guidance',
+      title: 'Taktiles Leitsystem',
     },
     {
       availableUnits: 1,
       id: 'accessible_toilets',
       outOfServiceUnits: 0,
       status: 'available',
-      summary: 'Euro-key required',
+      summary: 'Euro-Schlüssel erforderlich',
       totalUnits: 1,
-      title: 'Accessible Toilets',
+      title: 'Barrierefreie Toiletten',
     },
   ],
   stationId: 'frankfurt-main-hbf',
@@ -60,7 +60,7 @@ describe('StationServicesPanel', () => {
     render(<StationServicesPanel panel={availablePanel} />);
 
     const stationAccessibilityCard = screen
-      .getByRole('heading', { level: 3, name: /station accessibility/i })
+      .getByRole('heading', { level: 3, name: /bahnhofsbarrierefreiheit/i })
       .closest('article');
 
     expect(stationAccessibilityCard).not.toBeNull();
@@ -70,11 +70,15 @@ describe('StationServicesPanel', () => {
     }
 
     expect(
-      within(stationAccessibilityCard).getByText(/the elevator is operating in standard mode/i)
+      within(stationAccessibilityCard).getByText(/der aufzug läuft im normalbetrieb/i)
     ).toBeInTheDocument();
-    expect(within(stationAccessibilityCard).getByText(/2 units/i)).toBeInTheDocument();
-    expect(within(stationAccessibilityCard).getByText(/2 working/i)).toBeInTheDocument();
-    expect(within(stationAccessibilityCard).getByText(/0 out of service/i)).toBeInTheDocument();
-    expect(screen.queryByText(/rerouted path/i)).not.toBeInTheDocument();
+    expect(within(stationAccessibilityCard).getByText(/2 anlagen/i)).toBeInTheDocument();
+    expect(within(stationAccessibilityCard).getByText(/2 in betrieb/i)).toBeInTheDocument();
+    expect(within(stationAccessibilityCard).getByText(/0 außer betrieb/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /bahnhofsservice/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 3, name: /live-anlagenstatus/i })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/umgeleitete route/i)).not.toBeInTheDocument();
   });
 });

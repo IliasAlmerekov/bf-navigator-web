@@ -1,11 +1,63 @@
 import { useState } from 'react';
-import { ArrowRight, Headset, Info, SlidersHorizontal, TriangleAlert, Wrench } from 'lucide-react';
+import {
+  ArrowRight,
+  Clock3,
+  FileText,
+  Headset,
+  Info,
+  MapPinned,
+  Phone,
+  SlidersHorizontal,
+  TriangleAlert,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
 import wheelChairIcon from '../../assets/Onboarding/icons8-rollstuhl-26.png';
 import styles from './Alerts.module.css';
 
 type AlertScope = 'current' | 'saved';
 
+type ResolvedAlert = {
+  id: string;
+  title: string;
+  station: string;
+  resolvedAt: string;
+};
+
+type QuickAction = {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+};
+
 const ACTIVE_ALERT_COUNT = 3;
+
+const RESOLVED_ALERTS: ResolvedAlert[] = [
+  {
+    id: 'ticket-machines',
+    title: 'Ticketautomaten repariert',
+    station: 'St. Pancras Intl',
+    resolvedAt: 'vor 12 Min.',
+  },
+  {
+    id: 'escalator',
+    title: 'Rolltreppe repariert',
+    station: 'Muenchen Hbf',
+    resolvedAt: 'vor 44 Min.',
+  },
+  {
+    id: 'signal',
+    title: 'Signalsystem stabilisiert',
+    station: 'West Coast Mainline',
+    resolvedAt: 'vor 70 Min.',
+  },
+];
+
+const QUICK_ACTIONS: QuickAction[] = [
+  { id: 'delay-repay', label: 'Verspaetung melden', icon: Clock3 },
+  { id: 'alt-map', label: 'Alternative Karte', icon: MapPinned },
+  { id: 'station-info', label: 'Stationsinformationen', icon: Info },
+];
 
 export default function Alerts() {
   const [activeScope, setActiveScope] = useState<AlertScope>('current');
@@ -145,8 +197,36 @@ export default function Alerts() {
                   <strong>15 min</strong> Verzoegerung bei der Rampenbereitstellung
                 </p>
               </article>
-            </li>
-          </ul>
+            </div>
+          </section>
+
+          <section
+            aria-labelledby="mobile-resolved-heading"
+            className={`${styles.section} ${styles['mobile-only']}`}
+          >
+            <header className={styles['section-header']}>
+              <h2 id="mobile-resolved-heading">Zuletzt behoben</h2>
+            </header>
+
+            <button className={styles['resolved-row']} type="button">
+              <span className={styles['resolved-bullet']} aria-hidden="true" />
+              <span className={styles['resolved-text-group']}>
+                <span className={styles['resolved-title']}>Rolltreppe repariert</span>
+                <span className={styles['resolved-subtitle']}>Muenchen Hbf - Behoben</span>
+              </span>
+              <ArrowRight aria-hidden="true" className={styles['resolved-arrow']} />
+            </button>
+          </section>
+
+          <section className={`${styles.section} ${styles['mobile-only']}`}>
+            <article className={`${styles['alert-card']} ${styles['other-routes-card']}`}>
+              <div aria-hidden="true" className={styles['empty-icon-bubble']}>
+                <Info className={styles['card-icon']} />
+              </div>
+              <h2>Weitere Routen</h2>
+              <p>Auf deinen weiteren haeufigen Wegen wurden keine aktiven Stoerungen erkannt.</p>
+            </article>
+          </section>
         </div>
 
         <div

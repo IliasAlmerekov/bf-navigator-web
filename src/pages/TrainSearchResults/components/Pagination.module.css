@@ -110,3 +110,10 @@
   background: var(--color-surface-container-high);
   color: var(--color-text-strong);
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .page-btn {
+    transition: none;
+  }
+}

@@ -2,61 +2,59 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Navigation, ZoomIn, ZoomOut } from 'lucide-react';
 import { ROUTE_OVERVIEW_MAP_DATA } from '../mapData';
+import type { RouteMapData } from '../types';
 import { RouteMapCanvas } from './RouteMapCanvas';
 import styles from '../RouteOverview.module.css';
 
-export function MapNavigationCard() {
-  const [zoom, setZoom] = useState(ROUTE_OVERVIEW_MAP_DATA.zoom);
-  const facilityMarkers = ROUTE_OVERVIEW_MAP_DATA.markers.filter(
-    (marker) => marker.kind === 'facility'
+type MapNavigationCardProps = {
+  mapData?: RouteMapData;
+};
+
+export function MapNavigationCard({ mapData = ROUTE_OVERVIEW_MAP_DATA }: MapNavigationCardProps) {
+  const [zoom, setZoom] = useState(mapData.zoom);
+  const facilityMarkers = mapData.markers.filter(
+    (marker) => marker.kind === 'facility' && marker.status !== 'available'
   );
 
   function handleZoomChange(delta: number) {
     setZoom((currentZoom) =>
-      Math.min(
-        ROUTE_OVERVIEW_MAP_DATA.maxZoom,
-        Math.max(ROUTE_OVERVIEW_MAP_DATA.minZoom, currentZoom + delta)
-      )
+      Math.min(mapData.maxZoom, Math.max(mapData.minZoom, currentZoom + delta))
     );
   }
 
   return (
     <section
-      aria-describedby="route-map-copy route-map-attribution"
+      aria-describedby="route-map-hint route-map-attribution"
       aria-labelledby="route-map-heading"
       className={styles['map-nav-card']}
     >
       <div className={styles['map-nav-header']}>
-        <p className={styles['map-nav-kicker']}>Route preview</p>
+        <p className={styles['map-nav-kicker']}>Routenvorschau</p>
         <h2 className={styles['map-nav-heading']} id="route-map-heading">
-          Live map ready for backend coordinates
+          Live-Karte
         </h2>
-        <p className={styles['map-nav-copy']} id="route-map-copy">
-          The map uses a dedicated route DTO, so station and facility coordinates can later come
-          directly from the backend without changing the UI layer.
-        </p>
-        <p className={styles['map-nav-hint']}>
-          Drag with mouse or one finger. Use the wheel or pinch gesture to zoom.
+        <p className={styles['map-nav-hint']} id="route-map-hint">
+          Mit Maus oder einem Finger ziehen. Zum Zoomen Mausrad oder Pinch-Geste nutzen.
         </p>
       </div>
 
       <div className={styles['map-nav-map-wrap']}>
-        <RouteMapCanvas mapData={ROUTE_OVERVIEW_MAP_DATA} zoom={zoom} />
+        <RouteMapCanvas mapData={mapData} zoom={zoom} />
 
         <div className={styles['map-nav-controls']}>
           <button
-            aria-label="Zoom in route preview"
+            aria-label="Routenvorschau vergrößern"
             className={styles['map-nav-zoom-btn']}
-            disabled={zoom >= ROUTE_OVERVIEW_MAP_DATA.maxZoom}
+            disabled={zoom >= mapData.maxZoom}
             type="button"
             onClick={() => handleZoomChange(1)}
           >
             <ZoomIn className={styles['map-nav-zoom-icon']} />
           </button>
           <button
-            aria-label="Zoom out route preview"
+            aria-label="Routenvorschau verkleinern"
             className={styles['map-nav-zoom-btn']}
-            disabled={zoom <= ROUTE_OVERVIEW_MAP_DATA.minZoom}
+            disabled={zoom <= mapData.minZoom}
             type="button"
             onClick={() => handleZoomChange(-1)}
           >
@@ -65,11 +63,7 @@ export function MapNavigationCard() {
         </div>
       </div>
 
-      <ul
-        aria-label="Mapped facilities preview"
-        className={styles['map-nav-facilities']}
-        role="list"
-      >
+      <ul aria-label="Vorgemerkte Anlagen" className={styles['map-nav-facilities']} role="list">
         {facilityMarkers.map((marker) => (
           <li className={styles['map-nav-facility-item']} key={marker.id}>
             <span
@@ -79,19 +73,26 @@ export function MapNavigationCard() {
             />
             <div className={styles['map-nav-facility-copy']}>
               <span className={styles['map-nav-facility-title']}>{marker.label}</span>
-              <span className={styles['map-nav-facility-description']}>{marker.description}</span>
+              {marker.locationDetail ? (
+                <span className={styles['map-nav-facility-description']}>
+                  {marker.locationDetail}
+                </span>
+              ) : null}
+              {marker.statusLabel ? (
+                <span className={styles['map-nav-facility-state']}>{marker.statusLabel}</span>
+              ) : null}
             </div>
           </li>
         ))}
       </ul>
 
       <p className={styles['map-nav-attribution']} id="route-map-attribution">
-        Map data © OpenStreetMap contributors
+        Kartendaten © OpenStreetMap-Mitwirkende
       </p>
 
       <Link to="/live-navigation" className={styles['live-nav-button']}>
         <Navigation aria-hidden="true" />
-        <span>Live Navigation</span>
+        <span>Live-Navigation</span>
       </Link>
     </section>
   );

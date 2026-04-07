@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { Bell, Bookmark, ChevronDown, CircleUserRound, House, LifeBuoy } from 'lucide-react';
+import { Bell, Bookmark, ChevronDown, CircleUserRound, House } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { getToken } from '../../utils/tokenStorage';
@@ -17,7 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: 'home', icon: House, label: 'Startsuche', to: '/' },
   { key: 'saved', icon: Bookmark, label: 'Gespeicherte Reisen', to: '/saved-trips' },
   { key: 'alerts', icon: Bell, label: 'Meldungen', to: '/alerts' },
-  { key: 'profile', icon: LifeBuoy, label: 'Hilfe', to: '/profile' },
+  { key: 'profile', icon: CircleUserRound, label: 'Profil', to: '/profile' },
 ];
 
 const HOME_SECTION_PATHS = new Set([

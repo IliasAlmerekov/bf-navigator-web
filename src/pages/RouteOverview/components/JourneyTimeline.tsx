@@ -8,7 +8,7 @@ type JourneyTimelineProps = {
 
 export function JourneyTimeline({ items }: JourneyTimelineProps) {
   return (
-    <ol aria-label="Journey timeline" className={styles.timeline}>
+    <ol aria-label="Reiseverlauf" className={styles.timeline}>
       {items.map((item, index) => (
         <li className={styles['timeline-item']} key={item.station}>
           <div aria-hidden="true" className={styles['timeline-rail']}>
@@ -25,7 +25,7 @@ export function JourneyTimeline({ items }: JourneyTimelineProps) {
 
               {item.transferNote ? (
                 <div
-                  aria-label={`${item.transferNote}, ${item.transferTrain}`}
+                  aria-label={[item.transferNote, item.transferTrain].filter(Boolean).join(', ')}
                   className={styles['transfer-note']}
                 >
                   <span className={styles['transfer-icon-wrap']}>
@@ -46,7 +46,7 @@ export function JourneyTimeline({ items }: JourneyTimelineProps) {
 
             {item.amenities.length > 0 ? (
               <ul
-                aria-label={`${item.station} amenities`}
+                aria-label={`${item.station} Ausstattung`}
                 className={styles['timeline-tags']}
                 role="list"
               >
