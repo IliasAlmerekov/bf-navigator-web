@@ -220,23 +220,6 @@ function getInactiveElevatorWarnings(
   return warnings;
 }
 
-function getRequiredManualStarts(): LiveNavigationManualStart[] {
-  return [
-    {
-      description: 'Starten Sie am Haupteingang und folgen Sie dem Leitweg zum Abfahrtsgleis.',
-      id: 'main-entrance',
-      label: 'Haupteingang',
-      routePointId: 'main-entrance',
-    },
-    {
-      description: 'Starten Sie an der Info-Station und folgen Sie dem Leitweg zum Abfahrtsgleis.',
-      id: 'info-point',
-      label: 'Info-Station',
-      routePointId: 'info-point',
-    },
-  ];
-}
-
 function buildManualRouteToDeparture(
   routePoints: LiveNavigationRoutePoint[],
   startIndex: number,
@@ -338,54 +321,6 @@ function getRequiredManualStarts(
   ];
 }
 
-function mergeManualStartOptions(
-  derivedManualStarts: LiveNavigationManualStart[],
-  requiredManualStarts: LiveNavigationManualStart[]
-): LiveNavigationManualStart[] {
-  const optionalDerivedStarts = derivedManualStarts.filter(
-    (start) => !requiredManualStarts.some((requiredStart) => requiredStart.id === start.id)
-  );
-
-  return [...requiredManualStarts, ...optionalDerivedStarts];
-}
-
-function mergeManualFallbackRoutePoints(
-  routePoints: LiveNavigationRoutePoint[]
-): LiveNavigationRoutePoint[] {
-  const requiredFallbackPoints = LIVE_NAVIGATION_ROUTE_POINTS.filter(
-    (point) => point.id === 'main-entrance' || point.id === 'info-point'
-  ).map((point) => ({
-    ...point,
-    instruction: 'Folgen Sie dem Leitweg zum Abfahrtsgleis.',
-  }));
-  const deduplicatedRoutePoints = routePoints.filter(
-    (point) => !requiredFallbackPoints.some((requiredPoint) => requiredPoint.id === point.id)
-  );
-
-  return [...requiredFallbackPoints, ...deduplicatedRoutePoints];
-}
-
-function hasRouteAnchors(routePoints: LiveNavigationRoutePoint[]) {
-  const hasOriginAnchor = routePoints.some((point) => point.id.startsWith('origin-'));
-  const hasDestinationAnchor = routePoints.some((point) => point.id.startsWith('destination-'));
-
-  return hasOriginAnchor && hasDestinationAnchor;
-}
-
-function getVisibleTrainLabel(trainNames: string[] | undefined): string {
-  if (!trainNames?.length) {
-    return 'ICE 782';
-  }
-
-  const uniqueTrainNames = trainNames
-    .map((trainName) => trainName.trim())
-    .filter(
-      (trainName, index, names) => trainName.length > 0 && names.indexOf(trainName) === index
-    );
-
-  return uniqueTrainNames.length > 0 ? uniqueTrainNames.join(' · ') : 'ICE 782';
-}
-
 function formatRouteStopTime(value: string | null) {
   if (!value) {
     return '--:--';
@@ -483,16 +418,13 @@ export default function LiveNavigation() {
   const hasSelectedRouteTouchpoints = Boolean(selectedTouchpoints?.length);
   const derivedRoutePoints = getRoutePointsFromTouchpoints(selectedTouchpoints);
   const hasCompleteDerivedRoutePoints = derivedRoutePoints.length >= 2;
-  const requiredManualStarts = getRequiredManualStarts();
+  const requiredManualStarts = getRequiredManualStarts(selectedTouchpoints);
   const selectedRouteManualFallbackRoutes = hasCompleteDerivedRoutePoints
     ? buildSelectedRouteManualFallbackRoutes(derivedRoutePoints)
     : null;
   const routePoints = hasCompleteDerivedRoutePoints
     ? derivedRoutePoints
     : LIVE_NAVIGATION_ROUTE_POINTS;
-  const manualFallbackRoutePoints = hasCompleteDerivedRoutePoints
-    ? mergeManualFallbackRoutePoints(routePoints)
-    : routePoints;
   const manualStartOptions = hasCompleteDerivedRoutePoints
     ? requiredManualStarts
     : LIVE_NAVIGATION_MANUAL_STARTS;
