@@ -100,13 +100,34 @@ function hasValidCoordinates(
 }
 
 function getTouchpointPosition(touchpoint: TrainRouteTouchpoint): LiveNavigationLatLng | null {
-  const facilityWithCoordinates = (touchpoint.facilities ?? []).find(hasValidCoordinates);
+  if (touchpoint.departureStop?.latitude != null && touchpoint.departureStop?.longitude != null) {
+    return [touchpoint.departureStop.latitude, touchpoint.departureStop.longitude];
+  }
 
+  const facilityWithCoordinates = (touchpoint.facilities ?? []).find(hasValidCoordinates);
   if (!facilityWithCoordinates) {
     return null;
   }
 
   return [facilityWithCoordinates.geocoordY, facilityWithCoordinates.geocoordX];
+}
+
+function getActiveElevatorPoints(
+  touchpoint: TrainRouteTouchpoint,
+  index: number
+): LiveNavigationRoutePoint[] {
+  return (touchpoint.facilities ?? [])
+    .filter(
+      (f): f is TrainRouteFacility & { geocoordX: number; geocoordY: number } =>
+        f.type === 'ELEVATOR' && f.state === 'ACTIVE' && hasValidCoordinates(f)
+    )
+    .map((f, elevatorIndex) => ({
+      description: f.description,
+      id: `elevator-${index}-${elevatorIndex}`,
+      instruction: `Nehmen Sie ${f.description} zur Plattform.`,
+      label: f.description,
+      position: [f.geocoordY, f.geocoordX] as LiveNavigationLatLng,
+    }));
 }
 
 function getRoutePointsFromTouchpoints(
@@ -116,29 +137,71 @@ function getRoutePointsFromTouchpoints(
     return [];
   }
 
-  return touchpoints
-    .map((touchpoint, index) => {
-      const position = getTouchpointPosition(touchpoint);
+  const points: LiveNavigationRoutePoint[] = [];
 
-      if (!position) {
-        return null;
-      }
-
-      const id = `${touchpoint.kind.toLowerCase()}-${index}`;
-      const label = touchpoint.stationName;
-
-      return {
-        description: `Orientierungspunkt: ${label}.`,
-        id,
+  for (const [index, touchpoint] of touchpoints.entries()) {
+    if (touchpoint.kind !== 'DESTINATION' && touchpoint.walkingApproach != null) {
+      points.push({
+        description: `Eingang ${touchpoint.stationName}.`,
+        id: `entrance-${index}`,
         instruction:
-          touchpoint.kind === 'DESTINATION'
-            ? `Sie haben ${label} erreicht.`
-            : `Folgen Sie dem Leitweg in Richtung ${label}.`,
-        label,
-        position,
-      };
-    })
-    .filter((point): point is LiveNavigationRoutePoint => point !== null);
+          touchpoint.walkingApproach.instruction ??
+          `Betreten Sie ${touchpoint.stationName} am Eingang.`,
+        label: 'Eingang',
+        position: [touchpoint.walkingApproach.latitude, touchpoint.walkingApproach.longitude],
+      });
+    }
+
+    points.push(...getActiveElevatorPoints(touchpoint, index));
+
+    const position = getTouchpointPosition(touchpoint);
+    if (position == null) {
+      continue;
+    }
+
+    points.push({
+      description: `Orientierungspunkt: ${touchpoint.stationName}.`,
+      id: `${touchpoint.kind.toLowerCase()}-${index}`,
+      instruction:
+        touchpoint.kind === 'DESTINATION'
+          ? `Sie haben ${touchpoint.stationName} erreicht.`
+          : `Folgen Sie dem Leitweg in Richtung ${touchpoint.stationName}.`,
+      label: touchpoint.stationName,
+      position,
+    });
+  }
+
+  return points;
+}
+
+type InactiveElevatorWarning = {
+  description: string;
+  operationalResumeDate: string | null;
+  stationName: string;
+};
+
+function getInactiveElevatorWarnings(
+  touchpoints: TrainRouteTouchpoint[] | undefined
+): InactiveElevatorWarning[] {
+  if (!touchpoints?.length) {
+    return [];
+  }
+
+  const warnings: InactiveElevatorWarning[] = [];
+
+  for (const touchpoint of touchpoints) {
+    for (const facility of touchpoint.facilities ?? []) {
+      if (facility.type === 'ELEVATOR' && facility.state === 'INACTIVE') {
+        warnings.push({
+          description: facility.description,
+          operationalResumeDate: facility.operationalResumeDate,
+          stationName: touchpoint.stationName,
+        });
+      }
+    }
+  }
+
+  return warnings;
 }
 
 function getManualStartsFromRoutePoints(
@@ -324,6 +387,7 @@ export default function LiveNavigation() {
   const routeStops = hasSelectedRouteTouchpoints
     ? getRouteStopsFromTouchpoints(selectedTouchpoints)
     : ROUTE_STOPS;
+  const inactiveElevatorWarnings = getInactiveElevatorWarnings(selectedTouchpoints);
   const selectedOriginLabel = hasSelectedRouteTouchpoints
     ? (selectedTouchpoints?.find((touchpoint) => touchpoint.kind === 'ORIGIN')?.stationName ??
       selectedRoute?.origin)
@@ -557,6 +621,33 @@ export default function LiveNavigation() {
               </div>
             ) : null}
           </div>
+
+          {inactiveElevatorWarnings.length > 0 ? (
+            <section
+              aria-label="Aufzug nicht verfügbar"
+              className={styles['elevator-warning']}
+              role="alert"
+            >
+              {inactiveElevatorWarnings.map((warning) => (
+                <div key={warning.description} className={styles['elevator-warning-item']}>
+                  <TriangleAlert aria-hidden="true" className={styles['elevator-warning-icon']} />
+                  <div>
+                    <p className={styles['elevator-warning-title']}>
+                      Aufzug nicht verfügbar: {warning.description}
+                    </p>
+                    {warning.operationalResumeDate != null ? (
+                      <p className={styles['elevator-warning-date']}>
+                        Voraussichtliche Wiederinbetriebnahme: {warning.operationalResumeDate}
+                      </p>
+                    ) : null}
+                    <p className={styles['elevator-warning-advice']}>
+                      Bitte wenden Sie sich an das Bahnhofspersonal.
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </section>
+          ) : null}
 
           {shouldShowManualFallback ? (
             <ManualStartSelector
