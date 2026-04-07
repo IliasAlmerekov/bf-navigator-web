@@ -75,6 +75,17 @@ export interface TrainRouteStationAccessibility {
   summary: string;
 }
 
+export interface WalkingApproach {
+  instruction: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface StopLocation {
+  latitude: number;
+  longitude: number;
+}
+
 export interface TrainRouteTouchpoint {
   accessibility: TrainRouteStationAccessibility;
   arrivalTime: string | null;
@@ -83,6 +94,9 @@ export interface TrainRouteTouchpoint {
   kind: 'ORIGIN' | 'TRANSFER' | 'DESTINATION';
   station: TrainRouteStation | null;
   stationName: string;
+  departureStop: StopLocation | null;
+  arrivalStop: StopLocation | null;
+  walkingApproach: WalkingApproach | null;
 }
 
 export interface TrainRouteResponse {
