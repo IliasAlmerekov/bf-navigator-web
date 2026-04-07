@@ -151,12 +151,15 @@ function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteR
           stepFreeAvailable: true,
           summary: 'Step-free access available',
         },
+        arrivalStop: null,
         arrivalTime: null,
+        departureStop: null,
         departureTime: '2026-04-02T09:10:00Z',
         facilities: [makeFacility(1001, 8.66312, 50.10736)],
         kind: 'ORIGIN',
         station: null,
         stationName: 'Düsseldorf Hbf',
+        walkingApproach: null,
       },
       {
         accessibility: {
@@ -170,12 +173,15 @@ function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteR
           stepFreeAvailable: true,
           summary: 'Step-free access available',
         },
+        arrivalStop: null,
         arrivalTime: '2026-04-02T10:33:00Z',
+        departureStop: null,
         departureTime: '2026-04-02T10:36:00Z',
         facilities: [makeFacility(1002, 8.66301, 50.10754)],
         kind: 'TRANSFER',
         station: null,
         stationName: 'Essen Hbf',
+        walkingApproach: null,
       },
       {
         accessibility: {
@@ -189,12 +195,15 @@ function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteR
           stepFreeAvailable: true,
           summary: 'Step-free access available',
         },
+        arrivalStop: null,
         arrivalTime: '2026-04-02T11:45:00Z',
+        departureStop: null,
         departureTime: null,
         facilities: [makeFacility(1003, 8.66292, 50.10772)],
         kind: 'DESTINATION',
         station: null,
         stationName: 'Köln Hbf',
+        walkingApproach: null,
       },
     ],
     transits: [],
@@ -343,12 +352,15 @@ describe('LiveNavigation', () => {
               stepFreeAvailable: true,
               summary: 'Step-free access available',
             },
+            arrivalStop: null,
             arrivalTime: null,
+            departureStop: null,
             departureTime: '2026-04-02T09:10:00Z',
             facilities: [makeFacility(1001, 8.66312, 50.10736)],
             kind: 'ORIGIN',
             station: null,
             stationName: 'Düsseldorf Hbf',
+            walkingApproach: null,
           },
           {
             accessibility: {
@@ -362,12 +374,15 @@ describe('LiveNavigation', () => {
               stepFreeAvailable: true,
               summary: 'Step-free access available',
             },
+            arrivalStop: null,
             arrivalTime: '2026-04-02T11:45:00Z',
+            departureStop: null,
             departureTime: null,
             facilities: [makeFacility(2001, 8.66301, 50.10754)],
             kind: 'DESTINATION',
             station: null,
             stationName: 'Köln Hbf',
+            walkingApproach: null,
           },
         ],
       })
@@ -387,6 +402,44 @@ describe('LiveNavigation', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /haupteingang/i })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /info-station/i })).toBeInTheDocument();
+  });
+
+  it('uses walkingApproach coordinates as Haupteingang starting position', () => {
+    const selectedRoute = makeSelectedRoute();
+    const [originTouchpoint, ...restTouchpoints] = selectedRoute.touchpoints ?? [];
+
+    getSelectedTrainRouteMock.mockReturnValue({
+      ...selectedRoute,
+      touchpoints: originTouchpoint
+        ? [
+            {
+              ...originTouchpoint,
+              walkingApproach: {
+                instruction: 'Hier einsteigen: E',
+                latitude: 53.5515,
+                longitude: 10.0054,
+              },
+            },
+            ...restTouchpoints,
+          ]
+        : selectedRoute.touchpoints,
+    });
+    render(<LiveNavigation />);
+
+    watchErrorCallback?.({
+      code: 1,
+      message: 'Permission denied',
+      PERMISSION_DENIED: 1,
+      POSITION_UNAVAILABLE: 2,
+      TIMEOUT: 3,
+    } as GeolocationPositionError);
+
+    expect(screen.getByRole('radio', { name: /haupteingang/i })).toBeInTheDocument();
+
+    const lastCall = liveNavigationMapMock.mock.calls[liveNavigationMapMock.mock.calls.length - 1];
+    const lastProps = lastCall?.[0] as { routePath?: Array<[number, number]> } | undefined;
+
+    expect(lastProps?.routePath?.[0]).toEqual([53.5515, 10.0054]);
   });
 
   it('shows manual fallback controls when geolocation permission is denied', async () => {

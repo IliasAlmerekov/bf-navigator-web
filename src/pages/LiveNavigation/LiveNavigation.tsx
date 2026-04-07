@@ -235,13 +235,20 @@ function getManualStartsFromRoutePoints(
   }));
 }
 
-function getRequiredManualStarts(): LiveNavigationManualStart[] {
+function getRequiredManualStarts(
+  touchpoints: TrainRouteTouchpoint[] | undefined
+): LiveNavigationManualStart[] {
+  const originTouchpoint = touchpoints?.find((touchpoint) => touchpoint.kind === 'ORIGIN');
+
   return [
     {
-      description: 'Starten Sie am Haupteingang und folgen Sie dem Leitweg zum Abfahrtsgleis.',
+      description:
+        originTouchpoint?.walkingApproach != null
+          ? 'Starten Sie am Eingang und folgen Sie dem Leitweg zum Abfahrtsgleis.'
+          : 'Starten Sie am Haupteingang und folgen Sie dem Leitweg zum Abfahrtsgleis.',
       id: 'main-entrance',
       label: 'Haupteingang',
-      routePointId: 'main-entrance',
+      routePointId: originTouchpoint?.walkingApproach != null ? 'entrance-0' : 'main-entrance',
     },
     {
       description: 'Starten Sie an der Info-Station und folgen Sie dem Leitweg zum Abfahrtsgleis.',
@@ -253,9 +260,9 @@ function getRequiredManualStarts(): LiveNavigationManualStart[] {
 }
 
 function mergeManualStartOptions(
-  derivedManualStarts: LiveNavigationManualStart[]
+  derivedManualStarts: LiveNavigationManualStart[],
+  requiredManualStarts: LiveNavigationManualStart[]
 ): LiveNavigationManualStart[] {
-  const requiredManualStarts = getRequiredManualStarts();
   const optionalDerivedStarts = derivedManualStarts.filter(
     (start) => !requiredManualStarts.some((requiredStart) => requiredStart.id === start.id)
   );
@@ -397,6 +404,7 @@ export default function LiveNavigation() {
   const hasSelectedRouteTouchpoints = Boolean(selectedTouchpoints?.length);
   const derivedRoutePoints = getRoutePointsFromTouchpoints(selectedTouchpoints);
   const hasCompleteDerivedRoutePoints = hasRouteAnchors(derivedRoutePoints);
+  const requiredManualStarts = getRequiredManualStarts(selectedTouchpoints);
   const routePoints = hasCompleteDerivedRoutePoints
     ? derivedRoutePoints
     : LIVE_NAVIGATION_ROUTE_POINTS;
@@ -404,7 +412,10 @@ export default function LiveNavigation() {
     ? mergeManualFallbackRoutePoints(routePoints)
     : routePoints;
   const manualStartOptions = hasCompleteDerivedRoutePoints
-    ? mergeManualStartOptions(getManualStartsFromRoutePoints(derivedRoutePoints))
+    ? mergeManualStartOptions(
+        getManualStartsFromRoutePoints(derivedRoutePoints),
+        requiredManualStarts
+      )
     : LIVE_NAVIGATION_MANUAL_STARTS;
   const defaultManualStartId = manualStartOptions[0]?.id ?? DEFAULT_MANUAL_START_ID;
   const routeStops = hasSelectedRouteTouchpoints
