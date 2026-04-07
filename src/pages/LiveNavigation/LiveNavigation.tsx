@@ -99,9 +99,25 @@ function hasValidCoordinates(
   return isValidCoordinate(facility.geocoordX) && isValidCoordinate(facility.geocoordY);
 }
 
+function getStopPosition(
+  stop: TrainRouteTouchpoint['departureStop'] | TrainRouteTouchpoint['arrivalStop']
+): LiveNavigationLatLng | null {
+  if (stop?.latitude == null || stop?.longitude == null) {
+    return null;
+  }
+
+  return [stop.latitude, stop.longitude];
+}
+
 function getTouchpointPosition(touchpoint: TrainRouteTouchpoint): LiveNavigationLatLng | null {
-  if (touchpoint.departureStop?.latitude != null && touchpoint.departureStop?.longitude != null) {
-    return [touchpoint.departureStop.latitude, touchpoint.departureStop.longitude];
+  const departurePosition = getStopPosition(touchpoint.departureStop);
+  if (departurePosition) {
+    return departurePosition;
+  }
+
+  const arrivalPosition = getStopPosition(touchpoint.arrivalStop);
+  if (arrivalPosition) {
+    return arrivalPosition;
   }
 
   const facilityWithCoordinates = (touchpoint.facilities ?? []).find(hasValidCoordinates);
@@ -147,7 +163,7 @@ function getRoutePointsFromTouchpoints(
         instruction:
           touchpoint.walkingApproach.instruction ??
           `Betreten Sie ${touchpoint.stationName} am Eingang.`,
-        label: 'Eingang',
+        label: `Eingang ${touchpoint.stationName}`,
         position: [touchpoint.walkingApproach.latitude, touchpoint.walkingApproach.longitude],
       });
     }
@@ -263,6 +279,13 @@ function mergeManualFallbackRoutePoints(
   return [...requiredFallbackPoints, ...deduplicatedRoutePoints];
 }
 
+function hasRouteAnchors(routePoints: LiveNavigationRoutePoint[]) {
+  const hasOriginAnchor = routePoints.some((point) => point.id.startsWith('origin-'));
+  const hasDestinationAnchor = routePoints.some((point) => point.id.startsWith('destination-'));
+
+  return hasOriginAnchor && hasDestinationAnchor;
+}
+
 function getVisibleTrainLabel(trainNames: string[] | undefined): string {
   if (!trainNames?.length) {
     return 'ICE 782';
@@ -373,7 +396,7 @@ export default function LiveNavigation() {
   const selectedTouchpoints = selectedRoute?.touchpoints;
   const hasSelectedRouteTouchpoints = Boolean(selectedTouchpoints?.length);
   const derivedRoutePoints = getRoutePointsFromTouchpoints(selectedTouchpoints);
-  const hasCompleteDerivedRoutePoints = derivedRoutePoints.length >= 2;
+  const hasCompleteDerivedRoutePoints = hasRouteAnchors(derivedRoutePoints);
   const routePoints = hasCompleteDerivedRoutePoints
     ? derivedRoutePoints
     : LIVE_NAVIGATION_ROUTE_POINTS;

@@ -2,9 +2,10 @@ import type { ReactNode } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { TrainRouteResponse } from '../TrainSearchResults/types';
 import LiveNavigation from './LiveNavigation';
+import { LIVE_NAVIGATION_ROUTE_POINTS } from './liveNavigationData';
 import * as liveNavigationUtils from './liveNavigationUtils';
+import type { TrainRouteResponse } from '../TrainSearchResults/types';
 
 const liveNavigationMapMock = vi.fn();
 const watchPositionMock = vi.fn();
@@ -567,7 +568,7 @@ describe('LiveNavigation', () => {
     expect(clearWatchMock).toHaveBeenCalledWith(17);
   });
 
-  it('uses departureStop coordinates for map position when available', () => {
+  it('uses stop coordinates for origin and destination when facilities are absent', () => {
     getSelectedTrainRouteMock.mockReturnValue({
       origin: 'Hamburg Hbf',
       destination: 'Braunschweig Hbf',
@@ -672,11 +673,97 @@ describe('LiveNavigation', () => {
     );
     expect(hasDepStopCoord).toBe(true);
 
+    // Destination should use arrivalStop coordinates [52.2524, 10.5316] when facilities are absent.
+    const hasArrivalStopCoord = routePath?.some(
+      ([lat, lng]) => Math.abs(lat - 52.2524) < 0.0001 && Math.abs(lng - 10.5316) < 0.0001
+    );
+    expect(hasArrivalStopCoord).toBe(true);
+
     const hasFacilityCoord = routePath?.some(
       ([lat, lng]) => Math.abs(lat - 53.5532) < 0.0001 && Math.abs(lng - 10.0065) < 0.0001
     );
     // Facility coordinate should NOT be the primary stop position
     expect(hasFacilityCoord).toBe(false);
+  });
+
+  it('falls back to the default route when derived points miss the destination anchor', () => {
+    getSelectedTrainRouteMock.mockReturnValue(
+      makeSelectedRoute({
+        touchpoints: [
+          {
+            accessibility: {
+              activeElevators: 1,
+              activeEscalators: 0,
+              hasFacilityData: true,
+              inactiveElevators: 0,
+              inactiveEscalators: 0,
+              mobilityServiceAvailable: true,
+              status: 'ACCESSIBLE',
+              stepFreeAvailable: true,
+              summary: 'Step-free access available',
+            },
+            arrivalTime: null,
+            departureTime: '2026-04-02T09:10:00Z',
+            facilities: [makeFacility(3001, 8.6633, 50.1074)],
+            kind: 'ORIGIN',
+            station: null,
+            stationName: 'Düsseldorf Hbf',
+            departureStop: { latitude: 50.1075, longitude: 8.6635 },
+            arrivalStop: null,
+            walkingApproach: {
+              latitude: 50.1072,
+              longitude: 8.6631,
+              instruction: 'Start am Haupteingang',
+            },
+          },
+          {
+            accessibility: {
+              activeElevators: 0,
+              activeEscalators: 0,
+              hasFacilityData: false,
+              inactiveElevators: 0,
+              inactiveEscalators: 0,
+              mobilityServiceAvailable: false,
+              status: 'UNKNOWN',
+              stepFreeAvailable: false,
+              summary: 'Station accessibility data unavailable',
+            },
+            arrivalTime: '2026-04-02T11:45:00Z',
+            departureTime: null,
+            facilities: null,
+            kind: 'DESTINATION',
+            station: null,
+            stationName: 'Köln Hbf',
+            departureStop: null,
+            arrivalStop: null,
+            walkingApproach: null,
+          },
+        ],
+      })
+    );
+
+    render(<LiveNavigation />);
+
+    const [fallbackLat, fallbackLng] = LIVE_NAVIGATION_ROUTE_POINTS[0].position;
+
+    watchSuccessCallback?.({
+      coords: {
+        accuracy: 5,
+        altitude: null,
+        altitudeAccuracy: null,
+        heading: null,
+        latitude: fallbackLat,
+        longitude: fallbackLng,
+        speed: null,
+      },
+      timestamp: Date.now(),
+    } as GeolocationPosition);
+
+    const routePath = (
+      liveNavigationMapMock.mock.calls.at(-1)?.[0] as { routePath: [number, number][] } | undefined
+    )?.routePath;
+
+    expect(routePath).toEqual(LIVE_NAVIGATION_ROUTE_POINTS.map((point) => point.position));
   });
 
   it('shows inactive elevator warning when origin touchpoint has inactive elevators', () => {
