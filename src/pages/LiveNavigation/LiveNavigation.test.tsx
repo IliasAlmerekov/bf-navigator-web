@@ -404,25 +404,27 @@ describe('LiveNavigation', () => {
     expect(screen.getByRole('radio', { name: /info-station/i })).toBeInTheDocument();
   });
 
-  it('uses walkingApproach coordinates as Haupteingang starting position', () => {
+  it('uses walkingApproach coordinates when the origin is not the first touchpoint', () => {
     const selectedRoute = makeSelectedRoute();
-    const [originTouchpoint, ...restTouchpoints] = selectedRoute.touchpoints ?? [];
+    const [originTouchpoint, transferTouchpoint, destinationTouchpoint] =
+      selectedRoute.touchpoints ?? [];
+    const updatedOriginTouchpoint = originTouchpoint
+      ? {
+          ...originTouchpoint,
+          walkingApproach: {
+            instruction: 'Hier einsteigen: E',
+            latitude: 53.5515,
+            longitude: 10.0054,
+          },
+        }
+      : undefined;
 
     getSelectedTrainRouteMock.mockReturnValue({
       ...selectedRoute,
-      touchpoints: originTouchpoint
-        ? [
-            {
-              ...originTouchpoint,
-              walkingApproach: {
-                instruction: 'Hier einsteigen: E',
-                latitude: 53.5515,
-                longitude: 10.0054,
-              },
-            },
-            ...restTouchpoints,
-          ]
-        : selectedRoute.touchpoints,
+      touchpoints:
+        updatedOriginTouchpoint && transferTouchpoint && destinationTouchpoint
+          ? [transferTouchpoint, updatedOriginTouchpoint, destinationTouchpoint]
+          : selectedRoute.touchpoints,
     });
     render(<LiveNavigation />);
 

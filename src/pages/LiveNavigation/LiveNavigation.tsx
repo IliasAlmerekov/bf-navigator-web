@@ -238,17 +238,21 @@ function getManualStartsFromRoutePoints(
 function getRequiredManualStarts(
   touchpoints: TrainRouteTouchpoint[] | undefined
 ): LiveNavigationManualStart[] {
-  const originTouchpoint = touchpoints?.find((touchpoint) => touchpoint.kind === 'ORIGIN');
+  const originIndex = touchpoints?.findIndex((touchpoint) => touchpoint.kind === 'ORIGIN') ?? -1;
+  const originTouchpoint = originIndex >= 0 ? touchpoints?.[originIndex] : undefined;
+  const hasOriginWalkingApproach = originTouchpoint?.walkingApproach != null && originIndex >= 0;
+  const entranceRoutePointId = hasOriginWalkingApproach
+    ? `entrance-${originIndex}`
+    : DEFAULT_MANUAL_START_ID;
 
   return [
     {
-      description:
-        originTouchpoint?.walkingApproach != null
-          ? 'Starten Sie am Eingang und folgen Sie dem Leitweg zum Abfahrtsgleis.'
-          : 'Starten Sie am Haupteingang und folgen Sie dem Leitweg zum Abfahrtsgleis.',
+      description: hasOriginWalkingApproach
+        ? 'Starten Sie am Eingang und folgen Sie dem Leitweg zum Abfahrtsgleis.'
+        : 'Starten Sie am Haupteingang und folgen Sie dem Leitweg zum Abfahrtsgleis.',
       id: 'main-entrance',
       label: 'Haupteingang',
-      routePointId: originTouchpoint?.walkingApproach != null ? 'entrance-0' : 'main-entrance',
+      routePointId: entranceRoutePointId,
     },
     {
       description: 'Starten Sie an der Info-Station und folgen Sie dem Leitweg zum Abfahrtsgleis.',
