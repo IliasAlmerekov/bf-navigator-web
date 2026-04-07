@@ -173,7 +173,7 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
         </div>
       )}
 
-      {transitMeta && <p className={styles.duration}>{transitMeta}</p>}
+      {transitMeta && <p className={styles['transit-meta']}>{transitMeta}</p>}
 
       <div
         aria-label={`Barrierefreiheit: ${route.accessibilitySummary.summary}`}
@@ -193,9 +193,15 @@ export function TrainResultCard({ route, onSelect, isRecommended = false }: Trai
 
       {firstTransit && lastTransit && (
         <div aria-label="Von / Nach" className={styles.stations}>
-          <span className={styles.station}>{firstTransit.departureStop}</span>
+          <span className={styles['station-block']}>
+            <span className={styles['station-label']}>Von</span>
+            <span className={styles.station}>{firstTransit.departureStop}</span>
+          </span>
           <span aria-hidden="true" className={styles['station-sep']} />
-          <span className={styles.station}>{lastTransit.arrivalStop}</span>
+          <span className={styles['station-block']}>
+            <span className={styles['station-label']}>Nach</span>
+            <span className={styles.station}>{lastTransit.arrivalStop}</span>
+          </span>
         </div>
       )}
 

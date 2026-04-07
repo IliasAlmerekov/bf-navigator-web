@@ -38,7 +38,12 @@ declare module 'leaflet' {
 
   export type LeafletCoordinate = [number, number];
 
+  export type LeafletLatLngBounds = {
+    isValid(): boolean;
+  };
+
   const Leaflet: {
+    latLngBounds(positions: LeafletCoordinate[]): LeafletLatLngBounds;
     circleMarker(position: LeafletCoordinate, options?: LeafletPathOptions): LeafletLayer;
     divIcon(options: LeafletDivIconOptions): LeafletDivIcon;
     marker(position: LeafletCoordinate, options?: LeafletMarkerOptions): LeafletLayer;
@@ -60,6 +65,14 @@ declare module 'react-leaflet' {
     keyboard: { disable(): void };
     removeLayer(layer: unknown): void;
     scrollWheelZoom: { disable(): void; enable(): void };
+    fitBounds(
+      bounds: import('leaflet').LeafletLatLngBounds,
+      options?: {
+        animate?: boolean;
+        maxZoom?: number;
+        padding?: [number, number];
+      }
+    ): void;
     setView(center: [number, number], zoom: number, options?: { animate?: boolean }): void;
     tap?: { disable(): void };
     touchZoom: { disable(): void };

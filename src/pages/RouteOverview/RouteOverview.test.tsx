@@ -273,7 +273,11 @@ describe('RouteOverview', () => {
   });
 
   it('renders the selected trip details instead of the static route overview mocks', () => {
-    render(<RouteOverview />);
+    const { container } = render(<RouteOverview />);
+
+    const page = container.querySelector('main');
+
+    expect(page?.children).toHaveLength(1);
 
     expect(
       screen.getByRole('heading', {

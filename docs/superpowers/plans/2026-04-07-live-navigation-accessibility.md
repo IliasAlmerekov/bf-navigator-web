@@ -1,51 +1,60 @@
-# Live Navigation Accessibility Routing — Implementation Plan
+# Live Navigation Departure Accessibility Routing Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Enrich the `/routes/trains` backend response with precise GPS stop coordinates and walking-approach points, then use that data in LiveNavigation to route users from the station entrance through active elevators to the departure platform.
+**Goal:** Add backend-provided departure-station navigation data and use it in `LiveNavigation` to build one accessible entrance-to-platform route through active elevators, while keeping escalators as informational markers and showing a blocked-route warning when no accessible path exists.
 
-**Architecture:** Extend the existing backend pipeline — add stop `location.latLng` and WALK-step `endLocation` to the Google Routes fieldMask, parse them into new DTO fields, and carry them through to `TrainRouteTouchpointDTO`. On the frontend, rewrite `getTouchpointPosition` to use real stop coordinates, extend `getRoutePointsFromTouchpoints` to include elevator waypoints, and derive the Haupteingang position from `walkingApproach` instead of hardcode.
+**Architecture:** Keep the current `/routes/trains` contract and existing station/facility enrichment intact. On the backend, extend stop and touchpoint DTOs with optional coordinates and `walkingApproach`, then populate those fields while mapping Google transit steps. On the frontend, keep the text-first `LiveNavigation` page but move the departure-only route derivation into pure utilities, pass richer marker data into the map, and render an explicit accessible warning state instead of pretending escalators are route alternatives.
 
-**Tech Stack:** Java 21 · Spring Boot 4 · Lombok · Jackson · Vitest · React Testing Library · TypeScript strict
-
----
-
-## File Map
-
-**Backend** (`/home/iliasalmerekov/Projects/LF8/bf-navigator-service`):
-
-| Action | File                                                                              |
-| ------ | --------------------------------------------------------------------------------- |
-| Modify | `src/main/java/com/bf/navigator/service/route/client/GoogleTrainRouteClient.java` |
-| Create | `src/main/java/com/bf/navigator/service/route/dto/WalkingApproachDTO.java`        |
-| Modify | `src/main/java/com/bf/navigator/service/route/dto/TrainRouteStopDTO.java`         |
-| Modify | `src/main/java/com/bf/navigator/service/route/dto/TrainRouteTouchpointDTO.java`   |
-| Modify | `src/main/java/com/bf/navigator/service/route/service/TrainRouteService.java`     |
-| Modify | `src/test/java/com/bf/navigator/service/route/service/TrainRouteServiceTest.java` |
-
-**Frontend** (`/home/iliasalmerekov/Projects/LF8/bf-navigator-web`):
-
-| Action | File                                               |
-| ------ | -------------------------------------------------- |
-| Modify | `src/pages/TrainSearchResults/types.ts`            |
-| Modify | `src/pages/LiveNavigation/LiveNavigation.tsx`      |
-| Modify | `src/pages/LiveNavigation/LiveNavigation.test.tsx` |
+**Tech Stack:** Java 21 · Spring Boot · Jackson · Lombok · React 19 · TypeScript 5.9 · Vitest · React Testing Library · Leaflet
 
 ---
 
-## Task 1: Backend — Write failing tests for location + walking approach
+## File Structure
+
+**Backend** (`/home/iliasalmerekov/Projects/LF8/bf-navigator-service`)
+
+- Create: `src/main/java/com/bf/navigator/service/route/dto/WalkingApproachDTO.java`
+  Small DTO for the last walk-step approach to the departure transit step.
+- Modify: `src/main/java/com/bf/navigator/service/route/dto/TrainRouteStopDTO.java`
+  Add optional `latitude` and `longitude`.
+- Modify: `src/main/java/com/bf/navigator/service/route/dto/TrainRouteTouchpointDTO.java`
+  Add optional `departureStop`, `arrivalStop`, and `walkingApproach`.
+- Modify: `src/main/java/com/bf/navigator/service/route/service/TrainRouteService.java`
+  Parse stop coordinates, retain walk-step context, and attach navigation fields to the `ORIGIN` touchpoint without disturbing existing facility/accessibility enrichment.
+- Modify: `src/test/java/com/bf/navigator/service/route/service/TrainRouteServiceTest.java`
+  Add regression coverage for stop coordinates and walk-approach extraction.
+
+**Frontend** (`/home/iliasalmerekov/Projects/LF8/bf-navigator-web`)
+
+- Modify: `src/pages/LiveNavigation/liveNavigationUtils.ts`
+  Add pure departure-only route-model helpers and marker metadata builders.
+- Modify: `src/pages/LiveNavigation/liveNavigationUtils.test.ts`
+  Cover route-building, escalator-marker, and blocked-route logic.
+- Modify: `src/pages/LiveNavigation/LiveNavigation.tsx`
+  Consume the new route model, use only the `ORIGIN` touchpoint, and render the blocked-route UI.
+- Modify: `src/pages/LiveNavigation/LiveNavigation.test.tsx`
+  Verify warning state, `Hilfe rufen`, and map props for escalators/inactive elevators.
+- Modify: `src/pages/LiveNavigation/components/LiveNavigationMap.tsx`
+  Accept explicit markers for active elevators, inactive elevators, escalators, entrance, and departure point.
+- Modify: `src/pages/LiveNavigation/LiveNavigation.module.css`
+  Add styling for the warning card, marker summary, and non-functional help button.
+
+---
+
+### Task 1: Backend Tests For Coordinates And Walking Approach
 
 **Files:**
 
-- Test: `src/test/java/com/bf/navigator/service/route/service/TrainRouteServiceTest.java`
+- Modify: `/home/iliasalmerekov/Projects/LF8/bf-navigator-service/src/test/java/com/bf/navigator/service/route/service/TrainRouteServiceTest.java`
 
-- [ ] **Step 1: Add the two new test methods to TrainRouteServiceTest.java**
+- [ ] **Step 1: Add a failing test for stop coordinates**
 
-Add these two methods to the existing `TrainRouteServiceTest` class (after the last existing `@Test`):
+Insert this test near the existing touchpoint tests:
 
 ```java
 @Test
-void searchTrainRoutesParsesStopLocationFromTransitDetails() throws Exception {
+void searchTrainRoutesAddsDepartureAndArrivalStopCoordinatesToTouchpoints() throws Exception {
     TrainRouteRequestDTO request = TrainRouteRequestDTO.builder()
             .origin("Hamburg Hbf")
             .destination("Braunschweig Hbf")
@@ -68,11 +77,15 @@ void searchTrainRoutesParsesStopLocationFromTransitDetails() throws Exception {
                           "stopDetails": {
                             "departureStop": {
                               "name": "Hamburg Hauptbahnhof",
-                              "location": { "latLng": { "latitude": 53.553637, "longitude": 10.006677 } }
+                              "location": {
+                                "latLng": { "latitude": 53.552776, "longitude": 10.006603 }
+                              }
                             },
                             "arrivalStop": {
                               "name": "Braunschweig Hauptbahnhof",
-                              "location": { "latLng": { "latitude": 52.2524, "longitude": 10.5316 } }
+                              "location": {
+                                "latLng": { "latitude": 52.253164, "longitude": 10.54058 }
+                              }
                             },
                             "departureTime": "2026-04-02T08:29:00Z",
                             "arrivalTime": "2026-04-02T10:45:00Z"
@@ -97,17 +110,28 @@ void searchTrainRoutesParsesStopLocationFromTransitDetails() throws Exception {
 
     TrainRouteSearchResponseDTO response = trainRouteService.searchTrainRoutes(request, true);
 
-    TrainRouteTouchpointDTO origin = response.getTrips().getFirst().getTouchpoints().get(0);
-    assertEquals(53.553637, origin.getDepartureStop().getLatitude(), 0.000001);
-    assertEquals(10.006677, origin.getDepartureStop().getLongitude(), 0.000001);
-
-    TrainRouteTouchpointDTO destination = response.getTrips().getFirst().getTouchpoints().get(1);
-    assertEquals(52.2524, destination.getArrivalStop().getLatitude(), 0.000001);
-    assertEquals(10.5316, destination.getArrivalStop().getLongitude(), 0.000001);
+    assertEquals(53.552776,
+            response.getTrips().getFirst().getTouchpoints().get(0).getDepartureStop().getLatitude(),
+            0.000001);
+    assertEquals(10.006603,
+            response.getTrips().getFirst().getTouchpoints().get(0).getDepartureStop().getLongitude(),
+            0.000001);
+    assertEquals(52.253164,
+            response.getTrips().getFirst().getTouchpoints().get(1).getArrivalStop().getLatitude(),
+            0.000001);
+    assertEquals(10.54058,
+            response.getTrips().getFirst().getTouchpoints().get(1).getArrivalStop().getLongitude(),
+            0.000001);
 }
+```
 
+- [ ] **Step 2: Add a failing test for `walkingApproach`**
+
+Insert this second test below the previous one:
+
+```java
 @Test
-void searchTrainRoutesBuildsWalkingApproachFromLastWalkStepBeforeTransit() throws Exception {
+void searchTrainRoutesBuildsWalkingApproachFromLastWalkStepBeforeOriginTransit() throws Exception {
     TrainRouteRequestDTO request = TrainRouteRequestDTO.builder()
             .origin("Hamburg Hbf")
             .destination("Braunschweig Hbf")
@@ -126,11 +150,15 @@ void searchTrainRoutesBuildsWalkingApproachFromLastWalkStepBeforeTransit() throw
                     "steps": [
                       {
                         "travelMode": "WALK",
-                        "endLocation": { "latLng": { "latitude": 53.5530, "longitude": 10.0060 } }
+                        "endLocation": {
+                          "latLng": { "latitude": 53.552321, "longitude": 10.00611 }
+                        }
                       },
                       {
                         "travelMode": "WALK",
-                        "endLocation": { "latLng": { "latitude": 53.553637, "longitude": 10.006677 } },
+                        "endLocation": {
+                          "latLng": { "latitude": 53.552776, "longitude": 10.006603 }
+                        },
                         "navigationInstruction": { "instructions": "Hier einsteigen: E" }
                       },
                       {
@@ -139,11 +167,15 @@ void searchTrainRoutesBuildsWalkingApproachFromLastWalkStepBeforeTransit() throw
                           "stopDetails": {
                             "departureStop": {
                               "name": "Hamburg Hauptbahnhof",
-                              "location": { "latLng": { "latitude": 53.553637, "longitude": 10.006677 } }
+                              "location": {
+                                "latLng": { "latitude": 53.552776, "longitude": 10.006603 }
+                              }
                             },
                             "arrivalStop": {
                               "name": "Braunschweig Hauptbahnhof",
-                              "location": { "latLng": { "latitude": 52.2524, "longitude": 10.5316 } }
+                              "location": {
+                                "latLng": { "latitude": 52.253164, "longitude": 10.54058 }
+                              }
                             },
                             "departureTime": "2026-04-02T08:29:00Z",
                             "arrivalTime": "2026-04-02T10:45:00Z"
@@ -168,36 +200,51 @@ void searchTrainRoutesBuildsWalkingApproachFromLastWalkStepBeforeTransit() throw
 
     TrainRouteSearchResponseDTO response = trainRouteService.searchTrainRoutes(request, true);
 
-    TrainRouteTouchpointDTO origin = response.getTrips().getFirst().getTouchpoints().get(0);
-    assertNotNull(origin.getWalkingApproach());
-    assertEquals(53.553637, origin.getWalkingApproach().getLatitude(), 0.000001);
-    assertEquals(10.006677, origin.getWalkingApproach().getLongitude(), 0.000001);
-    assertEquals("Hier einsteigen: E", origin.getWalkingApproach().getInstruction());
+    assertNotNull(response.getTrips().getFirst().getTouchpoints().get(0).getWalkingApproach());
+    assertEquals("Hier einsteigen: E",
+            response.getTrips().getFirst().getTouchpoints().get(0).getWalkingApproach().getInstruction());
+    assertEquals(53.552776,
+            response.getTrips().getFirst().getTouchpoints().get(0).getWalkingApproach().getLatitude(),
+            0.000001);
+    assertEquals(10.006603,
+            response.getTrips().getFirst().getTouchpoints().get(0).getWalkingApproach().getLongitude(),
+            0.000001);
 }
 ```
 
-- [ ] **Step 2: Run the new tests — verify they fail**
+- [ ] **Step 3: Run the backend tests and confirm they fail**
+
+Run from `/home/iliasalmerekov/Projects/LF8/bf-navigator-service`:
 
 ```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-service
-./mvnw test -pl . -Dtest=TrainRouteServiceTest#searchTrainRoutesParsesStopLocationFromTransitDetails+searchTrainRoutesBuildsWalkingApproachFromLastWalkStepBeforeTransit -q 2>&1 | tail -20
+rtk ./mvnw -q -Dtest=TrainRouteServiceTest#searchTrainRoutesAddsDepartureAndArrivalStopCoordinatesToTouchpoints+searchTrainRoutesBuildsWalkingApproachFromLastWalkStepBeforeOriginTransit test
 ```
 
-Expected: `FAILED` — compilation error because `getDepartureStop()`, `getArrivalStop()`, `getWalkingApproach()` do not exist yet.
+Expected: compilation failure because `TrainRouteTouchpointDTO` does not yet expose `getDepartureStop()`, `getArrivalStop()`, or `getWalkingApproach()`.
+
+- [ ] **Step 4: Commit the failing test scaffold**
+
+Run from `/home/iliasalmerekov/Projects/LF8/bf-navigator-service`:
+
+```bash
+rtk git add src/test/java/com/bf/navigator/service/route/service/TrainRouteServiceTest.java
+rtk git commit -m "test: cover live navigation route metadata"
+```
 
 ---
 
-## Task 2: Backend — Create DTOs
+### Task 2: Backend Implementation For Departure Navigation Metadata
 
 **Files:**
 
-- Create: `src/main/java/com/bf/navigator/service/route/dto/WalkingApproachDTO.java`
-- Modify: `src/main/java/com/bf/navigator/service/route/dto/TrainRouteStopDTO.java`
-- Modify: `src/main/java/com/bf/navigator/service/route/dto/TrainRouteTouchpointDTO.java`
+- Create: `/home/iliasalmerekov/Projects/LF8/bf-navigator-service/src/main/java/com/bf/navigator/service/route/dto/WalkingApproachDTO.java`
+- Modify: `/home/iliasalmerekov/Projects/LF8/bf-navigator-service/src/main/java/com/bf/navigator/service/route/dto/TrainRouteStopDTO.java`
+- Modify: `/home/iliasalmerekov/Projects/LF8/bf-navigator-service/src/main/java/com/bf/navigator/service/route/dto/TrainRouteTouchpointDTO.java`
+- Modify: `/home/iliasalmerekov/Projects/LF8/bf-navigator-service/src/main/java/com/bf/navigator/service/route/service/TrainRouteService.java`
 
-- [ ] **Step 1: Create WalkingApproachDTO.java**
+- [ ] **Step 1: Create `WalkingApproachDTO`**
 
-Create `src/main/java/com/bf/navigator/service/route/dto/WalkingApproachDTO.java`:
+Create `/home/iliasalmerekov/Projects/LF8/bf-navigator-service/src/main/java/com/bf/navigator/service/route/dto/WalkingApproachDTO.java`:
 
 ```java
 package com.bf.navigator.service.route.dto;
@@ -218,22 +265,11 @@ public class WalkingApproachDTO {
 }
 ```
 
-- [ ] **Step 2: Extend TrainRouteStopDTO**
+- [ ] **Step 2: Extend the route DTOs with optional navigation fields**
 
-Replace the full content of `src/main/java/com/bf/navigator/service/route/dto/TrainRouteStopDTO.java`:
+Update `/home/iliasalmerekov/Projects/LF8/bf-navigator-service/src/main/java/com/bf/navigator/service/route/dto/TrainRouteStopDTO.java`:
 
 ```java
-package com.bf.navigator.service.route.dto;
-
-import com.bf.navigator.service.station.dto.FacilityDTO;
-import com.bf.navigator.service.station.dto.StationDTO;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.util.List;
-
 @Data
 @Builder
 @NoArgsConstructor
@@ -242,37 +278,17 @@ public class TrainRouteStopDTO {
     private String stationName;
     private String arrivalTime;
     private String departureTime;
-
-    // GPS coordinates from Google Routes API location.latLng
     private Double latitude;
     private Double longitude;
 
-    // Boarding point from last WALK step before this transit stop
-    private WalkingApproachDTO walkingApproach;
-
-    // Station info from DB API
     private StationDTO station;
     private List<FacilityDTO> facilities;
 }
 ```
 
-- [ ] **Step 3: Extend TrainRouteTouchpointDTO**
-
-Replace the full content of `src/main/java/com/bf/navigator/service/route/dto/TrainRouteTouchpointDTO.java`:
+Update `/home/iliasalmerekov/Projects/LF8/bf-navigator-service/src/main/java/com/bf/navigator/service/route/dto/TrainRouteTouchpointDTO.java`:
 
 ```java
-package com.bf.navigator.service.route.dto;
-
-import java.util.List;
-
-import com.bf.navigator.service.station.dto.FacilityDTO;
-import com.bf.navigator.service.station.dto.StationDTO;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 @Data
 @Builder
 @NoArgsConstructor
@@ -285,416 +301,151 @@ public class TrainRouteTouchpointDTO {
     private StationDTO station;
     private List<FacilityDTO> facilities;
     private TrainRouteStationAccessibilityDTO accessibility;
-
-    // Coordinates of the actual transit stop (platform) from Google Routes API
-    private StopLocationDTO departureStop;
-    private StopLocationDTO arrivalStop;
-
-    // Boarding point derived from the last WALK step preceding this stop
+    private TrainRouteStopDTO departureStop;
+    private TrainRouteStopDTO arrivalStop;
     private WalkingApproachDTO walkingApproach;
 }
 ```
 
-- [ ] **Step 4: Create StopLocationDTO.java**
+- [ ] **Step 3: Refactor `TrainRouteService` to preserve walk-step context**
 
-Create `src/main/java/com/bf/navigator/service/route/dto/StopLocationDTO.java`:
+Inside `/home/iliasalmerekov/Projects/LF8/bf-navigator-service/src/main/java/com/bf/navigator/service/route/service/TrainRouteService.java`, introduce a private record and change the route collection flow:
 
 ```java
-package com.bf.navigator.service.route.dto;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class StopLocationDTO {
-    private Double latitude;
-    private Double longitude;
+private record MappedTransitStep(TrainRouteTransitDTO transit, WalkingApproachDTO walkingApproach) {
 }
+
+// inside searchTrainRoutes(...)
+List<MappedTransitStep> mappedTransitSteps = new java.util.ArrayList<>();
+collectRouteDetails(steps, mappedTransitSteps);
+
+List<TrainRouteTransitDTO> transits = mappedTransitSteps.stream()
+        .map(MappedTransitStep::transit)
+        .toList();
+List<TrainRouteTouchpointDTO> touchpoints = buildTouchpoints(mappedTransitSteps);
 ```
 
-- [ ] **Step 5: Compile to confirm no errors**
-
-```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-service
-./mvnw compile -q 2>&1 | tail -10
-```
-
-Expected: `BUILD SUCCESS` — DTOs compile, tests still fail on missing service logic.
-
----
-
-## Task 3: Backend — Extend FIELD_MASK and update service logic
-
-**Files:**
-
-- Modify: `src/main/java/com/bf/navigator/service/route/client/GoogleTrainRouteClient.java`
-- Modify: `src/main/java/com/bf/navigator/service/route/service/TrainRouteService.java`
-
-- [ ] **Step 1: Extend FIELD_MASK in GoogleTrainRouteClient.java**
-
-Replace the `FIELD_MASK` constant (lines 24–34):
+Replace the existing `collectRouteDetails(...)` body with transit-aware walk tracking:
 
 ```java
-private static final String FIELD_MASK = String.join(",",
-        "routes.localizedValues.distance.text",
-        "routes.localizedValues.duration.text",
-        "routes.legs.steps.travelMode",
-        "routes.legs.steps.endLocation",
-        "routes.legs.steps.navigationInstruction",
-        "routes.legs.steps.transitDetails.stopDetails.departureStop",
-        "routes.legs.steps.transitDetails.stopDetails.arrivalStop",
-        "routes.legs.steps.transitDetails.stopDetails.departureTime",
-        "routes.legs.steps.transitDetails.stopDetails.arrivalTime",
-        "routes.legs.steps.transitDetails.transitLine.name",
-        "routes.legs.steps.transitDetails.transitLine.nameShort",
-        "routes.legs.steps.transitDetails.transitLine.vehicle.name.text",
-        "routes.legs.steps.transitDetails.transitLine.agencies.name");
-```
-
-- [ ] **Step 2: Update DEBUG response to include WALK step + location data**
-
-In `GoogleTrainRouteClient.java`, update `DEBUG_GOOGLE_MAPS_RESPONSE` to add `travelMode`, `endLocation`, and `location.latLng` to the first route. Replace the current string literal with:
-
-```java
-private static final String DEBUG_GOOGLE_MAPS_RESPONSE = """
-            {
-              "routes": [
-                {
-                  "localizedValues": {
-                    "distance": { "text": "240 km" },
-                    "duration": { "text": "2 Stunden, 20 Minuten" }
-                  },
-                  "legs": [
-                    {
-                      "steps": [
-                        {
-                          "travelMode": "WALK",
-                          "endLocation": { "latLng": { "latitude": 53.553637, "longitude": 10.006677 } },
-                          "navigationInstruction": { "instructions": "Hier einsteigen: E" }
-                        },
-                        {
-                          "travelMode": "TRANSIT",
-                          "transitDetails": {
-                            "stopDetails": {
-                              "departureStop": {
-                                "name": "Hamburg Hauptbahnhof",
-                                "location": { "latLng": { "latitude": 53.553637, "longitude": 10.006677 } }
-                              },
-                              "arrivalStop": {
-                                "name": "Braunschweig Hauptbahnhof",
-                                "location": { "latLng": { "latitude": 52.2524, "longitude": 10.5316 } }
-                              },
-                              "departureTime": "2026-04-02T08:29:00Z",
-                              "arrivalTime": "2026-04-02T10:45:00Z"
-                            },
-                            "transitLine": {
-                              "nameShort": "ICE 73",
-                              "vehicle": { "name": { "text": "Hochgeschwindigkeitszug" } },
-                              "agencies": [{ "name": "DB Fernverkehr AG" }]
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "localizedValues": {
-                    "distance": { "text": "248 km" },
-                    "duration": { "text": "2 Stunden, 35 Minuten" }
-                  },
-                  "legs": [
-                    {
-                      "steps": [
-                        {
-                          "travelMode": "TRANSIT",
-                          "transitDetails": {
-                            "stopDetails": {
-                              "departureStop": { "name": "Hamburg Hauptbahnhof" },
-                              "arrivalStop": { "name": "Hannover Hauptbahnhof" },
-                              "departureTime": "2026-04-02T08:41:00Z",
-                              "arrivalTime": "2026-04-02T09:58:00Z"
-                            },
-                            "transitLine": {
-                              "nameShort": "ICE 585",
-                              "vehicle": { "name": { "text": "Hochgeschwindigkeitszug" } },
-                              "agencies": [{ "name": "DB Fernverkehr AG" }]
-                            }
-                          }
-                        },
-                        {
-                          "travelMode": "TRANSIT",
-                          "transitDetails": {
-                            "stopDetails": {
-                              "departureStop": { "name": "Hannover Hauptbahnhof" },
-                              "arrivalStop": { "name": "Braunschweig Hauptbahnhof" },
-                              "departureTime": "2026-04-02T10:10:00Z",
-                              "arrivalTime": "2026-04-02T10:58:00Z"
-                            },
-                            "transitLine": {
-                              "nameShort": "IC 2038",
-                              "vehicle": { "name": { "text": "Intercity" } },
-                              "agencies": [{ "name": "DB Fernverkehr AG" }]
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "localizedValues": {
-                    "distance": { "text": "266 km" },
-                    "duration": { "text": "3 Stunden, 7 Minuten" }
-                  },
-                  "legs": [
-                    {
-                      "steps": [
-                        {
-                          "travelMode": "TRANSIT",
-                          "transitDetails": {
-                            "stopDetails": {
-                              "departureStop": { "name": "Hamburg Hauptbahnhof" },
-                              "arrivalStop": { "name": "Uelzen Bahnhof" },
-                              "departureTime": "2026-04-02T08:17:00Z",
-                              "arrivalTime": "2026-04-02T09:11:00Z"
-                            },
-                            "transitLine": {
-                              "nameShort": "RE 3",
-                              "vehicle": { "name": { "text": "Regionalzug" } },
-                              "agencies": [{ "name": "metronom" }]
-                            }
-                          }
-                        },
-                        {
-                          "travelMode": "TRANSIT",
-                          "transitDetails": {
-                            "stopDetails": {
-                              "departureStop": { "name": "Uelzen Bahnhof" },
-                              "arrivalStop": { "name": "Hannover Hauptbahnhof" },
-                              "departureTime": "2026-04-02T09:22:00Z",
-                              "arrivalTime": "2026-04-02T10:17:00Z"
-                            },
-                            "transitLine": {
-                              "nameShort": "IC 2083",
-                              "vehicle": { "name": { "text": "Intercity" } },
-                              "agencies": [{ "name": "DB Fernverkehr AG" }]
-                            }
-                          }
-                        },
-                        {
-                          "travelMode": "TRANSIT",
-                          "transitDetails": {
-                            "stopDetails": {
-                              "departureStop": { "name": "Hannover Hauptbahnhof" },
-                              "arrivalStop": { "name": "Braunschweig Hauptbahnhof" },
-                              "departureTime": "2026-04-02T10:31:00Z",
-                              "arrivalTime": "2026-04-02T11:24:00Z"
-                            },
-                            "transitLine": {
-                              "nameShort": "RE 60",
-                              "vehicle": { "name": { "text": "Regionalzug" } },
-                              "agencies": [{ "name": "DB Regio" }]
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-        """;
-```
-
-- [ ] **Step 3: Update collectRouteDetails to track WALK steps**
-
-In `TrainRouteService.java`, replace `collectRouteDetails` (lines 385–401):
-
-```java
-private void collectRouteDetails(JsonNode steps, List<TrainRouteTransitDTO> collectedTransits) {
+private void collectRouteDetails(JsonNode steps, List<MappedTransitStep> collectedSteps) {
     if (!steps.isArray()) {
         return;
     }
 
-    JsonNode lastWalkEndLocation = null;
-    String lastWalkInstruction = null;
+    WalkingApproachDTO lastWalkingApproach = null;
 
     for (JsonNode step : steps) {
+        String travelMode = step.path("travelMode").asText();
+
+        if ("WALK".equals(travelMode)) {
+            lastWalkingApproach = mapWalkingApproach(step);
+            continue;
+        }
+
+        if (!"TRANSIT".equals(travelMode)) {
+            continue;
+        }
+
         JsonNode transitDetails = step.path("transitDetails");
         if (transitDetails.isMissingNode()) {
-            // WALK step — capture its endLocation as boarding point candidate
-            JsonNode endLatLng = step.path("endLocation").path("latLng");
-            if (!endLatLng.isMissingNode()) {
-                lastWalkEndLocation = endLatLng;
-                lastWalkInstruction = step.path("navigationInstruction").path("instructions").asText(null);
-            }
             continue;
         }
 
         JsonNode stopDetails = transitDetails.path("stopDetails");
         JsonNode transitLine = transitDetails.path("transitLine");
-        WalkingApproachDTO walkingApproach = buildWalkingApproach(lastWalkEndLocation, lastWalkInstruction);
-        TrainRouteTransitDTO transit = mapTransit(stopDetails, transitLine, walkingApproach);
-        addTransitIfValid(collectedTransits, transit);
+        TrainRouteTransitDTO transit = mapTransit(stopDetails, transitLine);
 
-        // Reset — each TRANSIT step consumes the preceding WALK approach
-        lastWalkEndLocation = null;
-        lastWalkInstruction = null;
+        if (isValidTransit(transit)) {
+            collectedSteps.add(new MappedTransitStep(transit, lastWalkingApproach));
+        }
+
+        lastWalkingApproach = null;
     }
 }
 ```
 
-- [ ] **Step 4: Add buildWalkingApproach helper to TrainRouteService**
-
-Add this private method to `TrainRouteService` (place it near the end, before `textOrNull`):
+Add these helpers below the existing mapping helpers:
 
 ```java
-@Nullable
-private WalkingApproachDTO buildWalkingApproach(@Nullable JsonNode endLatLng, @Nullable String instruction) {
-    if (endLatLng == null || endLatLng.isMissingNode()) {
+private WalkingApproachDTO mapWalkingApproach(JsonNode step) {
+    JsonNode latLng = step.path("endLocation").path("latLng");
+
+    if (latLng.isMissingNode() || latLng.isNull()) {
         return null;
     }
+
+    Double latitude = doubleOrNull(latLng, "latitude");
+    Double longitude = doubleOrNull(latLng, "longitude");
+
+    if (latitude == null || longitude == null) {
+        return null;
+    }
+
     return WalkingApproachDTO.builder()
-            .latitude(endLatLng.path("latitude").asDouble())
-            .longitude(endLatLng.path("longitude").asDouble())
-            .instruction(instruction)
+            .latitude(latitude)
+            .longitude(longitude)
+            .instruction(textOrNull(step.path("navigationInstruction"), "instructions"))
             .build();
+}
+
+private Double doubleOrNull(JsonNode node, String fieldName) {
+    JsonNode value = node.path(fieldName);
+    return value.isMissingNode() || value.isNull() ? null : value.asDouble();
+}
+
+private boolean isValidTransit(TrainRouteTransitDTO candidate) {
+    return candidate.getDeparture() != null
+            && candidate.getDeparture().getStationName() != null
+            && !candidate.getDeparture().getStationName().isBlank()
+            && candidate.getArrival() != null
+            && candidate.getArrival().getStationName() != null
+            && !candidate.getArrival().getStationName().isBlank();
 }
 ```
 
-- [ ] **Step 5: Update mapTransit to accept and pass walkingApproach**
+- [ ] **Step 4: Attach the new fields to stops and touchpoints**
 
-Replace `mapTransit` (lines 404–415) in `TrainRouteService.java`:
-
-```java
-private TrainRouteTransitDTO mapTransit(JsonNode stopDetails, JsonNode transitLine,
-        @Nullable WalkingApproachDTO walkingApproach) {
-    TrainRouteStopDTO departureStop = mapDepartureStop(stopDetails, walkingApproach);
-    TrainRouteStopDTO arrivalStop = mapArrivalStop(stopDetails);
-
-    return TrainRouteTransitDTO.builder()
-            .departure(departureStop)
-            .arrival(arrivalStop)
-            .trainName(resolveTrainName(transitLine))
-            .vehicleType(textOrNull(transitLine.path("vehicle").path("name"), "text"))
-            .agencyName(firstAgencyName(transitLine.path("agencies")))
-            .build();
-}
-```
-
-- [ ] **Step 6: Update mapDepartureStop to parse location + walkingApproach**
-
-Replace `mapDepartureStop` (lines 418–423) in `TrainRouteService.java`:
+Replace `mapDepartureStop(...)`, `mapArrivalStop(...)`, and `buildTouchpoints(...)`/`appendOrMergeTouchpoint(...)` with versions that preserve coordinates and `walkingApproach`:
 
 ```java
-private TrainRouteStopDTO mapDepartureStop(JsonNode stopDetails, @Nullable WalkingApproachDTO walkingApproach) {
+private TrainRouteStopDTO mapDepartureStop(JsonNode stopDetails) {
     JsonNode latLng = stopDetails.path("departureStop").path("location").path("latLng");
+
     return TrainRouteStopDTO.builder()
             .stationName(stopDetails.path("departureStop").path("name").asText(null))
             .departureTime(textOrNull(stopDetails, "departureTime"))
-            .latitude(latLng.isMissingNode() ? null : latLng.path("latitude").asDouble())
-            .longitude(latLng.isMissingNode() ? null : latLng.path("longitude").asDouble())
-            .walkingApproach(walkingApproach)
+            .latitude(doubleOrNull(latLng, "latitude"))
+            .longitude(doubleOrNull(latLng, "longitude"))
             .build();
 }
-```
 
-- [ ] **Step 7: Update mapArrivalStop to parse location**
-
-Replace `mapArrivalStop` (lines 426–431) in `TrainRouteService.java`:
-
-```java
 private TrainRouteStopDTO mapArrivalStop(JsonNode stopDetails) {
     JsonNode latLng = stopDetails.path("arrivalStop").path("location").path("latLng");
+
     return TrainRouteStopDTO.builder()
             .stationName(stopDetails.path("arrivalStop").path("name").asText(null))
             .arrivalTime(textOrNull(stopDetails, "arrivalTime"))
-            .latitude(latLng.isMissingNode() ? null : latLng.path("latitude").asDouble())
-            .longitude(latLng.isMissingNode() ? null : latLng.path("longitude").asDouble())
+            .latitude(doubleOrNull(latLng, "latitude"))
+            .longitude(doubleOrNull(latLng, "longitude"))
             .build();
 }
-```
 
-- [ ] **Step 8: Update appendOrMergeTouchpoint to carry walkingApproach and stop locations to touchpoint**
-
-In `buildTouchpoints`, the touchpoint builder must carry the new fields. Replace `appendOrMergeTouchpoint` (lines 151–187):
-
-```java
-private void appendOrMergeTouchpoint(List<TrainRouteTouchpointDTO> touchpoints, TrainRouteStopDTO stop) {
-    if (stop == null || stop.getStationName() == null || stop.getStationName().isBlank()) {
-        return;
-    }
-
-    StopLocationDTO stopLocation = (stop.getLatitude() != null && stop.getLongitude() != null)
-            ? StopLocationDTO.builder().latitude(stop.getLatitude()).longitude(stop.getLongitude()).build()
-            : null;
-
-    TrainRouteTouchpointDTO candidate = TrainRouteTouchpointDTO.builder()
-            .stationName(stop.getStationName())
-            .arrivalTime(stop.getArrivalTime())
-            .departureTime(stop.getDepartureTime())
-            .station(stop.getStation())
-            .facilities(stop.getFacilities())
-            .departureStop(stopLocation)
-            .walkingApproach(stop.getWalkingApproach())
-            .build();
-
-    if (touchpoints.isEmpty()) {
-        touchpoints.add(candidate);
-        return;
-    }
-
-    TrainRouteTouchpointDTO previous = touchpoints.getLast();
-    if (!sameStation(previous, candidate)) {
-        touchpoints.add(candidate);
-        return;
-    }
-
-    if (candidate.getArrivalTime() != null) {
-        previous.setArrivalTime(candidate.getArrivalTime());
-    }
-    if (candidate.getDepartureTime() != null) {
-        previous.setDepartureTime(candidate.getDepartureTime());
-    }
-    if (previous.getStation() == null && candidate.getStation() != null) {
-        previous.setStation(candidate.getStation());
-    }
-    if (candidate.getFacilities() != null) {
-        previous.setFacilities(candidate.getFacilities());
-    }
-    if (previous.getDepartureStop() == null && candidate.getDepartureStop() != null) {
-        previous.setDepartureStop(candidate.getDepartureStop());
-    }
-    if (previous.getWalkingApproach() == null && candidate.getWalkingApproach() != null) {
-        previous.setWalkingApproach(candidate.getWalkingApproach());
-    }
-}
-```
-
-For arrival stops, we need to set `arrivalStop` on the touchpoint. The arrival stop's coordinates come from `mapArrivalStop`. Currently `appendOrMergeTouchpoint` receives either a departure stop or an arrival stop. We need to distinguish these.
-
-Replace the `appendOrMergeTouchpoint` call site in `buildTouchpoints` to pass the stop type. Update `buildTouchpoints` (lines 126–149):
-
-```java
-private List<TrainRouteTouchpointDTO> buildTouchpoints(List<TrainRouteTransitDTO> transits) {
+private List<TrainRouteTouchpointDTO> buildTouchpoints(List<MappedTransitStep> mappedTransitSteps) {
     List<TrainRouteTouchpointDTO> touchpoints = new java.util.ArrayList<>();
-    if (transits.isEmpty()) {
+    if (mappedTransitSteps.isEmpty()) {
         return touchpoints;
     }
 
-    appendDepartureTouchpoint(touchpoints, transits.getFirst().getDeparture());
+    MappedTransitStep firstTransit = mappedTransitSteps.getFirst();
+    appendOrMergeTouchpoint(touchpoints, firstTransit.transit().getDeparture(), firstTransit.walkingApproach(), true);
 
-    for (int index = 0; index < transits.size(); index++) {
-        TrainRouteTransitDTO transit = transits.get(index);
-        appendArrivalTouchpoint(touchpoints, transit.getArrival());
-        if (index < transits.size() - 1) {
-            appendDepartureTouchpoint(touchpoints, transits.get(index + 1).getDeparture());
+    for (int index = 0; index < mappedTransitSteps.size(); index++) {
+        TrainRouteTransitDTO transit = mappedTransitSteps.get(index).transit();
+        appendOrMergeTouchpoint(touchpoints, transit.getArrival(), null, false);
+        if (index < mappedTransitSteps.size() - 1) {
+            appendOrMergeTouchpoint(touchpoints, mappedTransitSteps.get(index + 1).transit().getDeparture(),
+                    mappedTransitSteps.get(index + 1).walkingApproach(), true);
         }
     }
 
@@ -707,63 +458,23 @@ private List<TrainRouteTouchpointDTO> buildTouchpoints(List<TrainRouteTransitDTO
     return touchpoints;
 }
 
-private void appendDepartureTouchpoint(List<TrainRouteTouchpointDTO> touchpoints, TrainRouteStopDTO stop) {
+private void appendOrMergeTouchpoint(List<TrainRouteTouchpointDTO> touchpoints,
+        TrainRouteStopDTO stop,
+        WalkingApproachDTO walkingApproach,
+        boolean isDeparture) {
     if (stop == null || stop.getStationName() == null || stop.getStationName().isBlank()) {
         return;
     }
-
-    StopLocationDTO stopLocation = buildStopLocation(stop.getLatitude(), stop.getLongitude());
-
-    TrainRouteTouchpointDTO candidate = TrainRouteTouchpointDTO.builder()
-            .stationName(stop.getStationName())
-            .departureTime(stop.getDepartureTime())
-            .station(stop.getStation())
-            .facilities(stop.getFacilities())
-            .departureStop(stopLocation)
-            .walkingApproach(stop.getWalkingApproach())
-            .build();
-
-    if (touchpoints.isEmpty()) {
-        touchpoints.add(candidate);
-        return;
-    }
-
-    TrainRouteTouchpointDTO previous = touchpoints.getLast();
-    if (!sameStation(previous, candidate)) {
-        touchpoints.add(candidate);
-        return;
-    }
-
-    if (candidate.getDepartureTime() != null) {
-        previous.setDepartureTime(candidate.getDepartureTime());
-    }
-    if (previous.getStation() == null && candidate.getStation() != null) {
-        previous.setStation(candidate.getStation());
-    }
-    if (candidate.getFacilities() != null) {
-        previous.setFacilities(candidate.getFacilities());
-    }
-    if (previous.getDepartureStop() == null && candidate.getDepartureStop() != null) {
-        previous.setDepartureStop(candidate.getDepartureStop());
-    }
-    if (previous.getWalkingApproach() == null && candidate.getWalkingApproach() != null) {
-        previous.setWalkingApproach(candidate.getWalkingApproach());
-    }
-}
-
-private void appendArrivalTouchpoint(List<TrainRouteTouchpointDTO> touchpoints, TrainRouteStopDTO stop) {
-    if (stop == null || stop.getStationName() == null || stop.getStationName().isBlank()) {
-        return;
-    }
-
-    StopLocationDTO stopLocation = buildStopLocation(stop.getLatitude(), stop.getLongitude());
 
     TrainRouteTouchpointDTO candidate = TrainRouteTouchpointDTO.builder()
             .stationName(stop.getStationName())
             .arrivalTime(stop.getArrivalTime())
+            .departureTime(stop.getDepartureTime())
             .station(stop.getStation())
             .facilities(stop.getFacilities())
-            .arrivalStop(stopLocation)
+            .departureStop(isDeparture ? stop : null)
+            .arrivalStop(isDeparture ? null : stop)
+            .walkingApproach(isDeparture ? walkingApproach : null)
             .build();
 
     if (touchpoints.isEmpty()) {
@@ -780,815 +491,591 @@ private void appendArrivalTouchpoint(List<TrainRouteTouchpointDTO> touchpoints, 
     if (candidate.getArrivalTime() != null) {
         previous.setArrivalTime(candidate.getArrivalTime());
     }
+    if (candidate.getDepartureTime() != null) {
+        previous.setDepartureTime(candidate.getDepartureTime());
+    }
     if (previous.getStation() == null && candidate.getStation() != null) {
         previous.setStation(candidate.getStation());
     }
     if (candidate.getFacilities() != null) {
         previous.setFacilities(candidate.getFacilities());
     }
+    if (previous.getDepartureStop() == null && candidate.getDepartureStop() != null) {
+        previous.setDepartureStop(candidate.getDepartureStop());
+    }
     if (previous.getArrivalStop() == null && candidate.getArrivalStop() != null) {
         previous.setArrivalStop(candidate.getArrivalStop());
     }
-}
-
-@Nullable
-private StopLocationDTO buildStopLocation(@Nullable Double latitude, @Nullable Double longitude) {
-    if (latitude == null || longitude == null) {
-        return null;
+    if (previous.getWalkingApproach() == null && candidate.getWalkingApproach() != null) {
+        previous.setWalkingApproach(candidate.getWalkingApproach());
     }
-    return StopLocationDTO.builder().latitude(latitude).longitude(longitude).build();
 }
 ```
 
-Also delete the old `appendOrMergeTouchpoint` method — it is replaced by the two new methods above.
+- [ ] **Step 5: Run backend tests and confirm they pass**
 
-Also add the import for `WalkingApproachDTO` and `StopLocationDTO` at the top of `TrainRouteService.java`:
-
-```java
-import com.bf.navigator.service.route.dto.WalkingApproachDTO;
-import com.bf.navigator.service.route.dto.StopLocationDTO;
-```
-
-- [ ] **Step 9: Run all backend tests — verify they pass**
+Run from `/home/iliasalmerekov/Projects/LF8/bf-navigator-service`:
 
 ```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-service
-./mvnw test -q 2>&1 | tail -20
+rtk ./mvnw -q -Dtest=TrainRouteServiceTest test
 ```
 
-Expected: `BUILD SUCCESS` — all tests including the two new ones pass.
+Expected: PASS, including the new stop-coordinate and `walkingApproach` assertions plus the older touchpoint/facility regressions.
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 6: Commit the backend slice**
+
+Run from `/home/iliasalmerekov/Projects/LF8/bf-navigator-service`:
 
 ```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-service
-git add src/
-git commit -m "feat: add stop location and walking approach to train route response"
+rtk git add src/main/java/com/bf/navigator/service/route/dto/WalkingApproachDTO.java src/main/java/com/bf/navigator/service/route/dto/TrainRouteStopDTO.java src/main/java/com/bf/navigator/service/route/dto/TrainRouteTouchpointDTO.java src/main/java/com/bf/navigator/service/route/service/TrainRouteService.java src/test/java/com/bf/navigator/service/route/service/TrainRouteServiceTest.java
+rtk git commit -m "feat: enrich touchpoints for departure navigation"
 ```
 
 ---
 
-## Task 4: Frontend — Extend TypeScript types
+### Task 3: Frontend Tests For Departure-Only Route Modeling
 
 **Files:**
 
-- Modify: `src/pages/TrainSearchResults/types.ts`
+- Modify: `/home/iliasalmerekov/Projects/LF8/bf-navigator-web/src/pages/LiveNavigation/liveNavigationUtils.test.ts`
+- Modify: `/home/iliasalmerekov/Projects/LF8/bf-navigator-web/src/pages/LiveNavigation/LiveNavigation.test.tsx`
 
-- [ ] **Step 1: Write the failing type-check test**
+- [ ] **Step 1: Add utility tests for the route model**
 
-In `src/pages/LiveNavigation/LiveNavigation.test.tsx`, add a compile-time sentinel at the top of the file (after imports) that will fail if the new fields are missing. Add the following right after the last `vi.mock(...)` block:
-
-```ts
-// Type sentinel — verifies new fields exist on TrainRouteTouchpoint
-type _AssertWalkingApproach =
-  NonNullable<NonNullable<TrainRouteResponse['touchpoints']>[number]['walkingApproach']> extends {
-    latitude: number;
-    longitude: number;
-    instruction: string;
-  }
-    ? true
-    : never;
-type _AssertDepartureStop =
-  NonNullable<NonNullable<TrainRouteResponse['touchpoints']>[number]['departureStop']> extends {
-    latitude: number;
-    longitude: number;
-  }
-    ? true
-    : never;
-```
-
-- [ ] **Step 2: Run the type check — verify it fails**
-
-```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-web
-npx tsc --noEmit 2>&1 | grep -i "walkingApproach\|departureStop\|_Assert" | head -10
-```
-
-Expected: type errors because fields do not exist yet.
-
-- [ ] **Step 3: Add new interfaces and extend TrainRouteTouchpoint in types.ts**
-
-In `src/pages/TrainSearchResults/types.ts`, add the following two interfaces before `TrainRouteTouchpoint`:
+Extend `/home/iliasalmerekov/Projects/LF8/bf-navigator-web/src/pages/LiveNavigation/liveNavigationUtils.test.ts` with these tests:
 
 ```ts
-export interface WalkingApproach {
-  instruction: string;
-  latitude: number;
-  longitude: number;
-}
+import type { TrainRouteTouchpoint } from '../TrainSearchResults/types';
+import { buildOriginRouteModel } from './liveNavigationUtils';
 
-export interface StopLocation {
-  latitude: number;
-  longitude: number;
-}
-```
-
-Then extend `TrainRouteTouchpoint` by adding three new optional fields:
-
-```ts
-export interface TrainRouteTouchpoint {
-  accessibility: TrainRouteStationAccessibility;
-  arrivalTime: string | null;
-  departureTime: string | null;
-  facilities: TrainRouteFacility[] | null;
-  kind: 'ORIGIN' | 'TRANSFER' | 'DESTINATION';
-  station: TrainRouteStation | null;
-  stationName: string;
-  // New fields from backend enrichment
-  departureStop: StopLocation | null;
-  arrivalStop: StopLocation | null;
-  walkingApproach: WalkingApproach | null;
-}
-```
-
-- [ ] **Step 4: Run the type check — verify it passes**
-
-```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-web
-npx tsc --noEmit 2>&1 | grep -E "error TS" | head -10
-```
-
-Expected: no type errors.
-
-- [ ] **Step 5: Commit**
-
-```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-web
-git add src/pages/TrainSearchResults/types.ts src/pages/LiveNavigation/LiveNavigation.test.tsx
-git commit -m "feat: add WalkingApproach and StopLocation types to TrainRouteTouchpoint"
-```
-
----
-
-## Task 5: Frontend — Fix getTouchpointPosition + extend route points with elevator waypoints
-
-**Files:**
-
-- Modify: `src/pages/LiveNavigation/LiveNavigation.tsx`
-- Modify: `src/pages/LiveNavigation/LiveNavigation.test.tsx`
-
-- [ ] **Step 1: Write failing test for departureStop coordinate usage**
-
-In `LiveNavigation.test.tsx`, update the `makeTouchpoint` helper (the tests currently use the inline structure from `makeSelectedRoute`). Add a new test near the bottom of the describe block, before the closing `});`:
-
-```ts
-it('uses departureStop coordinates for map position when available', async () => {
-  const user = userEvent.setup();
-
-  getSelectedTrainRouteMock.mockReturnValue({
-    origin: 'Hamburg Hbf',
-    destination: 'Braunschweig Hbf',
-    departureTime: '2026-04-02T08:29:00Z',
-    arrivalTime: '2026-04-02T10:45:00Z',
-    localizedDistanceText: '240 km',
-    localizedDurationText: '2 Stunden',
-    accessibilitySummary: {
+function makeOriginTouchpoint(): TrainRouteTouchpoint {
+  return {
+    accessibility: {
       activeElevators: 1,
-      activeEscalators: 0,
-      inactiveElevators: 0,
-      inactiveEscalators: 0,
-      mobilityServiceStations: 1,
-      status: 'ACCESSIBLE',
-      stepFreeStations: 1,
-      summary: '1/2 stations step-free',
-      totalStations: 2,
-    },
-    transits: [makeTransit('ICE 579')],
-    touchpoints: [
-      {
-        accessibility: {
-          activeElevators: 1,
-          activeEscalators: 0,
-          hasFacilityData: true,
-          inactiveElevators: 0,
-          inactiveEscalators: 0,
-          mobilityServiceAvailable: true,
-          status: 'ACCESSIBLE',
-          stepFreeAvailable: true,
-          summary: 'Step-free access available',
-        },
-        arrivalTime: null,
-        departureTime: '2026-04-02T08:29:00Z',
-        facilities: [makeFacility(1001, 10.006500, 53.553200)],
-        kind: 'ORIGIN',
-        station: null,
-        stationName: 'Hamburg Hbf',
-        departureStop: { latitude: 53.553637, longitude: 10.006677 },
-        arrivalStop: null,
-        walkingApproach: { latitude: 53.553400, longitude: 10.006300, instruction: 'Hier einsteigen: E' },
-      },
-      {
-        accessibility: {
-          activeElevators: 0,
-          activeEscalators: 0,
-          hasFacilityData: false,
-          inactiveElevators: 0,
-          inactiveEscalators: 0,
-          mobilityServiceAvailable: false,
-          status: 'UNKNOWN',
-          stepFreeAvailable: false,
-          summary: 'Station accessibility data unavailable',
-        },
-        arrivalTime: '2026-04-02T10:45:00Z',
-        departureTime: null,
-        facilities: null,
-        kind: 'DESTINATION',
-        station: null,
-        stationName: 'Braunschweig Hbf',
-        departureStop: null,
-        arrivalStop: { latitude: 52.2524, longitude: 10.5316 },
-        walkingApproach: null,
-      },
-    ],
-  } satisfies TrainRouteResponse);
-
-  render(<LiveNavigation />);
-
-  watchErrorCallback?.({
-    code: 1,
-    message: 'Permission denied',
-    PERMISSION_DENIED: 1,
-    POSITION_UNAVAILABLE: 2,
-    TIMEOUT: 3,
-  } as GeolocationPositionError);
-
-  const routePath = (
-    liveNavigationMapMock.mock.calls.at(-1)?.[0] as
-      | { routePath: [number, number][] }
-      | undefined
-  )?.routePath;
-
-  // Route must include departureStop coordinates [53.553637, 10.006677], not facility [53.553200, 10.006500]
-  const hasDepStopCoord = routePath?.some(
-    ([lat, lng]) => Math.abs(lat - 53.553637) < 0.0001 && Math.abs(lng - 10.006677) < 0.0001
-  );
-  expect(hasDepStopCoord).toBe(true);
-
-  const hasFacilityCoord = routePath?.some(
-    ([lat, lng]) => Math.abs(lat - 53.553200) < 0.0001 && Math.abs(lng - 10.006500) < 0.0001
-  );
-  // Facility coordinate should NOT be the primary stop position
-  expect(hasFacilityCoord).toBe(false);
-});
-```
-
-- [ ] **Step 2: Write failing test for inactive elevator warning**
-
-Add another test after the one above:
-
-```ts
-it('shows inactive elevator warning when origin touchpoint has inactive elevators', async () => {
-  getSelectedTrainRouteMock.mockReturnValue({
-    origin: 'Hamburg Hbf',
-    destination: 'Braunschweig Hbf',
-    departureTime: '2026-04-02T08:29:00Z',
-    arrivalTime: '2026-04-02T10:45:00Z',
-    localizedDistanceText: '240 km',
-    localizedDurationText: '2 Stunden',
-    accessibilitySummary: {
-      activeElevators: 0,
-      activeEscalators: 0,
+      activeEscalators: 1,
+      hasFacilityData: true,
       inactiveElevators: 1,
       inactiveEscalators: 0,
-      mobilityServiceStations: 0,
+      mobilityServiceAvailable: true,
       status: 'LIMITED',
-      stepFreeStations: 0,
-      summary: '0/2 stations step-free',
-      totalStations: 2,
+      stepFreeAvailable: true,
+      summary: 'Step-free access available',
     },
-    transits: [makeTransit('ICE 579')],
-    touchpoints: [
+    arrivalStop: null,
+    arrivalTime: null,
+    departureStop: { latitude: 50.10772, longitude: 8.66292 },
+    departureTime: '2026-04-02T09:10:00Z',
+    facilities: [
       {
-        accessibility: {
-          activeElevators: 0,
-          activeEscalators: 0,
-          hasFacilityData: true,
-          inactiveElevators: 1,
-          inactiveEscalators: 0,
-          mobilityServiceAvailable: false,
-          status: 'LIMITED',
-          stepFreeAvailable: false,
-          summary: 'Elevators 0 active / 1 inactive',
-        },
-        arrivalTime: null,
-        departureTime: '2026-04-02T08:29:00Z',
-        facilities: [
-          {
-            description: 'Lift to platform 7',
-            equipmentnumber: 1001,
-            geocoordX: 10.006500,
-            geocoordY: 53.553200,
-            operationalResumeDate: '2026-04-15',
-            operatorname: 'DB InfraGO',
-            state: 'INACTIVE',
-            stateExplanation: 'Maintenance',
-            stationnumber: 12345,
-            type: 'ELEVATOR',
-          },
-        ],
-        kind: 'ORIGIN',
-        station: null,
-        stationName: 'Hamburg Hbf',
-        departureStop: { latitude: 53.553637, longitude: 10.006677 },
-        arrivalStop: null,
-        walkingApproach: null,
+        description: 'Aufzug A',
+        equipmentnumber: 1001,
+        geocoordX: 8.66312,
+        geocoordY: 50.10736,
+        operationalResumeDate: null,
+        operatorname: 'DB InfraGO',
+        state: 'ACTIVE',
+        stateExplanation: 'available',
+        stationnumber: 8000001,
+        type: 'ELEVATOR',
       },
       {
-        accessibility: {
-          activeElevators: 0,
-          activeEscalators: 0,
-          hasFacilityData: false,
-          inactiveElevators: 0,
-          inactiveEscalators: 0,
-          mobilityServiceAvailable: false,
-          status: 'UNKNOWN',
-          stepFreeAvailable: false,
-          summary: 'Station accessibility data unavailable',
-        },
-        arrivalTime: '2026-04-02T10:45:00Z',
-        departureTime: null,
-        facilities: null,
-        kind: 'DESTINATION',
-        station: null,
-        stationName: 'Braunschweig Hbf',
-        departureStop: null,
-        arrivalStop: { latitude: 52.2524, longitude: 10.5316 },
-        walkingApproach: null,
+        description: 'Aufzug B',
+        equipmentnumber: 1002,
+        geocoordX: 8.6634,
+        geocoordY: 50.10744,
+        operationalResumeDate: '2026-04-09',
+        operatorname: 'DB InfraGO',
+        state: 'INACTIVE',
+        stateExplanation: 'out of service',
+        stationnumber: 8000001,
+        type: 'ELEVATOR',
+      },
+      {
+        description: 'Rolltreppe C',
+        equipmentnumber: 1003,
+        geocoordX: 8.66355,
+        geocoordY: 50.1075,
+        operationalResumeDate: null,
+        operatorname: 'DB InfraGO',
+        state: 'ACTIVE',
+        stateExplanation: 'available',
+        stationnumber: 8000001,
+        type: 'ESCALATOR',
       },
     ],
-  } satisfies TrainRouteResponse);
+    kind: 'ORIGIN',
+    station: null,
+    stationName: 'Frankfurt (Main) Hbf',
+    walkingApproach: {
+      instruction: 'Nutzen Sie den Haupteingang.',
+      latitude: 50.1071,
+      longitude: 8.6638,
+    },
+  };
+}
 
-  render(<LiveNavigation />);
+it('builds a departure-only route from entrance through active elevators to departure stop', () => {
+  const routeModel = buildOriginRouteModel([makeOriginTouchpoint()]);
 
-  watchErrorCallback?.({
-    code: 1,
-    message: 'Permission denied',
-    PERMISSION_DENIED: 1,
-    POSITION_UNAVAILABLE: 2,
-    TIMEOUT: 3,
-  } as GeolocationPositionError);
+  expect(routeModel.hasAccessibleRoute).toBe(true);
+  expect(routeModel.routePoints.map((point) => point.label)).toEqual([
+    'Haupteingang',
+    'Aufzug A',
+    'Abfahrtspunkt',
+  ]);
+});
 
-  expect(screen.getByRole('alert')).toBeInTheDocument();
-  expect(screen.getByRole('alert')).toHaveTextContent(/aufzug.*nicht verfügbar/i);
-  expect(screen.getByRole('alert')).toHaveTextContent(/2026-04-15/);
+it('keeps inactive elevators and escalators as markers only', () => {
+  const routeModel = buildOriginRouteModel([makeOriginTouchpoint()]);
+
+  expect(routeModel.markers.map((marker) => marker.kind)).toEqual([
+    'entrance',
+    'active-elevator',
+    'inactive-elevator',
+    'escalator',
+    'departure',
+  ]);
+  expect(routeModel.routePoints.map((point) => point.label)).not.toContain('Rolltreppe C');
+  expect(routeModel.warningMessage).toBeNull();
 });
 ```
 
-- [ ] **Step 3: Run failing tests to confirm they fail**
+- [ ] **Step 2: Add a page test for the blocked-route UI**
+
+Extend `/home/iliasalmerekov/Projects/LF8/bf-navigator-web/src/pages/LiveNavigation/LiveNavigation.test.tsx` with this scenario:
+
+```ts
+it('shows a blocked-route warning and a Hilfe rufen button when no active elevators exist', () => {
+  getSelectedTrainRouteMock.mockReturnValue(
+    makeSelectedRoute({
+      touchpoints: [
+        {
+          ...makeSelectedRoute().touchpoints![0],
+          departureStop: { latitude: 50.10772, longitude: 8.66292 },
+          facilities: [
+            {
+              ...makeFacility(1001, 8.66312, 50.10736),
+              description: 'Aufzug A',
+              operationalResumeDate: '2026-04-09',
+              state: 'INACTIVE',
+            },
+            {
+              ...makeFacility(1002, 8.66355, 50.1075),
+              description: 'Rolltreppe C',
+              type: 'ESCALATOR',
+            },
+          ],
+          walkingApproach: {
+            instruction: 'Nutzen Sie den Haupteingang.',
+            latitude: 50.1071,
+            longitude: 8.6638,
+          },
+        },
+      ],
+    })
+  );
+
+  render(<LiveNavigation />);
+
+  expect(screen.getByRole('alert')).toHaveTextContent(/barrierefreier weg derzeit nicht verfügbar/i);
+  expect(screen.getByRole('button', { name: /hilfe rufen/i })).toBeInTheDocument();
+});
+```
+
+- [ ] **Step 3: Run the frontend tests and confirm they fail**
+
+Run from `/home/iliasalmerekov/Projects/LF8/bf-navigator-web`:
 
 ```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-web
-npx vitest run src/pages/LiveNavigation/LiveNavigation.test.tsx --reporter=verbose 2>&1 | grep -E "FAIL|PASS|✓|×|uses departureStop|shows inactive" | head -20
+rtk vitest run src/pages/LiveNavigation/liveNavigationUtils.test.ts src/pages/LiveNavigation/LiveNavigation.test.tsx
 ```
 
-Expected: 2 new tests FAIL.
+Expected: FAIL because `buildOriginRouteModel()` and the blocked-route UI do not exist yet.
 
-- [ ] **Step 4: Rewrite getTouchpointPosition in LiveNavigation.tsx**
+- [ ] **Step 4: Commit the failing frontend tests**
 
-Replace the existing `getTouchpointPosition` function (lines 102–110):
+Run from `/home/iliasalmerekov/Projects/LF8/bf-navigator-web`:
 
-```ts
-function getTouchpointPosition(touchpoint: TrainRouteTouchpoint): LiveNavigationLatLng | null {
-  if (touchpoint.departureStop?.latitude != null && touchpoint.departureStop?.longitude != null) {
-    return [touchpoint.departureStop.latitude, touchpoint.departureStop.longitude];
-  }
-
-  const facilityWithCoordinates = (touchpoint.facilities ?? []).find(hasValidCoordinates);
-  if (!facilityWithCoordinates) {
-    return null;
-  }
-
-  return [facilityWithCoordinates.geocoordY, facilityWithCoordinates.geocoordX];
-}
+```bash
+rtk git add src/pages/LiveNavigation/liveNavigationUtils.test.ts src/pages/LiveNavigation/LiveNavigation.test.tsx
+rtk git commit -m "test: cover live navigation accessibility states"
 ```
 
-- [ ] **Step 5: Extend getRoutePointsFromTouchpoints to include elevator waypoints**
+---
 
-Replace `getRoutePointsFromTouchpoints` (lines 112–142):
+### Task 4: Frontend Implementation For Departure-Only Accessible Routing
+
+**Files:**
+
+- Modify: `/home/iliasalmerekov/Projects/LF8/bf-navigator-web/src/pages/LiveNavigation/liveNavigationUtils.ts`
+- Modify: `/home/iliasalmerekov/Projects/LF8/bf-navigator-web/src/pages/LiveNavigation/LiveNavigation.tsx`
+- Modify: `/home/iliasalmerekov/Projects/LF8/bf-navigator-web/src/pages/LiveNavigation/components/LiveNavigationMap.tsx`
+- Modify: `/home/iliasalmerekov/Projects/LF8/bf-navigator-web/src/pages/LiveNavigation/LiveNavigation.module.css`
+
+- [ ] **Step 1: Add a pure origin-route model helper**
+
+Append these types and helpers to `/home/iliasalmerekov/Projects/LF8/bf-navigator-web/src/pages/LiveNavigation/liveNavigationUtils.ts`:
 
 ```ts
-function getActiveElevatorPoints(
-  touchpoint: TrainRouteTouchpoint,
-  index: number
-): LiveNavigationRoutePoint[] {
-  return (touchpoint.facilities ?? [])
-    .filter(
-      (f): f is TrainRouteFacility & { geocoordX: number; geocoordY: number } =>
-        f.type === 'ELEVATOR' && f.state === 'ACTIVE' && hasValidCoordinates(f)
-    )
-    .map((f, elevatorIndex) => ({
-      description: f.description,
-      id: `elevator-${index}-${elevatorIndex}`,
-      instruction: `Nehmen Sie ${f.description} zur Plattform.`,
-      label: f.description,
-      position: [f.geocoordY, f.geocoordX] as LiveNavigationLatLng,
-    }));
+import type { TrainRouteFacility, TrainRouteTouchpoint } from '../TrainSearchResults/types';
+
+export type LiveNavigationMapMarker = {
+  accessibleLabel: string;
+  id: string;
+  kind: 'entrance' | 'active-elevator' | 'inactive-elevator' | 'escalator' | 'departure';
+  label: string;
+  position: LiveNavigationLatLng;
+};
+
+export type LiveNavigationOriginRouteModel = {
+  hasAccessibleRoute: boolean;
+  markers: LiveNavigationMapMarker[];
+  routePoints: LiveNavigationRoutePoint[];
+  warningMessage: string | null;
+};
+
+function hasValidFacilityCoordinates(
+  facility: TrainRouteFacility
+): facility is TrainRouteFacility & { geocoordX: number; geocoordY: number } {
+  return facility.geocoordX != null && facility.geocoordY != null;
 }
 
-function getRoutePointsFromTouchpoints(
+export function buildOriginRouteModel(
   touchpoints: TrainRouteTouchpoint[] | undefined
-): LiveNavigationRoutePoint[] {
-  if (!touchpoints?.length) {
-    return [];
+): LiveNavigationOriginRouteModel {
+  const originTouchpoint = touchpoints?.find((touchpoint) => touchpoint.kind === 'ORIGIN');
+  if (!originTouchpoint) {
+    return { hasAccessibleRoute: false, markers: [], routePoints: [], warningMessage: null };
   }
 
-  const points: LiveNavigationRoutePoint[] = [];
+  const markers: LiveNavigationMapMarker[] = [];
+  const routePoints: LiveNavigationRoutePoint[] = [];
 
-  for (const [index, touchpoint] of touchpoints.entries()) {
-    if (touchpoint.kind !== 'DESTINATION' && touchpoint.walkingApproach != null) {
-      points.push({
-        description: `Eingang ${touchpoint.stationName}.`,
-        id: `entrance-${index}`,
-        instruction:
-          touchpoint.walkingApproach.instruction ??
-          `Betreten Sie ${touchpoint.stationName} am Eingang.`,
-        label: 'Eingang',
-        position: [touchpoint.walkingApproach.latitude, touchpoint.walkingApproach.longitude],
-      });
-    }
-
-    points.push(...getActiveElevatorPoints(touchpoint, index));
-
-    const position = getTouchpointPosition(touchpoint);
-    if (position == null) {
-      continue;
-    }
-
-    points.push({
-      description: `Orientierungspunkt: ${touchpoint.stationName}.`,
-      id: `${touchpoint.kind.toLowerCase()}-${index}`,
-      instruction:
-        touchpoint.kind === 'DESTINATION'
-          ? `Sie haben ${touchpoint.stationName} erreicht.`
-          : `Folgen Sie dem Leitweg in Richtung ${touchpoint.stationName}.`,
-      label: touchpoint.stationName,
-      position,
+  if (originTouchpoint.walkingApproach) {
+    const entrancePosition: LiveNavigationLatLng = [
+      originTouchpoint.walkingApproach.latitude,
+      originTouchpoint.walkingApproach.longitude,
+    ];
+    markers.push({
+      accessibleLabel: 'Haupteingang',
+      id: 'origin-entrance',
+      kind: 'entrance',
+      label: 'Haupteingang',
+      position: entrancePosition,
+    });
+    routePoints.push({
+      description: 'Sie stehen am Haupteingang.',
+      id: 'origin-entrance',
+      instruction: originTouchpoint.walkingApproach.instruction,
+      label: 'Haupteingang',
+      position: entrancePosition,
     });
   }
 
-  return points;
+  const facilities = originTouchpoint.facilities ?? [];
+  const activeElevators = facilities.filter(
+    (facility): facility is TrainRouteFacility & { geocoordX: number; geocoordY: number } =>
+      facility.type === 'ELEVATOR' &&
+      facility.state === 'ACTIVE' &&
+      hasValidFacilityCoordinates(facility)
+  );
+
+  activeElevators.forEach((facility, index) => {
+    const position: LiveNavigationLatLng = [facility.geocoordY, facility.geocoordX];
+    markers.push({
+      accessibleLabel: `${facility.description}, Aufzug aktiv`,
+      id: `active-elevator-${index}`,
+      kind: 'active-elevator',
+      label: facility.description,
+      position,
+    });
+    routePoints.push({
+      description: facility.description,
+      id: `active-elevator-${index}`,
+      instruction: `Nehmen Sie ${facility.description}.`,
+      label: facility.description,
+      position,
+    });
+  });
+
+  facilities.forEach((facility, index) => {
+    if (!hasValidFacilityCoordinates(facility)) return;
+    const position: LiveNavigationLatLng = [facility.geocoordY, facility.geocoordX];
+
+    if (facility.type === 'ELEVATOR' && facility.state === 'INACTIVE') {
+      markers.push({
+        accessibleLabel: `${facility.description}, Aufzug außer Betrieb`,
+        id: `inactive-elevator-${index}`,
+        kind: 'inactive-elevator',
+        label: facility.description,
+        position,
+      });
+    }
+
+    if (facility.type === 'ESCALATOR') {
+      markers.push({
+        accessibleLabel: `${facility.description}, Rolltreppe nur zur Orientierung`,
+        id: `escalator-${index}`,
+        kind: 'escalator',
+        label: facility.description,
+        position,
+      });
+    }
+  });
+
+  if (originTouchpoint.departureStop) {
+    const departurePosition: LiveNavigationLatLng = [
+      originTouchpoint.departureStop.latitude,
+      originTouchpoint.departureStop.longitude,
+    ];
+    markers.push({
+      accessibleLabel: 'Abfahrtspunkt',
+      id: 'departure-stop',
+      kind: 'departure',
+      label: 'Abfahrtspunkt',
+      position: departurePosition,
+    });
+    routePoints.push({
+      description: 'Sie haben den Abfahrtspunkt erreicht.',
+      id: 'departure-stop',
+      instruction: 'Sie sind am Abfahrtspunkt angekommen.',
+      label: 'Abfahrtspunkt',
+      position: departurePosition,
+    });
+  }
+
+  const hasAccessibleRoute =
+    originTouchpoint.walkingApproach != null &&
+    activeElevators.length > 0 &&
+    originTouchpoint.departureStop != null;
+
+  return {
+    hasAccessibleRoute,
+    markers,
+    routePoints: hasAccessibleRoute ? routePoints : [],
+    warningMessage: hasAccessibleRoute
+      ? null
+      : 'Der barrierefreie Weg zum Abfahrtspunkt ist derzeit nicht verfügbar.',
+  };
 }
 ```
 
-- [ ] **Step 6: Add inactive elevator warning computation and UI**
+- [ ] **Step 2: Update `LiveNavigationMap` to render explicit infrastructure markers**
 
-After the `getRoutePointsFromTouchpoints` function in `LiveNavigation.tsx`, add:
+Change the map props in `/home/iliasalmerekov/Projects/LF8/bf-navigator-web/src/pages/LiveNavigation/components/LiveNavigationMap.tsx`:
 
 ```ts
-type InactiveElevatorWarning = {
-  description: string;
-  operationalResumeDate: string | null;
-  stationName: string;
+import type { LiveNavigationLatLng } from '../liveNavigationData';
+import type { LiveNavigationMapMarker } from '../liveNavigationUtils';
+
+type LiveNavigationMapProps = {
+  currentPosition: LiveNavigationLatLng;
+  destinationLabel: string;
+  destinationPosition: LiveNavigationLatLng;
+  markers?: LiveNavigationMapMarker[];
+  nextLabel: string;
+  routePath: LiveNavigationLatLng[];
+};
+```
+
+In `LiveNavigationMapLayers`, render markers when they are provided:
+
+```ts
+const MARKER_CLASS_BY_KIND: Record<LiveNavigationMapMarker['kind'], string> = {
+  'active-elevator': 'live-nav-dest-marker',
+  departure: 'live-nav-platform-marker',
+  entrance: 'live-nav-platform-marker',
+  escalator: 'live-nav-dest-marker',
+  'inactive-elevator': 'live-nav-platform-marker',
 };
 
-function getInactiveElevatorWarnings(
-  touchpoints: TrainRouteTouchpoint[] | undefined
-): InactiveElevatorWarning[] {
-  if (!touchpoints?.length) {
-    return [];
-  }
-
-  const warnings: InactiveElevatorWarning[] = [];
-
-  for (const touchpoint of touchpoints) {
-    for (const facility of touchpoint.facilities ?? []) {
-      if (facility.type === 'ELEVATOR' && facility.state === 'INACTIVE') {
-        warnings.push({
-          description: facility.description,
-          operationalResumeDate: facility.operationalResumeDate,
-          stationName: touchpoint.stationName,
-        });
-      }
-    }
-  }
-
-  return warnings;
+if (markers?.length) {
+  markers.forEach((marker) => {
+    const leafletMarker = L.marker(marker.position, {
+      icon: createMarkerIcon(
+        MARKER_CLASS_BY_KIND[marker.kind],
+        getMarkerShortLabel(marker.label),
+        marker.kind === 'departure' ? 32 : 40,
+        marker.kind === 'departure' ? 16 : 20
+      ),
+    }).addTo(map);
+    leafletMarker.bindTooltip?.(marker.accessibleLabel, { direction: 'top', offset: [0, -24] });
+    layers.push(leafletMarker);
+  });
+} else {
+  // keep the current fallback next/destination markers for mock-mode compatibility
 }
 ```
 
-In the `LiveNavigation` component function, after `const routeStops = ...`, add:
+- [ ] **Step 3: Use the origin-route model in `LiveNavigation.tsx`**
+
+Replace the selected-route derivation in `/home/iliasalmerekov/Projects/LF8/bf-navigator-web/src/pages/LiveNavigation/LiveNavigation.tsx` with an origin-only model:
 
 ```ts
-const inactiveElevatorWarnings = getInactiveElevatorWarnings(selectedTouchpoints);
+import {
+  buildInstructionState,
+  buildOriginRouteModel,
+  getRoutePointsFromManualStart,
+  type LiveNavigationMapMarker,
+} from './liveNavigationUtils';
+
+const originRouteModel = buildOriginRouteModel(selectedTouchpoints);
+const hasSelectedAccessibleRoute = originRouteModel.hasAccessibleRoute;
+const routePoints = hasSelectedAccessibleRoute
+  ? originRouteModel.routePoints
+  : LIVE_NAVIGATION_ROUTE_POINTS;
+const mapMarkers: LiveNavigationMapMarker[] | undefined =
+  hasSelectedRouteTouchpoints && originRouteModel.markers.length > 0
+    ? originRouteModel.markers
+    : undefined;
 ```
 
-In the JSX, add the warning section after the `<div className={styles['alt-section']}>` block (after the closing `</div>` of alt-section, before `{shouldShowManualFallback ...}`):
+Render the blocked state above the map:
 
 ```tsx
 {
-  inactiveElevatorWarnings.length > 0 ? (
-    <section
-      aria-label="Aufzug nicht verfügbar"
-      className={styles['elevator-warning']}
-      role="alert"
-    >
-      {inactiveElevatorWarnings.map((warning) => (
-        <div key={warning.description} className={styles['elevator-warning-item']}>
-          <TriangleAlert aria-hidden="true" className={styles['elevator-warning-icon']} />
-          <div>
-            <p className={styles['elevator-warning-title']}>
-              Aufzug nicht verfügbar: {warning.description}
-            </p>
-            {warning.operationalResumeDate != null ? (
-              <p className={styles['elevator-warning-date']}>
-                Voraussichtliche Wiederinbetriebnahme: {warning.operationalResumeDate}
-              </p>
-            ) : null}
-            <p className={styles['elevator-warning-advice']}>
-              Bitte wenden Sie sich an das Bahnhofspersonal.
-            </p>
-          </div>
+  hasSelectedRouteTouchpoints && originRouteModel.warningMessage ? (
+    <section className={styles['warning-card']} role="alert" aria-live="assertive">
+      <div className={styles['warning-copy']}>
+        <TriangleAlert aria-hidden="true" />
+        <div>
+          <h2>Barrierefreier Weg nicht verfügbar</h2>
+          <p>{originRouteModel.warningMessage}</p>
         </div>
-      ))}
+      </div>
+      <button className={styles['help-button']} type="button">
+        Hilfe rufen
+      </button>
+    </section>
+  ) : null;
+}
+
+{
+  mapMarkers?.length ? (
+    <section aria-labelledby="karte-orientierung-heading" className={styles['marker-summary']}>
+      <h2 id="karte-orientierung-heading">Orientierungspunkte</h2>
+      <ul>
+        {mapMarkers.map((marker) => (
+          <li key={marker.id}>{marker.accessibleLabel}</li>
+        ))}
+      </ul>
     </section>
   ) : null;
 }
 ```
 
-Add the CSS classes to `LiveNavigation.module.css` (append at the end of the file):
+Pass the markers into the map:
+
+```tsx
+<LiveNavigationMap
+  currentPosition={activePosition}
+  destinationLabel={destination.label}
+  destinationPosition={destination.position}
+  markers={mapMarkers}
+  nextLabel={instructionState.nextLabel}
+  routePath={instructionState.routePoints.map((point) => point.position)}
+/>
+```
+
+Keep the current mock fallback path when the backend still returns the old payload. Do not remove `LIVE_NAVIGATION_ROUTE_POINTS` or `LIVE_NAVIGATION_MANUAL_STARTS`.
+
+- [ ] **Step 4: Add styles for the warning and marker summary**
+
+Append these rules to `/home/iliasalmerekov/Projects/LF8/bf-navigator-web/src/pages/LiveNavigation/LiveNavigation.module.css`:
 
 ```css
-.elevator-warning {
-  border: 2px solid var(--color-warning, #f59e0b);
-  border-radius: 8px;
-  padding: 12px 16px;
-  background: var(--color-warning-bg, #fffbeb);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.warning-card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 2px solid #b42318;
+  border-radius: 1rem;
+  background: #fff4f2;
 }
 
-.elevator-warning-item {
+.warning-copy {
   display: flex;
-  gap: 12px;
+  gap: 0.75rem;
   align-items: flex-start;
 }
 
-.elevator-warning-icon {
-  width: 20px;
-  height: 20px;
-  color: var(--color-warning, #f59e0b);
-  flex-shrink: 0;
-  margin-top: 2px;
+.help-button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: #7a271a;
+  color: #fff;
+  font: inherit;
 }
 
-.elevator-warning-title {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.elevator-warning-date {
-  font-size: 0.85rem;
-  color: var(--color-text-secondary, #6b7280);
-  margin-top: 2px;
-}
-
-.elevator-warning-advice {
-  font-size: 0.85rem;
-  margin-top: 4px;
+.marker-summary ul {
+  margin: 0;
+  padding-left: 1.25rem;
 }
 ```
 
-- [ ] **Step 7: Run the tests — verify all pass**
+- [ ] **Step 5: Run frontend tests and confirm they pass**
+
+Run from `/home/iliasalmerekov/Projects/LF8/bf-navigator-web`:
 
 ```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-web
-npx vitest run src/pages/LiveNavigation/LiveNavigation.test.tsx --reporter=verbose 2>&1 | tail -30
+rtk vitest run src/pages/LiveNavigation/liveNavigationUtils.test.ts src/pages/LiveNavigation/LiveNavigation.test.tsx
 ```
 
-Expected: all tests PASS including the 2 new ones.
+Expected: PASS, including the new route-model tests and the blocked-route warning test.
 
-- [ ] **Step 8: Run the full test suite to check for regressions**
+- [ ] **Step 6: Run the broader `LiveNavigation` regression slice**
+
+Run from `/home/iliasalmerekov/Projects/LF8/bf-navigator-web`:
 
 ```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-web
-npx vitest run --reporter=verbose 2>&1 | tail -20
+rtk vitest run src/pages/LiveNavigation/liveNavigationUtils.test.ts src/pages/LiveNavigation/LiveNavigation.test.tsx
 ```
 
-Expected: `Test Files: all passed`.
+Expected: PASS, with no regressions in geolocation fallback or selected-route rendering.
 
-- [ ] **Step 9: Run type check**
+- [ ] **Step 7: Commit the frontend slice**
 
-```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-web
-npx tsc --noEmit 2>&1 | grep "error TS" | head -10
-```
-
-Expected: no errors.
-
-- [ ] **Step 10: Commit**
+Run from `/home/iliasalmerekov/Projects/LF8/bf-navigator-web`:
 
 ```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-web
-git add src/pages/LiveNavigation/LiveNavigation.tsx src/pages/LiveNavigation/LiveNavigation.module.css src/pages/LiveNavigation/LiveNavigation.test.tsx
-git commit -m "feat: route through active elevators and warn on inactive ones in LiveNavigation"
+rtk git add src/pages/LiveNavigation/liveNavigationUtils.ts src/pages/LiveNavigation/liveNavigationUtils.test.ts src/pages/LiveNavigation/LiveNavigation.tsx src/pages/LiveNavigation/LiveNavigation.test.tsx src/pages/LiveNavigation/components/LiveNavigationMap.tsx src/pages/LiveNavigation/LiveNavigation.module.css
+rtk git commit -m "feat: add departure accessibility route guidance"
 ```
 
 ---
 
-## Task 6: Frontend — Dynamic Haupteingang from walkingApproach
+## Self-Review
 
-**Files:**
+### Spec coverage
 
-- Modify: `src/pages/LiveNavigation/LiveNavigation.tsx`
-- Modify: `src/pages/LiveNavigation/LiveNavigation.test.tsx`
+- Backend coordinate enrichment: covered by Task 1 and Task 2.
+- `walkingApproach` extraction: covered by Task 1 and Task 2.
+- Departure-only route through active elevators: covered by Task 3 and Task 4.
+- Escalators as informational markers only: covered by Task 3 and Task 4.
+- Blocked-route warning and UI-only `Hilfe rufen`: covered by Task 3 and Task 4.
+- Legacy payload fallback: preserved explicitly in Task 4 Step 3.
+- Accessibility checks for warning state and marker semantics: covered by Task 3 and Task 4.
 
-- [ ] **Step 1: Write failing test for dynamic Haupteingang**
+### Placeholder scan
 
-Add this test to `LiveNavigation.test.tsx`:
+- No `TODO`, `TBD`, or deferred implementation placeholders remain.
+- All code steps include concrete code snippets.
+- All test and verification steps include concrete commands and expected results.
 
-```ts
-it('uses walkingApproach coordinates as Haupteingang starting position', async () => {
-  getSelectedTrainRouteMock.mockReturnValue({
-    origin: 'Hamburg Hbf',
-    destination: 'Braunschweig Hbf',
-    departureTime: '2026-04-02T08:29:00Z',
-    arrivalTime: '2026-04-02T10:45:00Z',
-    localizedDistanceText: '240 km',
-    localizedDurationText: '2 Stunden',
-    accessibilitySummary: {
-      activeElevators: 1,
-      activeEscalators: 0,
-      inactiveElevators: 0,
-      inactiveEscalators: 0,
-      mobilityServiceStations: 1,
-      status: 'ACCESSIBLE',
-      stepFreeStations: 1,
-      summary: '1/2 stations step-free',
-      totalStations: 2,
-    },
-    transits: [makeTransit('ICE 579')],
-    touchpoints: [
-      {
-        accessibility: {
-          activeElevators: 1,
-          activeEscalators: 0,
-          hasFacilityData: true,
-          inactiveElevators: 0,
-          inactiveEscalators: 0,
-          mobilityServiceAvailable: true,
-          status: 'ACCESSIBLE',
-          stepFreeAvailable: true,
-          summary: 'Step-free access available',
-        },
-        arrivalTime: null,
-        departureTime: '2026-04-02T08:29:00Z',
-        facilities: [makeFacility(1001, 10.006677, 53.553637)],
-        kind: 'ORIGIN',
-        station: null,
-        stationName: 'Hamburg Hbf',
-        departureStop: { latitude: 53.553637, longitude: 10.006677 },
-        arrivalStop: null,
-        walkingApproach: { latitude: 53.5515, longitude: 10.0054, instruction: 'Hier einsteigen: E' },
-      },
-      {
-        accessibility: {
-          activeElevators: 0,
-          activeEscalators: 0,
-          hasFacilityData: false,
-          inactiveElevators: 0,
-          inactiveEscalators: 0,
-          mobilityServiceAvailable: false,
-          status: 'UNKNOWN',
-          stepFreeAvailable: false,
-          summary: 'Station accessibility data unavailable',
-        },
-        arrivalTime: '2026-04-02T10:45:00Z',
-        departureTime: null,
-        facilities: null,
-        kind: 'DESTINATION',
-        station: null,
-        stationName: 'Braunschweig Hbf',
-        departureStop: null,
-        arrivalStop: { latitude: 52.2524, longitude: 10.5316 },
-        walkingApproach: null,
-      },
-    ],
-  } satisfies TrainRouteResponse);
+### Type consistency
 
-  render(<LiveNavigation />);
-
-  watchErrorCallback?.({
-    code: 1,
-    message: 'Permission denied',
-    PERMISSION_DENIED: 1,
-    POSITION_UNAVAILABLE: 2,
-    TIMEOUT: 3,
-  } as GeolocationPositionError);
-
-  // Select Haupteingang — route should start at walkingApproach coords [53.5515, 10.0054]
-  const mainEntranceRadio = screen.getByRole('radio', { name: /haupteingang/i });
-  expect(mainEntranceRadio).toBeInTheDocument();
-
-  const routePathAtHaupteingang = (
-    liveNavigationMapMock.mock.calls.at(-1)?.[0] as
-      | { routePath: [number, number][] }
-      | undefined
-  )?.routePath;
-
-  // First point of the route must be walkingApproach coordinates
-  expect(routePathAtHaupteingang?.[0]).toEqual([53.5515, 10.0054]);
-});
-```
-
-- [ ] **Step 2: Run failing test**
-
-```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-web
-npx vitest run src/pages/LiveNavigation/LiveNavigation.test.tsx -t "uses walkingApproach" --reporter=verbose 2>&1 | tail -20
-```
-
-Expected: FAIL.
-
-- [ ] **Step 3: Update getRequiredManualStarts to accept touchpoints and derive Haupteingang**
-
-Replace `getRequiredManualStarts` in `LiveNavigation.tsx` (lines 144–159):
-
-```ts
-function getRequiredManualStarts(
-  touchpoints: TrainRouteTouchpoint[] | undefined
-): LiveNavigationManualStart[] {
-  const originTouchpoint = touchpoints?.find((t) => t.kind === 'ORIGIN');
-
-  return [
-    {
-      description:
-        originTouchpoint?.walkingApproach != null
-          ? 'Starten Sie am Eingang und folgen Sie dem Leitweg zum Abfahrtsgleis.'
-          : 'Starten Sie am Haupteingang und folgen Sie dem Leitweg zum Abfahrtsgleis.',
-      id: 'main-entrance',
-      label: 'Haupteingang',
-      routePointId: originTouchpoint?.walkingApproach != null ? 'entrance-0' : 'main-entrance',
-    },
-    {
-      description: 'Starten Sie an der Info-Station und folgen Sie dem Leitweg zum Abfahrtsgleis.',
-      id: 'info-point',
-      label: 'Info-Station',
-      routePointId: 'info-point',
-    },
-  ];
-}
-```
-
-- [ ] **Step 4: Update the call site in the component**
-
-In the `LiveNavigation` component function, change:
-
-```ts
-const requiredManualStarts = getRequiredManualStarts();
-```
-
-to:
-
-```ts
-const requiredManualStarts = getRequiredManualStarts(selectedTouchpoints);
-```
-
-- [ ] **Step 5: Run the tests — verify all pass**
-
-```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-web
-npx vitest run src/pages/LiveNavigation/LiveNavigation.test.tsx --reporter=verbose 2>&1 | tail -30
-```
-
-Expected: all tests PASS.
-
-- [ ] **Step 6: Full suite + type check**
-
-```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-web
-npx vitest run --reporter=verbose 2>&1 | tail -10 && npx tsc --noEmit 2>&1 | grep "error TS" | head -5
-```
-
-Expected: all tests pass, no type errors.
-
-- [ ] **Step 7: Commit**
-
-```bash
-cd /home/iliasalmerekov/Projects/LF8/bf-navigator-web
-git add src/pages/LiveNavigation/LiveNavigation.tsx src/pages/LiveNavigation/LiveNavigation.test.tsx
-git commit -m "feat: derive Haupteingang coordinates from walkingApproach data"
-```
+- Backend uses `TrainRouteStopDTO` on touchpoints to avoid creating a second stop-location DTO.
+- Frontend consumes only `latitude`/`longitude` from `departureStop` and `arrivalStop`, which stays compatible with the existing TypeScript shape.
+- Map marker props are introduced once in `liveNavigationUtils.ts` and reused by `LiveNavigation.tsx` and `LiveNavigationMap.tsx`.
 
 ---
 
-## Self-Review Checklist
+Plan complete and saved to `docs/superpowers/plans/2026-04-07-live-navigation-accessibility.md`. Two execution options:
 
-**Spec coverage:**
+**1. Subagent-Driven (recommended)** - I dispatch a fresh subagent per task, review between tasks, fast iteration
 
-| Spec requirement                                          | Covered by                                                       |
-| --------------------------------------------------------- | ---------------------------------------------------------------- |
-| Use `departureStop.location.latLng` for stop position     | Task 3 (backend parse) + Task 5 (frontend getTouchpointPosition) |
-| WALK step `endLocation` → `walkingApproach` on touchpoint | Task 3 (collectRouteDetails + buildWalkingApproach)              |
-| Active elevators as route waypoints                       | Task 5 (getActiveElevatorPoints + getRoutePointsFromTouchpoints) |
-| Inactive elevator warning with `operationalResumeDate`    | Task 5 (getInactiveElevatorWarnings + warning JSX)               |
-| Dynamic Haupteingang from `walkingApproach`               | Task 6 (getRequiredManualStarts)                                 |
-| Fallback to facility coords when `departureStop` null     | Task 5 (getTouchpointPosition fallback)                          |
-| No crash when new fields absent (old backend)             | All new fields are nullable; existing fallback logic preserved   |
-| Backend fieldMask extensions                              | Task 3, Step 1                                                   |
-| Backend tests                                             | Task 1                                                           |
-| Frontend tests                                            | Tasks 5, 6                                                       |
+**2. Inline Execution** - Execute tasks in this session using executing-plans, batch execution with checkpoints
 
-**Placeholder scan:** No TBDs or TODOs.
-
-**Type consistency:** `StopLocationDTO` (Java), `StopLocation` (TypeScript) — both have `latitude`/`longitude`. `WalkingApproachDTO` (Java), `WalkingApproach` (TypeScript) — both have `latitude`, `longitude`, `instruction`. All references use the same field names throughout.
+**Which approach?**

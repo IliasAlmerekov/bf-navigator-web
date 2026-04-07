@@ -1,66 +1,102 @@
 .bar {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
   padding: 12px 0 4px;
 }
 
 /* ── Route headline ── */
 .route {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.route-stop {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 10%, white), transparent),
+    var(--color-surface-container-low);
+  border: 1px solid color-mix(in srgb, var(--color-outline-variant) 68%, transparent);
+  min-width: 0;
+}
+
+.route-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary-container);
+}
+
+.route-name {
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--color-text-strong);
-  margin: 0;
   line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+}
+
+.route-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container-low);
+  color: var(--color-primary-container);
+  font-size: 1rem;
+  font-weight: 700;
+  align-self: flex-start;
 }
 
 /* ── Meta row ── */
 .meta {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
 .meta-text {
   font-size: 0.8125rem;
   color: var(--color-text);
   font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .change-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-primary-container);
   background: transparent;
-  border: none;
-  padding: 4px 0;
+  border: 1px solid color-mix(in srgb, var(--color-primary-container) 24%, transparent);
+  padding: 10px 14px;
   cursor: pointer;
   font-family: var(--font-body);
-  white-space: nowrap;
   min-height: 44px;
   -webkit-tap-highlight-color: transparent;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-color: color-mix(in srgb, var(--color-primary-container) 40%, transparent);
+  text-decoration: none;
+  border-radius: var(--radius-full);
 }
 
 .change-btn:hover {
-  text-decoration-color: var(--color-primary-container);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
 
 .change-btn:focus-visible {
   outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-  border-radius: 2px;
+  outline-offset: 3px;
 }
 
 /* ── Result count ── */
@@ -69,20 +105,37 @@
   color: var(--color-outline-variant);
   font-weight: 400;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 @media (width >= 480px) {
   .route {
-    font-size: 1.375rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .route-name {
+    font-size: 1.25rem;
+  }
+
+  .meta {
+    flex-flow: row wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .change-btn {
+    justify-content: flex-start;
   }
 }
 
 @media (width >= 768px) {
-  .route {
-    font-size: var(--font-size-title-lg);
-  }
-
   .bar {
     gap: 6px;
+  }
+
+  .route-name {
+    font-size: var(--font-size-title-lg);
   }
 }

@@ -29,10 +29,10 @@ export const LIVE_NAVIGATION_DESTINATION: LiveNavigationDestination = {
 
 export const LIVE_NAVIGATION_ROUTE_POINTS: LiveNavigationRoutePoint[] = [
   {
-    description: 'Sie stehen am Haupteingang.',
+    description: 'Sie stehen am Haupteingang auf der Straßenseite.',
     id: 'main-entrance',
     instruction: 'Gehen Sie geradeaus in Richtung Bahnhofshalle.',
-    label: 'Haupteingang',
+    label: 'Haupteingang (Straßenseite)',
     position: [50.1071, 8.6638],
   },
   {
@@ -60,9 +60,9 @@ export const LIVE_NAVIGATION_ROUTE_POINTS: LiveNavigationRoutePoint[] = [
 
 export const LIVE_NAVIGATION_MANUAL_STARTS: LiveNavigationManualStart[] = [
   {
-    description: 'Starten Sie am Haupteingang des Bahnhofs.',
+    description: 'Starten Sie am Haupteingang auf der Straßenseite des Bahnhofs.',
     id: 'main-entrance',
-    label: 'Haupteingang',
+    label: 'Haupteingang (Straßenseite)',
     routePointId: 'main-entrance',
   },
   {
