@@ -293,6 +293,13 @@ function getVisibleTrainLabel(trainNames: string[] | undefined): string {
   return uniqueTrainNames.length > 0 ? uniqueTrainNames.join(' · ') : 'ICE 782';
 }
 
+function hasRouteAnchors(routePoints: LiveNavigationRoutePoint[]) {
+  const hasOriginAnchor = routePoints.some((point) => point.id.startsWith('origin-'));
+  const hasDestinationAnchor = routePoints.some((point) => point.id.startsWith('destination-'));
+
+  return hasOriginAnchor && hasDestinationAnchor;
+}
+
 function getRequiredManualStarts(
   touchpoints: TrainRouteTouchpoint[] | undefined
 ): LiveNavigationManualStart[] {
@@ -417,7 +424,8 @@ export default function LiveNavigation() {
   const selectedTouchpoints = selectedRoute?.touchpoints;
   const hasSelectedRouteTouchpoints = Boolean(selectedTouchpoints?.length);
   const derivedRoutePoints = getRoutePointsFromTouchpoints(selectedTouchpoints);
-  const hasCompleteDerivedRoutePoints = derivedRoutePoints.length >= 2;
+  const hasCompleteDerivedRoutePoints =
+    derivedRoutePoints.length >= 2 && hasRouteAnchors(derivedRoutePoints);
   const requiredManualStarts = getRequiredManualStarts(selectedTouchpoints);
   const selectedRouteManualFallbackRoutes = hasCompleteDerivedRoutePoints
     ? buildSelectedRouteManualFallbackRoutes(derivedRoutePoints)
@@ -500,15 +508,19 @@ export default function LiveNavigation() {
     };
   }, [defaultManualStartId, geolocation, hasGeolocationSupport]);
 
-  const fallbackRoute = selectedRouteManualFallbackRoutes
-    ? (selectedRouteManualFallbackRoutes[
-        (manualStartId ?? defaultManualStartId) as keyof typeof selectedRouteManualFallbackRoutes
-      ] ?? selectedRouteManualFallbackRoutes['main-entrance'])
-    : getRoutePointsFromManualStart(
-        manualStartId ?? defaultManualStartId,
-        manualStartOptions,
-        routePoints
-      );
+  const manualStartRouteSlice = getRoutePointsFromManualStart(
+    manualStartId ?? defaultManualStartId,
+    manualStartOptions,
+    routePoints
+  );
+  const fallbackRoute =
+    manualStartRouteSlice !== routePoints
+      ? manualStartRouteSlice
+      : (selectedRouteManualFallbackRoutes?.[
+          (manualStartId ?? defaultManualStartId) as keyof typeof selectedRouteManualFallbackRoutes
+        ] ??
+        selectedRouteManualFallbackRoutes?.['main-entrance'] ??
+        routePoints);
   const isAwaitingLiveLocation =
     geolocationState === 'requesting-location' && manualStartId === null;
   const shouldUseLivePosition = geolocationState === 'live-tracking' && livePosition !== null;
