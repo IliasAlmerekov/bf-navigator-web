@@ -99,6 +99,33 @@ vi.mock('./components/LiveNavigationMap', () => ({
   },
 }));
 
+// Type sentinel — verifies new fields exist on TrainRouteTouchpoint
+
+type _AssertWalkingApproach =
+  NonNullable<NonNullable<TrainRouteResponse['touchpoints']>[number]['walkingApproach']> extends {
+    latitude: number;
+    longitude: number;
+    instruction: string;
+  }
+    ? true
+    : never;
+type _AssertDepartureStop =
+  NonNullable<NonNullable<TrainRouteResponse['touchpoints']>[number]['departureStop']> extends {
+    latitude: number;
+    longitude: number;
+  }
+    ? true
+    : never;
+
+// Reference sentinels in a no-op to satisfy unused-type checks without runtime cost
+const _useTouchpointTypeSentinels = () => {
+  // Use type-only assertions to reference the sentinel types
+  void (null as unknown as _AssertWalkingApproach);
+  void (null as unknown as _AssertDepartureStop);
+};
+
+_useTouchpointTypeSentinels();
+
 function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteResponse {
   return {
     accessibilitySummary: {
