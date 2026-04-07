@@ -748,6 +748,44 @@ describe('LiveNavigation', () => {
     expect(routePath).toEqual(LIVE_NAVIGATION_ROUTE_POINTS.map((point) => point.position));
   });
 
+  it('shows a blocked-route warning and a Hilfe rufen button when no active elevators exist', () => {
+    getSelectedTrainRouteMock.mockReturnValue(
+      makeSelectedRoute({
+        touchpoints: [
+          {
+            ...makeSelectedRoute().touchpoints![0],
+            departureStop: { latitude: 50.10772, longitude: 8.66292 },
+            facilities: [
+              {
+                ...makeFacility(1001, 8.66312, 50.10736),
+                description: 'Aufzug A',
+                operationalResumeDate: '2026-04-09',
+                state: 'INACTIVE',
+              },
+              {
+                ...makeFacility(1002, 8.66355, 50.1075),
+                description: 'Rolltreppe C',
+                type: 'ESCALATOR',
+              },
+            ],
+            walkingApproach: {
+              instruction: 'Nutzen Sie den Haupteingang.',
+              latitude: 50.1071,
+              longitude: 8.6638,
+            },
+          },
+        ],
+      })
+    );
+
+    render(<LiveNavigation />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /barrierefreier weg derzeit nicht verfügbar/i
+    );
+    expect(screen.getByRole('button', { name: /hilfe rufen/i })).toBeInTheDocument();
+  });
+
   it('shows inactive elevator warning when origin touchpoint has inactive elevators', () => {
     getSelectedTrainRouteMock.mockReturnValue({
       origin: 'Hamburg Hbf',
