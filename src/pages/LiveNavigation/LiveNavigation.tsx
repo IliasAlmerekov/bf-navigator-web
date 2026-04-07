@@ -628,12 +628,15 @@ export default function LiveNavigation() {
               className={styles['elevator-warning']}
               role="alert"
             >
-              {inactiveElevatorWarnings.map((warning) => (
-                <div key={warning.description} className={styles['elevator-warning-item']}>
+              {inactiveElevatorWarnings.map((warning, idx) => (
+                <div
+                  key={`${warning.stationName}-${idx}`}
+                  className={styles['elevator-warning-item']}
+                >
                   <TriangleAlert aria-hidden="true" className={styles['elevator-warning-icon']} />
                   <div>
                     <p className={styles['elevator-warning-title']}>
-                      Aufzug nicht verfügbar: {warning.description}
+                      Aufzug nicht verfügbar bei {warning.stationName}: {warning.description}
                     </p>
                     {warning.operationalResumeDate != null ? (
                       <p className={styles['elevator-warning-date']}>

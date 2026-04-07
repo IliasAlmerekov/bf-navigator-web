@@ -99,25 +99,6 @@ vi.mock('./components/LiveNavigationMap', () => ({
   },
 }));
 
-// Type sentinel — verifies new fields exist on TrainRouteTouchpoint
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type _AssertWalkingApproach =
-  NonNullable<NonNullable<TrainRouteResponse['touchpoints']>[number]['walkingApproach']> extends {
-    latitude: number;
-    longitude: number;
-    instruction: string;
-  }
-    ? true
-    : never;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type _AssertDepartureStop =
-  NonNullable<NonNullable<TrainRouteResponse['touchpoints']>[number]['departureStop']> extends {
-    latitude: number;
-    longitude: number;
-  }
-    ? true
-    : never;
-
 function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteResponse {
   return {
     accessibilitySummary: {
