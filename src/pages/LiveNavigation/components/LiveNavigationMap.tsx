@@ -63,13 +63,65 @@ function createMarkerIcon(className: string, label: string, size: number, anchor
   });
 }
 
-function MapZoomController({ zoom }: { zoom: number }) {
+function getViewportPoints({
+  currentPosition,
+  destinationPosition,
+  markers,
+  routePath,
+}: Pick<
+  LiveNavigationMapProps,
+  'currentPosition' | 'destinationPosition' | 'markers' | 'routePath'
+>) {
+  const positions = [
+    currentPosition,
+    destinationPosition,
+    ...routePath,
+    ...(markers?.map((marker) => marker.position) ?? []),
+  ];
+
+  return Array.from(
+    new Map(positions.map((position) => [`${position[0]}:${position[1]}`, position])).values()
+  );
+}
+
+function MapViewportController({
+  currentPosition,
+  destinationPosition,
+  markers,
+  routePath,
+  zoom,
+}: LiveNavigationMapProps & { zoom: number }) {
   const map = useMap();
 
   useEffect(() => {
-    const center = map.getCenter();
-    map.setView(center, zoom, { animate: false });
-  }, [map, zoom]);
+    const viewportPoints = getViewportPoints({
+      currentPosition,
+      destinationPosition,
+      markers,
+      routePath,
+    });
+
+    if (viewportPoints.length === 0) {
+      return;
+    }
+
+    if (viewportPoints.length === 1) {
+      map.setView(viewportPoints[0], zoom, { animate: false });
+      return;
+    }
+
+    const bounds = L.latLngBounds(viewportPoints);
+
+    if (!bounds.isValid()) {
+      return;
+    }
+
+    map.fitBounds(bounds, {
+      animate: false,
+      maxZoom: zoom,
+      padding: [32, 32],
+    });
+  }, [currentPosition, destinationPosition, map, markers, routePath, zoom]);
 
   return null;
 }
@@ -200,7 +252,7 @@ export function LiveNavigationMap(props: LiveNavigationMapProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <MapAccessibilityGuard />
-        <MapZoomController zoom={zoom} />
+        <MapViewportController {...props} zoom={zoom} />
         <LiveNavigationMapLayers {...props} />
       </MapContainer>
 

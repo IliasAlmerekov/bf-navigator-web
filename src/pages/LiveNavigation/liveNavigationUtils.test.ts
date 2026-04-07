@@ -45,6 +45,18 @@ function makeOriginTouchpoint(): TrainRouteTouchpoint {
         type: 'ELEVATOR',
       },
       {
+        description: 'Aufzug D',
+        equipmentnumber: 1004,
+        geocoordX: 8.6637,
+        geocoordY: 50.1072,
+        operationalResumeDate: null,
+        operatorname: 'DB InfraGO',
+        state: 'ACTIVE',
+        stateExplanation: 'available',
+        stationnumber: 8000001,
+        type: 'ELEVATOR',
+      },
+      {
         description: 'Aufzug B',
         equipmentnumber: 1002,
         geocoordX: 8.6634,
@@ -138,78 +150,41 @@ describe('liveNavigationUtils', () => {
 
     expect(routeModel.hasAccessibleRoute).toBe(true);
     expect(routeModel.routePoints.map((point) => point.label)).toEqual([
-      'Haupteingang',
-      'Aufzug A',
+      'Haupteingang (Straßenseite)',
+      'Aufzug D',
       'Abfahrtspunkt',
     ]);
   });
 
-  it('keeps inactive elevators and escalators as markers only', () => {
+  it('chooses only the nearest active elevator relative to entrance', () => {
     const routeModel = buildOriginRouteModel([makeOriginTouchpoint()]);
 
-    expect(routeModel.markers.map((marker) => marker.kind)).toEqual([
-      'entrance',
-      'active-elevator',
-      'inactive-elevator',
-      'escalator',
-      'departure',
+    expect(routeModel.routePoints.map((point) => point.label)).toEqual([
+      'Haupteingang (Straßenseite)',
+      'Aufzug D',
+      'Abfahrtspunkt',
     ]);
-    expect(routeModel.routePoints.map((point) => point.label)).not.toContain('Rolltreppe C');
+    expect(routeModel.markers[0]?.accessibleLabel).toBe('Haupteingang (Straßenseite)');
+    expect(routeModel.markers).toHaveLength(3);
     expect(routeModel.warningMessage).toBeNull();
   });
 
-  it('returns an empty route and warning when no active elevators are available', () => {
+  it('uses a direct fallback route when origin metadata is missing', () => {
     const routeModel = buildOriginRouteModel([
       {
         ...makeOriginTouchpoint(),
-        facilities: [
-          {
-            ...makeOriginTouchpoint().facilities![0],
-            state: 'INACTIVE',
-          },
-        ],
+        departureStop: null,
+        facilities: null,
+        walkingApproach: null,
       },
     ]);
-
-    expect(routeModel.hasAccessibleRoute).toBe(false);
-    expect(routeModel.routePoints).toEqual([]);
-    expect(routeModel.warningMessage).toBe(
-      'Der barrierefreie Weg zum Abfahrtspunkt ist derzeit nicht verfügbar.'
-    );
-  });
-
-  it('caps facility-derived markers to avoid unbounded fan-out', () => {
-    const activeFacilities = Array.from({ length: 80 }, (_, index) => ({
-      ...makeOriginTouchpoint().facilities![0],
-      description: `Aufzug ${index + 1}`,
-      equipmentnumber: 4000 + index,
-      geocoordX: 8.66 + index * 0.00001,
-      geocoordY: 50.1 + index * 0.00001,
-      state: 'ACTIVE' as const,
-      type: 'ELEVATOR' as const,
-    }));
-    const orientationFacilities = Array.from({ length: 20 }, (_, index) => ({
-      ...makeOriginTouchpoint().facilities![1],
-      description: `Rolltreppe ${index + 1}`,
-      equipmentnumber: 5000 + index,
-      geocoordX: 8.67 + index * 0.00001,
-      geocoordY: 50.11 + index * 0.00001,
-      type: 'ESCALATOR' as const,
-    }));
-
-    const routeModel = buildOriginRouteModel([
-      {
-        ...makeOriginTouchpoint(),
-        facilities: [...activeFacilities, ...orientationFacilities],
-      },
-    ]);
-
-    const facilityMarkerCount = routeModel.markers.filter((marker) =>
-      ['active-elevator', 'inactive-elevator', 'escalator'].includes(marker.kind)
-    ).length;
 
     expect(routeModel.hasAccessibleRoute).toBe(true);
-    expect(facilityMarkerCount).toBe(50);
+    expect(routeModel.routePoints.map((point) => point.position)).toEqual([
+      LIVE_NAVIGATION_ROUTE_POINTS[0].position,
+      LIVE_NAVIGATION_ROUTE_POINTS[LIVE_NAVIGATION_ROUTE_POINTS.length - 1].position,
+    ]);
+    expect(routeModel.warningMessage).toBeNull();
   });
 
   it('filters invalid coordinates from walking approach, departure, and facilities', () => {
@@ -247,14 +222,28 @@ describe('liveNavigationUtils', () => {
       },
     ]);
 
-    expect(routeModel.hasAccessibleRoute).toBe(false);
-    expect(routeModel.routePoints).toEqual([]);
-    expect(routeModel.markers).toEqual([]);
-    expect(routeModel.warningMessage).toBe(
-      'Der barrierefreie Weg zum Abfahrtspunkt ist derzeit nicht verfügbar.'
-    );
+    expect(routeModel.hasAccessibleRoute).toBe(true);
+    expect(routeModel.warningMessage).toBeNull();
+    expect(routeModel.routePoints).toHaveLength(2);
+    expect(routeModel.markers).toHaveLength(2);
 
     expect(routeModel.routePoints.every((point) => isValidLatLngTuple(point.position))).toBe(true);
     expect(routeModel.markers.every((marker) => isValidLatLngTuple(marker.position))).toBe(true);
+  });
+
+  it('uses a route-specific entrance label when walking approach instruction names the entrance', () => {
+    const routeModel = buildOriginRouteModel([
+      {
+        ...makeOriginTouchpoint(),
+        walkingApproach: {
+          instruction: 'Hier einsteigen: Ella-Trebe-Straße',
+          latitude: 52.525589,
+          longitude: 13.369548,
+        },
+      },
+    ]);
+
+    expect(routeModel.routePoints[0]?.label).toBe('Ella-Trebe-Straße');
+    expect(routeModel.markers[0]?.accessibleLabel).toBe('Ella-Trebe-Straße');
   });
 });

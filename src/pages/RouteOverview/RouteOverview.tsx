@@ -71,47 +71,53 @@ export default function RouteOverview() {
 
   return (
     <main className={styles.page}>
-      <RouteHero
-        isSaved={isRouteSaved}
-        route={heroRoute}
-        resultsSearch={search}
-        onSave={handleSave}
-      />
+      <div className={styles['content-shell']}>
+        <RouteHero
+          isSaved={isRouteSaved}
+          route={heroRoute}
+          resultsSearch={search}
+          onSave={handleSave}
+        />
 
-      <p aria-live="polite" className={styles['status-announcement']}>
-        {savedAnnouncement}
-      </p>
+        <p aria-live="polite" className={styles['status-announcement']}>
+          {savedAnnouncement}
+        </p>
 
-      <div className={styles.layout}>
-        <div className={styles['timeline-column']}>
-          <section
-            aria-labelledby="detailed-timeline-heading"
-            className={styles['timeline-section']}
-          >
-            <header className={styles['timeline-header']}>
-              <h2 id="detailed-timeline-heading" className={styles['card-title']}>
-                Detaillierter Reiseverlauf
-              </h2>
-              <div className={styles['header-badges']}>
-                <span className={styles['badge-on-time']}>Pünktlich</span>
-                <span className={styles['badge-train']}>ICE772</span>
+        <div className={styles.layout}>
+          <div className={styles['timeline-column']}>
+            <section
+              aria-labelledby="detailed-timeline-heading"
+              className={styles['timeline-section']}
+            >
+              <header className={styles['timeline-header']}>
+                <h2 id="detailed-timeline-heading" className={styles['card-title']}>
+                  Detaillierter Reiseverlauf
+                </h2>
+                <div className={styles['header-badges']}>
+                  <span className={styles['badge-on-time']}>Pünktlich</span>
+                  <span className={styles['badge-train']}>ICE772</span>
+                </div>
+              </header>
+
+              <JourneyTimeline items={timelineItems} />
+
+              <div className={styles['action-row']}>
+                <Link
+                  className={styles['action-button']}
+                  to="/train-search-results"
+                  search={search}
+                >
+                  <span>Alternativen anzeigen</span>
+                </Link>
               </div>
-            </header>
+            </section>
 
-            <JourneyTimeline items={timelineItems} />
+            <StationServicesPanel panel={stationServicesPanel} />
+          </div>
 
-            <div className={styles['action-row']}>
-              <Link className={styles['action-button']} to="/train-search-results" search={search}>
-                <span>Alternativen anzeigen</span>
-              </Link>
-            </div>
-          </section>
-
-          <StationServicesPanel panel={stationServicesPanel} />
-        </div>
-
-        <div className={styles['detail-column']}>
-          <MapNavigationCard mapData={routeMapData} />
+          <div className={styles['detail-column']}>
+            <MapNavigationCard mapData={routeMapData} />
+          </div>
         </div>
       </div>
     </main>

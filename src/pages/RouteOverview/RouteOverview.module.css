@@ -13,10 +13,17 @@
 
 .page {
   width: 100%;
-  display: grid;
-  gap: 20px;
   padding: 0;
   box-sizing: border-box;
+}
+
+.content-shell {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  padding-left: max(14px, env(safe-area-inset-left));
+  padding-right: max(14px, env(safe-area-inset-right));
 }
 
 .layout {
@@ -1201,8 +1208,10 @@
 }
 
 @media (width >= 1024px) {
-  .page {
+  .content-shell {
     gap: 24px;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .layout {

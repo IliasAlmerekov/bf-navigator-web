@@ -3,7 +3,6 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import LiveNavigation from './LiveNavigation';
-import { LIVE_NAVIGATION_ROUTE_POINTS } from './liveNavigationData';
 import * as liveNavigationUtils from './liveNavigationUtils';
 import type { TrainRouteResponse } from '../TrainSearchResults/types';
 
@@ -57,6 +56,56 @@ function makeTransit(trainName: string): TrainRouteResponse['transits'][number] 
     agencyName: 'DB',
     arrival: transitStop,
     departure: transitStop,
+    trainName,
+    vehicleType: 'TRAIN',
+  };
+}
+
+function makeTransitLeg({
+  arrivalStationName,
+  arrivalTime,
+  departureStationName,
+  departureTime,
+  trainName,
+}: {
+  arrivalStationName: string;
+  arrivalTime: string;
+  departureStationName: string;
+  departureTime: string;
+  trainName: string;
+}): TrainRouteResponse['transits'][number] {
+  return {
+    agencyName: 'DB',
+    arrival: {
+      facilities: [makeFacility(2002, 8.66312, 50.10736)],
+      station: {
+        category: 1,
+        city: 'Teststadt',
+        evaNumber: 8000086,
+        hasMobilityService: 'yes',
+        hasSteplessAccess: 'yes',
+        hasWiFi: true,
+        name: arrivalStationName,
+        number: 8000086,
+      },
+      stationName: arrivalStationName,
+      arrivalTime,
+    },
+    departure: {
+      facilities: [makeFacility(2003, 8.66312, 50.10736)],
+      station: {
+        category: 1,
+        city: 'Teststadt',
+        evaNumber: 8000087,
+        hasMobilityService: 'yes',
+        hasSteplessAccess: 'yes',
+        hasWiFi: true,
+        name: departureStationName,
+        number: 8000087,
+      },
+      stationName: departureStationName,
+      departureTime,
+    },
     trainName,
     vehicleType: 'TRAIN',
   };
@@ -287,7 +336,7 @@ describe('LiveNavigation', () => {
     );
   });
 
-  it('uses selected API route heading, departure destination, and train names when touchpoints are available', () => {
+  it('uses selected API route heading, origin-route destination label, and train names when touchpoints are available', () => {
     getSelectedTrainRouteMock.mockReturnValue(
       makeSelectedRoute({
         transits: [makeTransit('ICE 105'), makeTransit('RE 1')],
@@ -313,22 +362,63 @@ describe('LiveNavigation', () => {
     const lastMapCall = liveNavigationMapMock.mock.calls.at(-1)?.[0] as
       | { destinationLabel: string; routePath: [number, number][] }
       | undefined;
-    expect(lastMapCall?.destinationLabel).toBe('Düsseldorf Hbf');
+    expect(lastMapCall?.destinationLabel).toBe('Abfahrtspunkt');
     expect(lastMapCall?.routePath.at(-1)).toEqual([50.10772, 8.66292]);
-    expect(screen.getByText(/düsseldorf hbf · weg zu düsseldorf hbf/i)).toBeInTheDocument();
+    expect(screen.getByText(/düsseldorf hbf · weg zu abfahrtspunkt/i)).toBeInTheDocument();
+    expect(screen.getByText(/ice 105 · re 1 · abfahrtspunkt/i)).toBeInTheDocument();
     expect(screen.getByText('Düsseldorf Hbf')).toBeInTheDocument();
     expect(screen.getByText('Essen Hbf')).toBeInTheDocument();
     expect(screen.getByText('Köln Hbf')).toBeInTheDocument();
     expect(screen.queryByText('Frankfurt (Main) Hbf')).not.toBeInTheDocument();
     expect(screen.queryByText('Kassel-Wilhelmshöhe')).not.toBeInTheDocument();
     expect(screen.queryByText('Berlin Hbf')).not.toBeInTheDocument();
+    expect(screen.queryByText(/gleis 7/i)).not.toBeInTheDocument();
     expect(screen.getAllByText(/ice 105.*re 1/i)).toHaveLength(2);
     expect(
       screen.queryByRole('heading', { level: 2, name: /frankfurt → berlin/i })
     ).not.toBeInTheDocument();
   });
 
-  it('falls back to default manual options for selected routes without an accessible origin-only path', async () => {
+  it('uses selected route and transit-derived stops when touchpoints are missing', () => {
+    getSelectedTrainRouteMock.mockReturnValue(
+      makeSelectedRoute({
+        destination: 'Bremen Hbf',
+        origin: 'München Hbf',
+        touchpoints: undefined,
+        transits: [
+          makeTransitLeg({
+            arrivalStationName: 'Hannover Hbf',
+            arrivalTime: '2026-04-02T11:01:00Z',
+            departureStationName: 'München Hbf',
+            departureTime: '2026-04-02T08:42:00Z',
+            trainName: 'ICE 580',
+          }),
+          makeTransitLeg({
+            arrivalStationName: 'Bremen Hbf',
+            arrivalTime: '2026-04-02T12:35:00Z',
+            departureStationName: 'Hannover Hbf',
+            departureTime: '2026-04-02T11:15:00Z',
+            trainName: 'ICE 77',
+          }),
+        ],
+      })
+    );
+
+    render(<LiveNavigation />);
+
+    expect(
+      screen.getByRole('heading', { level: 2, name: /münchen hbf → bremen hbf/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText('München Hbf')).toBeInTheDocument();
+    expect(screen.getByText('Hannover Hbf')).toBeInTheDocument();
+    expect(screen.getByText('Bremen Hbf')).toBeInTheDocument();
+    expect(screen.queryByText('Kassel-Wilhelmshöhe')).not.toBeInTheDocument();
+    expect(screen.queryByText('Berlin Hbf')).not.toBeInTheDocument();
+    expect(screen.queryByText(/gleis 3/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/münchen hbf · weg zu bremen hbf/i)).toBeInTheDocument();
+  });
+
+  it('uses simplified manual options for selected routes and still renders a fallback route', async () => {
     const user = userEvent.setup();
     getSelectedTrainRouteMock.mockReturnValue(makeSelectedRoute());
     render(<LiveNavigation />);
@@ -344,13 +434,15 @@ describe('LiveNavigation', () => {
     expect(
       screen.getByRole('radiogroup', { name: /manuellen startpunkt wählen/i })
     ).toBeInTheDocument();
-    const mainEntranceOption = screen.getByRole('radio', { name: /haupteingang/i });
-    const infoStationOption = screen.getByRole('radio', { name: /info point/i });
-    const elevatorOption = screen.getByRole('radio', { name: /aufzug e4/i });
+    const mainEntranceOption = screen.getByRole('radio', {
+      name: /haupteingang \(straßenseite\)/i,
+    });
+    const infoStationOption = screen.getByRole('radio', { name: /info-station/i });
 
     expect(mainEntranceOption).toBeInTheDocument();
-    expect(elevatorOption).toBeInTheDocument();
     expect(infoStationOption).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /aufzug e4/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /info point/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /düsseldorf hbf/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /essen hbf/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: /köln hbf/i })).not.toBeInTheDocument();
@@ -371,6 +463,38 @@ describe('LiveNavigation', () => {
     expect(infoStartRoutePath?.at(-1)).toEqual([50.10772, 8.66292]);
     expect(infoStartRoutePath).not.toEqual(mainStartRoutePath);
     expect(infoStartRoutePath?.length ?? 0).toBeLessThanOrEqual(mainStartRoutePath?.length ?? 0);
+  });
+
+  it('uses the selected route entrance label in manual fallback guidance when the walking approach is specific', () => {
+    getSelectedTrainRouteMock.mockReturnValue(
+      makeSelectedRoute({
+        touchpoints: [
+          {
+            ...makeSelectedRoute().touchpoints![0],
+            walkingApproach: {
+              instruction: 'Hier einsteigen: Ella-Trebe-Straße',
+              latitude: 52.525589,
+              longitude: 13.369548,
+            },
+            departureStop: { latitude: 52.525823, longitude: 13.369402 },
+          },
+          ...makeSelectedRoute().touchpoints!.slice(1),
+        ],
+      })
+    );
+
+    render(<LiveNavigation />);
+
+    watchErrorCallback?.({
+      code: 1,
+      message: 'Permission denied',
+      PERMISSION_DENIED: 1,
+      POSITION_UNAVAILABLE: 2,
+      TIMEOUT: 3,
+    } as GeolocationPositionError);
+
+    expect(screen.getByText(/startpunkt: ella-trebe-straße/i)).toBeInTheDocument();
+    expect(screen.getAllByText('Ella-Trebe-Straße')).toHaveLength(2);
   });
 
   it('shows manual fallback controls when geolocation permission is denied', async () => {
@@ -552,7 +676,7 @@ describe('LiveNavigation', () => {
     expect(clearWatchMock).toHaveBeenCalledWith(17);
   });
 
-  it('falls back to the default route when no active elevators are available on the origin touchpoint', () => {
+  it('uses a direct route when no active elevators are available on the origin touchpoint', () => {
     getSelectedTrainRouteMock.mockReturnValue({
       origin: 'Hamburg Hbf',
       destination: 'Braunschweig Hbf',
@@ -651,7 +775,10 @@ describe('LiveNavigation', () => {
       liveNavigationMapMock.mock.calls.at(-1)?.[0] as { routePath: [number, number][] } | undefined
     )?.routePath;
 
-    expect(routePath).toEqual(LIVE_NAVIGATION_ROUTE_POINTS.map((point) => point.position));
+    expect(routePath).toEqual([
+      [53.5534, 10.0063],
+      [53.553637, 10.006677],
+    ]);
   });
 
   it('uses the origin-only accessible route when walking approach, active elevator, and departure stop are present', () => {
@@ -734,7 +861,7 @@ describe('LiveNavigation', () => {
     ]);
   });
 
-  it('shows a blocked-route warning and a Hilfe rufen button when no active elevators exist', () => {
+  it('keeps rendering a route without blocked warning when active elevator data is missing', () => {
     getSelectedTrainRouteMock.mockReturnValue(
       makeSelectedRoute({
         touchpoints: [
@@ -775,19 +902,18 @@ describe('LiveNavigation', () => {
     } as GeolocationPositionError);
 
     expect(
-      screen.getByRole('heading', { name: /barrierefreier weg nicht verfügbar/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/barrierefreie weg zum abfahrtspunkt ist derzeit nicht verfügbar/i)
-    ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /hilfe rufen/i })).toBeInTheDocument();
+      screen.queryByRole('heading', { name: /barrierefreier weg nicht verfügbar/i })
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /hilfe rufen/i })).not.toBeInTheDocument();
 
     const mapProps = liveNavigationMapMock.mock.calls.at(-1)?.[0] as
-      | { markers?: Array<{ kind: string }> }
+      | { markers?: Array<{ kind: string }>; routePath?: [number, number][] }
       | undefined;
-    expect(mapProps?.markers?.map((marker) => marker.kind)).toEqual(
-      expect.arrayContaining(['entrance', 'inactive-elevator', 'escalator', 'departure'])
-    );
+    expect(mapProps?.markers?.map((marker) => marker.kind)).toEqual(['entrance', 'departure']);
+    expect(mapProps?.routePath).toEqual([
+      [50.1071, 8.6638],
+      [50.10772, 8.66292],
+    ]);
   });
 
   it('shows inactive elevator warning when origin touchpoint has inactive elevators', () => {
