@@ -21,6 +21,7 @@ The goal: guide a user from the station entrance (Haupteingang or Info-Station) 
 ## Approach: Backend-First Enrichment
 
 Extend the existing `/routes/trains` pipeline to include:
+
 - Precise GPS coordinates for each transit stop (from Google Routes API `location.latLng`)
 - Walking approach coordinates per touchpoint (from WALK steps preceding each TRANSIT step)
 
@@ -126,12 +127,12 @@ If all elevators are `INACTIVE` or no elevators exist: show fallback card "Bitte
 
 ## Error Handling / Degradation
 
-| Scenario | Behaviour |
-|---|---|
-| `departureStop === null` | Fall back to first active facility coordinate; if none, show text-only info |
-| All elevators `INACTIVE` | Warning card + `operationalResumeDate` + "Contact staff" CTA |
-| No elevators at all | Route goes directly entrance → platform without elevator waypoints |
-| `walkingApproach === null` | Route starts from `departureStop`; Haupteingang option not shown |
+| Scenario                             | Behaviour                                                                                       |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `departureStop === null`             | Fall back to first active facility coordinate; if none, show text-only info                     |
+| All elevators `INACTIVE`             | Warning card + `operationalResumeDate` + "Contact staff" CTA                                    |
+| No elevators at all                  | Route goes directly entrance → platform without elevator waypoints                              |
+| `walkingApproach === null`           | Route starts from `departureStop`; Haupteingang option not shown                                |
 | Backend missing new fields (old API) | All new fields are optional; page degrades to current facility-coordinate behaviour, no crashes |
 
 ---

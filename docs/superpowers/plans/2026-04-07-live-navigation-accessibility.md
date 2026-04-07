@@ -14,21 +14,21 @@
 
 **Backend** (`/home/iliasalmerekov/Projects/LF8/bf-navigator-service`):
 
-| Action | File |
-|--------|------|
+| Action | File                                                                              |
+| ------ | --------------------------------------------------------------------------------- |
 | Modify | `src/main/java/com/bf/navigator/service/route/client/GoogleTrainRouteClient.java` |
-| Create | `src/main/java/com/bf/navigator/service/route/dto/WalkingApproachDTO.java` |
-| Modify | `src/main/java/com/bf/navigator/service/route/dto/TrainRouteStopDTO.java` |
-| Modify | `src/main/java/com/bf/navigator/service/route/dto/TrainRouteTouchpointDTO.java` |
-| Modify | `src/main/java/com/bf/navigator/service/route/service/TrainRouteService.java` |
+| Create | `src/main/java/com/bf/navigator/service/route/dto/WalkingApproachDTO.java`        |
+| Modify | `src/main/java/com/bf/navigator/service/route/dto/TrainRouteStopDTO.java`         |
+| Modify | `src/main/java/com/bf/navigator/service/route/dto/TrainRouteTouchpointDTO.java`   |
+| Modify | `src/main/java/com/bf/navigator/service/route/service/TrainRouteService.java`     |
 | Modify | `src/test/java/com/bf/navigator/service/route/service/TrainRouteServiceTest.java` |
 
 **Frontend** (`/home/iliasalmerekov/Projects/LF8/bf-navigator-web`):
 
-| Action | File |
-|--------|------|
-| Modify | `src/pages/TrainSearchResults/types.ts` |
-| Modify | `src/pages/LiveNavigation/LiveNavigation.tsx` |
+| Action | File                                               |
+| ------ | -------------------------------------------------- |
+| Modify | `src/pages/TrainSearchResults/types.ts`            |
+| Modify | `src/pages/LiveNavigation/LiveNavigation.tsx`      |
 | Modify | `src/pages/LiveNavigation/LiveNavigation.test.tsx` |
 
 ---
@@ -36,6 +36,7 @@
 ## Task 1: Backend — Write failing tests for location + walking approach
 
 **Files:**
+
 - Test: `src/test/java/com/bf/navigator/service/route/service/TrainRouteServiceTest.java`
 
 - [ ] **Step 1: Add the two new test methods to TrainRouteServiceTest.java**
@@ -189,6 +190,7 @@ Expected: `FAILED` — compilation error because `getDepartureStop()`, `getArriv
 ## Task 2: Backend — Create DTOs
 
 **Files:**
+
 - Create: `src/main/java/com/bf/navigator/service/route/dto/WalkingApproachDTO.java`
 - Modify: `src/main/java/com/bf/navigator/service/route/dto/TrainRouteStopDTO.java`
 - Modify: `src/main/java/com/bf/navigator/service/route/dto/TrainRouteTouchpointDTO.java`
@@ -329,6 +331,7 @@ Expected: `BUILD SUCCESS` — DTOs compile, tests still fail on missing service 
 ## Task 3: Backend — Extend FIELD_MASK and update service logic
 
 **Files:**
+
 - Modify: `src/main/java/com/bf/navigator/service/route/client/GoogleTrainRouteClient.java`
 - Modify: `src/main/java/com/bf/navigator/service/route/service/TrainRouteService.java`
 
@@ -828,6 +831,7 @@ git commit -m "feat: add stop location and walking approach to train route respo
 ## Task 4: Frontend — Extend TypeScript types
 
 **Files:**
+
 - Modify: `src/pages/TrainSearchResults/types.ts`
 
 - [ ] **Step 1: Write the failing type-check test**
@@ -836,12 +840,21 @@ In `src/pages/LiveNavigation/LiveNavigation.test.tsx`, add a compile-time sentin
 
 ```ts
 // Type sentinel — verifies new fields exist on TrainRouteTouchpoint
-type _AssertWalkingApproach = NonNullable<
-  NonNullable<TrainRouteResponse['touchpoints']>[number]['walkingApproach']
-> extends { latitude: number; longitude: number; instruction: string } ? true : never;
-type _AssertDepartureStop = NonNullable<
-  NonNullable<TrainRouteResponse['touchpoints']>[number]['departureStop']
-> extends { latitude: number; longitude: number } ? true : never;
+type _AssertWalkingApproach =
+  NonNullable<NonNullable<TrainRouteResponse['touchpoints']>[number]['walkingApproach']> extends {
+    latitude: number;
+    longitude: number;
+    instruction: string;
+  }
+    ? true
+    : never;
+type _AssertDepartureStop =
+  NonNullable<NonNullable<TrainRouteResponse['touchpoints']>[number]['departureStop']> extends {
+    latitude: number;
+    longitude: number;
+  }
+    ? true
+    : never;
 ```
 
 - [ ] **Step 2: Run the type check — verify it fails**
@@ -910,6 +923,7 @@ git commit -m "feat: add WalkingApproach and StopLocation types to TrainRouteTou
 ## Task 5: Frontend — Fix getTouchpointPosition + extend route points with elevator waypoints
 
 **Files:**
+
 - Modify: `src/pages/LiveNavigation/LiveNavigation.tsx`
 - Modify: `src/pages/LiveNavigation/LiveNavigation.test.tsx`
 
@@ -1135,10 +1149,7 @@ Replace the existing `getTouchpointPosition` function (lines 102–110):
 
 ```ts
 function getTouchpointPosition(touchpoint: TrainRouteTouchpoint): LiveNavigationLatLng | null {
-  if (
-    touchpoint.departureStop?.latitude != null &&
-    touchpoint.departureStop?.longitude != null
-  ) {
+  if (touchpoint.departureStop?.latitude != null && touchpoint.departureStop?.longitude != null) {
     return [touchpoint.departureStop.latitude, touchpoint.departureStop.longitude];
   }
 
@@ -1188,7 +1199,9 @@ function getRoutePointsFromTouchpoints(
       points.push({
         description: `Eingang ${touchpoint.stationName}.`,
         id: `entrance-${index}`,
-        instruction: touchpoint.walkingApproach.instruction ?? `Betreten Sie ${touchpoint.stationName} am Eingang.`,
+        instruction:
+          touchpoint.walkingApproach.instruction ??
+          `Betreten Sie ${touchpoint.stationName} am Eingang.`,
         label: 'Eingang',
         position: [touchpoint.walkingApproach.latitude, touchpoint.walkingApproach.longitude],
       });
@@ -1262,32 +1275,34 @@ const inactiveElevatorWarnings = getInactiveElevatorWarnings(selectedTouchpoints
 In the JSX, add the warning section after the `<div className={styles['alt-section']}>` block (after the closing `</div>` of alt-section, before `{shouldShowManualFallback ...}`):
 
 ```tsx
-{inactiveElevatorWarnings.length > 0 ? (
-  <section
-    aria-label="Aufzug nicht verfügbar"
-    className={styles['elevator-warning']}
-    role="alert"
-  >
-    {inactiveElevatorWarnings.map((warning) => (
-      <div key={warning.description} className={styles['elevator-warning-item']}>
-        <TriangleAlert aria-hidden="true" className={styles['elevator-warning-icon']} />
-        <div>
-          <p className={styles['elevator-warning-title']}>
-            Aufzug nicht verfügbar: {warning.description}
-          </p>
-          {warning.operationalResumeDate != null ? (
-            <p className={styles['elevator-warning-date']}>
-              Voraussichtliche Wiederinbetriebnahme: {warning.operationalResumeDate}
+{
+  inactiveElevatorWarnings.length > 0 ? (
+    <section
+      aria-label="Aufzug nicht verfügbar"
+      className={styles['elevator-warning']}
+      role="alert"
+    >
+      {inactiveElevatorWarnings.map((warning) => (
+        <div key={warning.description} className={styles['elevator-warning-item']}>
+          <TriangleAlert aria-hidden="true" className={styles['elevator-warning-icon']} />
+          <div>
+            <p className={styles['elevator-warning-title']}>
+              Aufzug nicht verfügbar: {warning.description}
             </p>
-          ) : null}
-          <p className={styles['elevator-warning-advice']}>
-            Bitte wenden Sie sich an das Bahnhofspersonal.
-          </p>
+            {warning.operationalResumeDate != null ? (
+              <p className={styles['elevator-warning-date']}>
+                Voraussichtliche Wiederinbetriebnahme: {warning.operationalResumeDate}
+              </p>
+            ) : null}
+            <p className={styles['elevator-warning-advice']}>
+              Bitte wenden Sie sich an das Bahnhofspersonal.
+            </p>
+          </div>
         </div>
-      </div>
-    ))}
-  </section>
-) : null}
+      ))}
+    </section>
+  ) : null;
+}
 ```
 
 Add the CSS classes to `LiveNavigation.module.css` (append at the end of the file):
@@ -1374,6 +1389,7 @@ git commit -m "feat: route through active elevators and warn on inactive ones in
 ## Task 6: Frontend — Dynamic Haupteingang from walkingApproach
 
 **Files:**
+
 - Modify: `src/pages/LiveNavigation/LiveNavigation.tsx`
 - Modify: `src/pages/LiveNavigation/LiveNavigation.test.tsx`
 
@@ -1502,8 +1518,7 @@ function getRequiredManualStarts(
           : 'Starten Sie am Haupteingang und folgen Sie dem Leitweg zum Abfahrtsgleis.',
       id: 'main-entrance',
       label: 'Haupteingang',
-      routePointId:
-        originTouchpoint?.walkingApproach != null ? 'entrance-0' : 'main-entrance',
+      routePointId: originTouchpoint?.walkingApproach != null ? 'entrance-0' : 'main-entrance',
     },
     {
       description: 'Starten Sie an der Info-Station und folgen Sie dem Leitweg zum Abfahrtsgleis.',
@@ -1561,18 +1576,18 @@ git commit -m "feat: derive Haupteingang coordinates from walkingApproach data"
 
 **Spec coverage:**
 
-| Spec requirement | Covered by |
-|---|---|
-| Use `departureStop.location.latLng` for stop position | Task 3 (backend parse) + Task 5 (frontend getTouchpointPosition) |
-| WALK step `endLocation` → `walkingApproach` on touchpoint | Task 3 (collectRouteDetails + buildWalkingApproach) |
-| Active elevators as route waypoints | Task 5 (getActiveElevatorPoints + getRoutePointsFromTouchpoints) |
-| Inactive elevator warning with `operationalResumeDate` | Task 5 (getInactiveElevatorWarnings + warning JSX) |
-| Dynamic Haupteingang from `walkingApproach` | Task 6 (getRequiredManualStarts) |
-| Fallback to facility coords when `departureStop` null | Task 5 (getTouchpointPosition fallback) |
-| No crash when new fields absent (old backend) | All new fields are nullable; existing fallback logic preserved |
-| Backend fieldMask extensions | Task 3, Step 1 |
-| Backend tests | Task 1 |
-| Frontend tests | Tasks 5, 6 |
+| Spec requirement                                          | Covered by                                                       |
+| --------------------------------------------------------- | ---------------------------------------------------------------- |
+| Use `departureStop.location.latLng` for stop position     | Task 3 (backend parse) + Task 5 (frontend getTouchpointPosition) |
+| WALK step `endLocation` → `walkingApproach` on touchpoint | Task 3 (collectRouteDetails + buildWalkingApproach)              |
+| Active elevators as route waypoints                       | Task 5 (getActiveElevatorPoints + getRoutePointsFromTouchpoints) |
+| Inactive elevator warning with `operationalResumeDate`    | Task 5 (getInactiveElevatorWarnings + warning JSX)               |
+| Dynamic Haupteingang from `walkingApproach`               | Task 6 (getRequiredManualStarts)                                 |
+| Fallback to facility coords when `departureStop` null     | Task 5 (getTouchpointPosition fallback)                          |
+| No crash when new fields absent (old backend)             | All new fields are nullable; existing fallback logic preserved   |
+| Backend fieldMask extensions                              | Task 3, Step 1                                                   |
+| Backend tests                                             | Task 1                                                           |
+| Frontend tests                                            | Tasks 5, 6                                                       |
 
 **Placeholder scan:** No TBDs or TODOs.
 
