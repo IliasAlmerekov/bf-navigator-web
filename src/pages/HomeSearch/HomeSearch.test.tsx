@@ -158,6 +158,14 @@ describe('HomeSearch', () => {
     expect(timeButtons[0]).toHaveAccessibleName(/09:00/i);
   });
 
+  it('prefills the origin field with Hamburg Hbf by default', () => {
+    render(<HomeSearch />);
+
+    const originInput = screen.getAllByRole('combobox', { name: 'Von' })[0] as HTMLInputElement;
+
+    expect(originInput.value).toBe('Hamburg Hbf');
+  });
+
   it('renders the onboarding accessibility preferences and activates the saved selection', () => {
     window.localStorage.setItem(ACCESSIBILITY_PREFERENCE_STORAGE_KEY, 'hearing');
 

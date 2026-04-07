@@ -51,7 +51,7 @@ const INITIAL_ROUTE_STATE: Record<FieldKey, RouteFieldState> = {
     selectedStation: null,
   },
   origin: {
-    input: 'Berlin Hbf',
+    input: 'Hamburg Hbf',
     selectedStation: null,
   },
 };
