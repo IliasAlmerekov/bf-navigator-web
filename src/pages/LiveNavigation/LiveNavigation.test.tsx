@@ -36,6 +36,31 @@ function makeFacility(
   };
 }
 
+function makeTransit(trainName: string): TrainRouteResponse['transits'][number] {
+  const transitStop = {
+    facilities: [makeFacility(2001, 8.66312, 50.10736)],
+    station: {
+      category: 1,
+      city: 'Düsseldorf',
+      evaNumber: 8000085,
+      hasMobilityService: 'yes',
+      hasSteplessAccess: 'yes',
+      hasWiFi: true,
+      name: 'Düsseldorf Hbf',
+      number: 8000085,
+    },
+    stationName: 'Düsseldorf Hbf',
+  };
+
+  return {
+    agencyName: 'DB',
+    arrival: transitStop,
+    departure: transitStop,
+    trainName,
+    vehicleType: 'TRAIN',
+  };
+}
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     children,
@@ -73,6 +98,25 @@ vi.mock('./components/LiveNavigationMap', () => ({
     );
   },
 }));
+
+// Type sentinel — verifies new fields exist on TrainRouteTouchpoint
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _AssertWalkingApproach =
+  NonNullable<NonNullable<TrainRouteResponse['touchpoints']>[number]['walkingApproach']> extends {
+    latitude: number;
+    longitude: number;
+    instruction: string;
+  }
+    ? true
+    : never;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _AssertDepartureStop =
+  NonNullable<NonNullable<TrainRouteResponse['touchpoints']>[number]['departureStop']> extends {
+    latitude: number;
+    longitude: number;
+  }
+    ? true
+    : never;
 
 function makeSelectedRoute(overrides?: Partial<TrainRouteResponse>): TrainRouteResponse {
   return {
@@ -233,8 +277,12 @@ describe('LiveNavigation', () => {
     );
   });
 
-  it('uses selected API route heading and map destination label when touchpoints are available', () => {
-    getSelectedTrainRouteMock.mockReturnValue(makeSelectedRoute());
+  it('uses selected API route heading, departure destination, and train names when touchpoints are available', () => {
+    getSelectedTrainRouteMock.mockReturnValue(
+      makeSelectedRoute({
+        transits: [makeTransit('ICE 105'), makeTransit('RE 1')],
+      })
+    );
     render(<LiveNavigation />);
 
     watchSuccessCallback?.({
@@ -252,26 +300,65 @@ describe('LiveNavigation', () => {
 
     const selectedRouteHeading = screen.getByRole('heading', { level: 2, name: /köln hbf/i });
     expect(selectedRouteHeading).toHaveTextContent(/düsseldorf hbf/i);
-    expect(liveNavigationMapMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        destinationLabel: 'Köln Hbf',
-        routePath: [
-          [50.10736, 8.66312],
-          [50.10754, 8.66301],
-          [50.10772, 8.66292],
-        ],
-      })
-    );
-    expect(screen.getByText(/düsseldorf hbf · weg zu köln hbf/i)).toBeInTheDocument();
+    const lastMapCall = liveNavigationMapMock.mock.calls.at(-1)?.[0] as
+      | { destinationLabel: string; routePath: [number, number][] }
+      | undefined;
+    expect(lastMapCall?.destinationLabel).toBe('Düsseldorf Hbf');
+    expect(lastMapCall?.routePath.at(-1)).toEqual([50.10736, 8.66312]);
+    expect(screen.getByText(/düsseldorf hbf · weg zu düsseldorf hbf/i)).toBeInTheDocument();
     expect(screen.getByText('Düsseldorf Hbf')).toBeInTheDocument();
     expect(screen.getByText('Essen Hbf')).toBeInTheDocument();
     expect(screen.getByText('Köln Hbf')).toBeInTheDocument();
     expect(screen.queryByText('Frankfurt (Main) Hbf')).not.toBeInTheDocument();
     expect(screen.queryByText('Kassel-Wilhelmshöhe')).not.toBeInTheDocument();
     expect(screen.queryByText('Berlin Hbf')).not.toBeInTheDocument();
+    expect(screen.getAllByText(/ice 105.*re 1/i)).toHaveLength(2);
     expect(
       screen.queryByRole('heading', { level: 2, name: /frankfurt → berlin/i })
     ).not.toBeInTheDocument();
+  });
+
+  it('shows only Haupteingang and Info-Station manual options for selected routes and adapts path by selected start', async () => {
+    const user = userEvent.setup();
+    getSelectedTrainRouteMock.mockReturnValue(makeSelectedRoute());
+    render(<LiveNavigation />);
+
+    watchErrorCallback?.({
+      code: 1,
+      message: 'Permission denied',
+      PERMISSION_DENIED: 1,
+      POSITION_UNAVAILABLE: 2,
+      TIMEOUT: 3,
+    } as GeolocationPositionError);
+
+    expect(
+      screen.getByRole('radiogroup', { name: /manuellen startpunkt wählen/i })
+    ).toBeInTheDocument();
+    const mainEntranceOption = screen.getByRole('radio', { name: /haupteingang/i });
+    const infoStationOption = screen.getByRole('radio', { name: /info-station/i });
+
+    expect(mainEntranceOption).toBeInTheDocument();
+    expect(infoStationOption).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /düsseldorf hbf/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /essen hbf/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /köln hbf/i })).not.toBeInTheDocument();
+    const mainStartRoutePath = (
+      liveNavigationMapMock.mock.calls.at(-1)?.[0] as
+        | { destinationLabel: string; routePath: [number, number][] }
+        | undefined
+    )?.routePath;
+    expect(mainStartRoutePath?.at(-1)).toEqual([50.10736, 8.66312]);
+
+    await user.click(infoStationOption);
+
+    const infoStartRoutePath = (
+      liveNavigationMapMock.mock.calls.at(-1)?.[0] as
+        | { destinationLabel: string; routePath: [number, number][] }
+        | undefined
+    )?.routePath;
+    expect(infoStartRoutePath?.at(-1)).toEqual([50.10736, 8.66312]);
+    expect(infoStartRoutePath).not.toEqual(mainStartRoutePath);
+    expect(infoStartRoutePath?.length ?? 0).toBeGreaterThanOrEqual(mainStartRoutePath?.length ?? 0);
   });
 
   it('shows manual fallback controls when geolocation permission is denied', async () => {
