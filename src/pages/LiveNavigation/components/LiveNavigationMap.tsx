@@ -77,7 +77,7 @@ function LiveNavigationMapLayers({
     layers.push(routeUnderlay);
 
     const walkingPath = L.polyline(routePath, {
-      color: '#f59e0b',
+      color: '#b45309',
       dashArray: '10 8',
       lineCap: 'round',
       lineJoin: 'round',
