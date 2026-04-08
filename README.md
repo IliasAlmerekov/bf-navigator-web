@@ -63,3 +63,5 @@ public/       static assets
 ## Accessibility
 
 Accessibility is the primary constraint of this project, not a secondary enhancement. UI decisions, interaction patterns, and implementation choices are expected to support keyboard navigation, screen readers, clear structure, and reduced-motion preferences from the start.
+
+## Test
